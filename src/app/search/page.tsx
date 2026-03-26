@@ -106,10 +106,10 @@ function SearchContent() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-3xl lg:text-7xl font-black text-white mb-4 lg:mb-6 tracking-tight leading-tight">
-              Consulta de <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Portabilidad</span>
+              Consulta de <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Crédito</span>
             </h1>
             <p className="text-sm lg:text-xl text-slate-400 font-medium max-w-2xl mx-auto mb-10 lg:mb-14 px-2">
-              Verifica el estatus de portabilidad y asignación de vendedor en tiempo real a través de nuestra pasarela institucional.
+              Verifica el estatus de crédito y asignación de vendedor en tiempo real a través de nuestra pasarela institucional.
             </p>
 
             <form onSubmit={onSubmit} className="relative max-w-2xl mx-auto w-full group">
@@ -118,7 +118,7 @@ function SearchContent() {
                 <Search className="absolute left-4 lg:left-6 text-slate-500 group-focus-within:text-blue-400 transition-colors" size={20} />
                 <input
                   type="text"
-                  placeholder="Ingresar Código DN..."
+                  placeholder="Ingresar número de trámite..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/10 text-white rounded-xl pl-11 lg:pl-16 pr-24 lg:pr-36 py-4 lg:py-6 text-[15px] lg:text-2xl focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600 placeholder:text-[13px] lg:placeholder:text-lg shadow-2xl"
@@ -233,7 +233,7 @@ function SearchResultCard({ result, index }: { result: SearchResult, index: numb
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-0.5 lg:gap-y-1">
             <DetailRow label="FECHA DE CITA" value={result.row['FECHA DE LA CITA']} icon={<Calendar size={14} />} />
-            <DetailRow label="CÓDIGO DN" value={result.row['DN']} icon={<Hash size={14} />} highlight />
+            <DetailRow label="NÚMERO DE TRÁMITE" value={result.row['DN']} icon={<Hash size={14} />} highlight />
             <DetailRow label="TITULAR" value={result.row['NOMBRE']} icon={<User size={14} />} />
             <DetailRow label="CURP OFICIAL" value={result.row['CURP']} icon={<Shield size={14} />} mono />
             <DetailRow label="TIPO CRÉDITO" value={result.row['TIPO DE CREDITO']} icon={<CreditCard size={14} />} />
