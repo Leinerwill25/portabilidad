@@ -1,6 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
-import { Users, FileSpreadsheet, Search as SearchIcon, Clock, ArrowUpRight, Check } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { 
+  Users, 
+  FileSpreadsheet, 
+  Search as SearchIcon, 
+  TrendingUp,
+  Check,
+  Clock,
+  ArrowUpRight
+} from 'lucide-react'
+import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -47,6 +57,9 @@ export default async function DashboardPage() {
           <span className="text-[12px] font-semibold text-[#374151] uppercase tracking-wider">Sistema Operativo</span>
         </div>
       </div>
+      
+      {/* Cuadro de Estadísticas Ejecutivas (Semana Actual / Mes) */}
+      <ExecutiveStatsTable />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat, i) => (
