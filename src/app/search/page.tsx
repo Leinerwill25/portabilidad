@@ -121,7 +121,7 @@ function SearchContent() {
                   placeholder="Ingresar Código DN..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/10 text-white rounded-xl pl-12 lg:pl-16 pr-28 lg:pr-36 py-4 lg:py-6 text-lg lg:text-2xl focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600 shadow-2xl"
+                  className="w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/10 text-white rounded-xl pl-11 lg:pl-16 pr-24 lg:pr-36 py-4 lg:py-6 text-[15px] lg:text-2xl focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600 placeholder:text-[13px] lg:placeholder:text-lg shadow-2xl"
                 />
                 <button 
                   type="submit"

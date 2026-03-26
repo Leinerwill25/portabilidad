@@ -88,7 +88,7 @@ export default function SellersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" size={16} />
             <input
               type="text"
-              placeholder="Buscar por nombre o email..."
+              placeholder="Buscar por nombre o DN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#f9fafb] border border-[#e5e7eb] text-[#374151] rounded-lg pl-10 pr-4 py-2 text-[13px] focus:outline-none focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 transition-all"
