@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState<'admin' | 'coordinator'>('admin')
   const [loading, setLoading] = useState(false)
   
   // Security State
@@ -47,6 +48,7 @@ export default function RegisterPage() {
       options: {
         data: {
           full_name: fullName,
+          role: role,
         },
       },
     })
@@ -167,6 +169,36 @@ export default function RegisterPage() {
                     className="w-full bg-white border border-[#e5e7eb] text-[#374151] rounded-md px-4 py-2.5 text-[14px] focus:outline-none focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 transition-all"
                     placeholder="nombre@empresa.com"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-bold text-[#64748b] uppercase tracking-wider mb-3 px-0.5">Tipo de Cuenta / Rol</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole('admin')}
+                      className={`flex flex-col p-3 rounded-lg border-2 text-left transition-all ${
+                        role === 'admin' 
+                          ? 'border-[#1a56db] bg-blue-50/30 ring-4 ring-blue-500/5' 
+                          : 'border-[#e5e7eb] hover:border-[#cbd5e1]'
+                      }`}
+                    >
+                      <span className={`text-[12px] font-black uppercase tracking-tight ${role === 'admin' ? 'text-[#1a56db]' : 'text-[#4b5563]'}`}>Supervisor</span>
+                      <span className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5 leading-tight">Gestión de ejecutivos</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole('coordinator')}
+                      className={`flex flex-col p-3 rounded-lg border-2 text-left transition-all ${
+                        role === 'coordinator' 
+                          ? 'border-[#1a56db] bg-blue-50/30 ring-4 ring-blue-500/5' 
+                          : 'border-[#e5e7eb] hover:border-[#cbd5e1]'
+                      }`}
+                    >
+                      <span className={`text-[12px] font-black uppercase tracking-tight ${role === 'coordinator' ? 'text-[#1a56db]' : 'text-[#4b5563]'}`}>Coordinador</span>
+                      <span className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5 leading-tight">Super Admín (Jerárquico)</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
