@@ -13,6 +13,7 @@ import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
 import DailyFvcTable from '@/components/dashboard/DailyFvcTable'
 import SupervisorManager from '@/components/dashboard/SupervisorManager'
 import SupervisorSelector from '@/components/dashboard/SupervisorSelector'
+import CoordinatorStatsTable from '@/components/dashboard/CoordinatorStatsTable'
 
 interface SearchAudit {
   id: string
@@ -113,40 +114,45 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {/* 2. Herramientas de Coordinador (Gestión de Supervisores) */}
       {isCoordinator && (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
           <SupervisorManager />
+          <CoordinatorStatsTable />
         </div>
       )}
       
-      {/* 2. Resumen de Métricas (Tarjetas) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat, i) => (
-          <div 
-            key={i} 
-            className="group bg-white p-6 rounded-2xl border border-[#e2e8f0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-          >
-            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500 opacity-[0.03] rounded-bl-full group-hover:opacity-[0.08] transition-opacity`} />
-            
-            <div className="flex items-center gap-4 relative">
-              <div className={`p-3 rounded-xl bg-${stat.color}-100 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500`}>
-                <stat.icon size={22} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[12px] font-black text-[#64748b] uppercase tracking-widest">{stat.label}</span>
-                <span className="text-[28px] font-black text-[#1e293b] leading-tight">{stat.value}</span>
+      {/* 2. Resumen de Métricas (Tarjetas) - OCULTAR PARA COORDINADOR */}
+      {!isCoordinator && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.map((stat, i) => (
+            <div 
+              key={i} 
+              className="group bg-white p-6 rounded-2xl border border-[#e2e8f0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+            >
+              <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500 opacity-[0.03] rounded-bl-full group-hover:opacity-[0.08] transition-opacity`} />
+              
+              <div className="flex items-center gap-4 relative">
+                <div className={`p-3 rounded-xl bg-${stat.color}-100 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500`}>
+                  <stat.icon size={22} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[12px] font-black text-[#64748b] uppercase tracking-widest">{stat.label}</span>
+                  <span className="text-[28px] font-black text-[#1e293b] leading-tight">{stat.value}</span>
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* 3. Cuadro de Estadísticas Ejecutivas y Seguimiento - OCULTAR PARA COORDINADOR */}
+      {!isCoordinator && (
+        <>
+          <ExecutiveStatsTable supervisorId={selectedSupervisorId} />
+          <div className="mt-8">
+            <DailyFvcTable supervisorId={selectedSupervisorId} />
           </div>
-        ))}
-      </div>
-
-      {/* 3. Cuadro de Estadísticas Ejecutivas */}
-      <ExecutiveStatsTable supervisorId={selectedSupervisorId} />
-
-      {/* 4. Cuadro de Seguimiento Diario (VAN) */}
-      <div className="mt-8">
-        <DailyFvcTable supervisorId={selectedSupervisorId} />
-      </div>
+        </>
+      )}
 
 
       <div className="bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
