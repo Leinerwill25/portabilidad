@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Loader2, TrendingUp, Users, Calendar } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Loader2, TrendingUp, Users, Calendar, RotateCw } from 'lucide-react'
 
 interface SellerStat {
   name: string
@@ -26,23 +26,31 @@ interface DashboardStats {
 export default function ExecutiveStatsTable() {
   const [data, setData] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/dashboard/stats')
-        const stats = await res.json()
-        setData(stats)
-      } catch (error) {
-        console.error('Error fetching stats:', error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchStats = useCallback(async (isManual = false) => {
+    if (isManual) setIsRefreshing(true)
+    else setLoading(true)
+    
+    try {
+      // Usar timestamp para evitar cache del navegador
+      const res = await fetch(`/api/dashboard/stats?t=${Date.now()}`)
+      const stats = await res.json()
+      setData(stats)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoading(false)
+      setIsRefreshing(false)
     }
-    fetchStats()
   }, [])
 
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
   if (loading) {
+// ... loading state ...
     return (
       <div className="bg-white border border-[#e5e7eb] rounded-xl p-8 flex flex-col items-center justify-center gap-3 shadow-sm">
         <Loader2 className="animate-spin text-[#1a56db]" size={32} />
@@ -78,8 +86,20 @@ export default function ExecutiveStatsTable() {
   return (
     <div className="bg-white border border-[#1a2744] rounded-lg overflow-hidden shadow-lg mb-8">
       {/* Header matching image style */}
-      <div className="bg-[#f97316] text-white py-2 text-center font-bold text-[14px] uppercase tracking-[0.2em] border-b border-[#1a2744]">
-        SEMANA {currentWeek} - {data.month}
+      <div className="bg-[#f97316] text-white py-2.5 px-4 flex items-center justify-between border-b border-[#1a2744]">
+        <div className="w-10 sm:hidden" /> {/* Spacer for centering on mobile */}
+        <span className="font-bold text-[14px] uppercase tracking-[0.2em] text-center flex-1">
+          SEMANA {currentWeek} - {data.month}
+        </span>
+        <button 
+          onClick={() => fetchStats(true)}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 active:scale-95 text-white px-3 py-1 rounded-md transition-all disabled:opacity-50"
+          title="Actualizar datos desde Google Sheets"
+        >
+          <RotateCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+          <span className="text-[11px] font-bold uppercase hidden sm:inline">Actualizar</span>
+        </button>
       </div>
 
       <div className="overflow-x-auto">
@@ -94,7 +114,7 @@ export default function ExecutiveStatsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1a2744]/10">
-            {data.sellers.map((seller, idx) => (
+            {data.sellers.map((seller: SellerStat, idx: number) => (
               <tr key={idx} className="hover:bg-[#f8fafc] transition-colors">
                 <td className="px-6 py-3 text-[13px] font-bold text-[#1a2744] border-r border-[#1a2744]/10">
                   {seller.name}
