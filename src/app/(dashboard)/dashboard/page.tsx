@@ -86,7 +86,8 @@ export default async function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                recentSearches?.map((s) => (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (recentSearches as any[])?.map((s: any) => (
                   <tr key={s.id} className="hover:bg-[#f1f5f9] transition-colors group">
                     <td className="px-6 py-4">
                       <span className="text-[#1a2744] font-bold font-mono tracking-tight">{s.dn_code}</span>
