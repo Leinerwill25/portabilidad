@@ -21,56 +21,66 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
+  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   // 1. Verificar si es superadmin
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
-  }
+  if (profile?.role !== 'superadmin') return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
 
-  // 2. Obtener supervisores asignados
-  const { data: assignments } = await supabase
+  // 2. Obtener IDs de supervisores asignados (SIN JOIN INICIAL PARA EVITAR BLOQUEOS RLS)
+  const { data: assignments, error: assignError } = await supabase
     .from('coordinator_supervisors')
-    .select('supervisor_id, profiles!inner(full_name, email)')
+    .select('supervisor_id')
     .eq('coordinator_id', user.id)
 
-  if (!assignments || assignments.length === 0) {
+  if (assignError || !assignments || assignments.length === 0) {
+    console.log('[Hierarchy API] No se encontraron asignaciones en la DB para:', user.id)
     return NextResponse.json({ supervisors: [] })
   }
 
-  const supervisorIds = assignments.map((a: { supervisor_id: string }) => a.supervisor_id)
-  
-  // 3. Obtener todos los sellers de estos supervisores
+  const supervisorIds = assignments.map(a => a.supervisor_id)
+  console.log('[Hierarchy API] IDs Asignados:', supervisorIds)
+
+  // 3. Obtener nombres de perfiles
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', supervisorIds)
+
+  console.log('[Hierarchy API] Perfiles encontrados:', profiles?.length || 0)
+
+  // 4. Obtener todos los sellers de estos supervisores
   const { data: sellers } = await supabase
     .from('sellers')
     .select('id, first_name, last_name, created_by')
-    .in('created_by', supervisorIds) as { data: any[], error: any }
+    .in('created_by', supervisorIds) as { data: any[] | null }
 
-  if (!sellers || sellers.length === 0) {
-    return NextResponse.json({ supervisors: [] })
+  console.log('[Hierarchy API] Vendedores encontrados:', sellers?.length || 0)
+
+  // 5. Obtener todos los sheets de estos sellers
+  let sheets: any[] = []
+  if (sellers && sellers.length > 0) {
+    const sellerIds = sellers.map(s => s.id)
+    const { data: sheetsData } = await supabase
+      .from('seller_sheets')
+      .select('id, seller_id, sheet_id, sheet_url')
+      .in('seller_id', sellerIds)
+    sheets = sheetsData || []
   }
+  console.log('[Hierarchy API] Hojas encontradas:', sheets.length)
 
-  // 4. Obtener todos los sheets de estos sellers
-  const sellerIds = sellers.map(s => s.id)
-  const { data: sheets } = await supabase
-    .from('seller_sheets')
-    .select('id, seller_id, sheet_id, sheet_url')
-    .in('seller_id', sellerIds)
-
-  // 5. Preparar Mapas de Agregación
+  // 6. Preparar Mapas de Agregación
   const currentMonthIndex = new Date().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hierarchyData: Record<string, any> = {}
 
-  assignments.forEach((a: any) => {
-    hierarchyData[a.supervisor_id] = {
-      id: a.supervisor_id,
-      name: a.profiles?.full_name || a.profiles?.email,
+  supervisorIds.forEach(sid => {
+    const p = profiles?.find(prof => prof.id === sid)
+    hierarchyData[sid] = {
+      id: sid,
+      name: p?.full_name || p?.email || 'Supervisor Desconocido',
       sellers: {},
       totals: {
         activacion_no_alta: 0,
@@ -83,26 +93,28 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  sellers.forEach((s: any) => {
-    const supervisorId = s.created_by
-    if (hierarchyData[supervisorId]) {
-      hierarchyData[supervisorId].sellers[s.id] = {
-        id: s.id,
-        name: `${s.first_name} ${s.last_name}`,
-        stats: {
-          activacion_no_alta: 0,
-          alta: 0,
-          alta_no_enrolada: 0,
-          sin_status: 0,
-          chargeback: 0,
-          total: 0
+  if (sellers) {
+    sellers.forEach((s: any) => {
+      const sid = s.created_by
+      if (hierarchyData[sid]) {
+        hierarchyData[sid].sellers[s.id] = {
+          id: s.id,
+          name: `${s.first_name} ${s.last_name}`,
+          stats: {
+            activacion_no_alta: 0,
+            alta: 0,
+            alta_no_enrolada: 0,
+            sin_status: 0,
+            chargeback: 0,
+            total: 0
+          }
         }
       }
-    }
-  })
+    })
+  }
 
-  // 6. Procesar Sheets en Paralelo
-  await Promise.all((sheets || []).map(async (sheet: { seller_id: string, sheet_id: string, sheet_url: string }) => {
+  // 7. Procesar Sheets
+  await Promise.all(sheets.map(async (sheet) => {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid)
 
@@ -113,11 +125,11 @@ export async function GET(request: NextRequest) {
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
 
-      const seller = sellers.find((s: { id: string }) => s.id === sheet.seller_id)
+      const seller = sellers?.find((s: any) => s.id === sheet.seller_id)
       if (!seller) return
       
-      const supervisorId = seller.created_by
-      const sellerEntry = hierarchyData[supervisorId]?.sellers[sheet.seller_id]
+      const sid = seller.created_by
+      const sellerEntry = hierarchyData[sid]?.sellers[sheet.seller_id]
       if (!sellerEntry) return
 
       fetched.rows.forEach((row: RowData) => {
@@ -125,22 +137,16 @@ export async function GET(request: NextRequest) {
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
 
-        // Filtro de temporalidad
         let match = false
-        if (filterWeek) {
-          match = rowWeekNum === filterWeek
-        } else if (filterMonth) {
-          match = rowMonth === filterMonth
-        } else {
-          match = rowMonth === currentMonthName
-        }
+        if (filterWeek) match = rowWeekNum === filterWeek
+        else if (filterMonth) match = rowMonth === filterMonth
+        else match = rowMonth === currentMonthName
 
-        if (!match) return
-        if (!row[dnCol || 'DN']) return // Solo filas con DN cuentan como registros base
+        if (!match || !row[dnCol || 'DN']) return
 
         const estatus = (row[estatusCol || 'ESTATUS'] || 'SIN STATUS').trim().toUpperCase()
         const targetStats = sellerEntry.stats
-        const targetTotals = hierarchyData[supervisorId].totals
+        const targetTotals = hierarchyData[sid].totals
 
         targetStats.total++
         targetTotals.total++
@@ -158,7 +164,6 @@ export async function GET(request: NextRequest) {
           targetStats.chargeback++
           targetTotals.chargeback++
         } else {
-          // Por defecto si no coincide con los anteriores
           targetStats.sin_status++
           targetTotals.sin_status++
         }
@@ -166,26 +171,18 @@ export async function GET(request: NextRequest) {
     }
   }))
 
-  // 7. Formatear Respuesta Final
-  const result = Object.values(hierarchyData).map(supervisor => {
+  const finalSupervisors = Object.values(hierarchyData).map((supervisor: any) => {
     const sellersList = Object.values(supervisor.sellers).map((s: any) => {
       const conv = s.stats.total > 0 ? Math.round((s.stats.alta / s.stats.total) * 100) : 0
       return { ...s, conv: `${conv}%` }
     })
-
     const supervisorConv = supervisor.totals.total > 0 
       ? Math.round((supervisor.totals.alta / supervisor.totals.total) * 100) 
       : 0
-
-    return {
-      ...supervisor,
-      sellers: sellersList,
-      conv: `${supervisorConv}%`
-    }
+    return { ...supervisor, sellers: sellersList, conv: `${supervisorConv}%` }
   })
 
-  // Calcular Gran Total
-  const grandTotal = result.reduce((acc, curr) => ({
+  const grandTotal = finalSupervisors.reduce((acc, curr) => ({
     activacion_no_alta: acc.activacion_no_alta + curr.totals.activacion_no_alta,
     alta: acc.alta + curr.totals.alta,
     alta_no_enrolada: acc.alta_no_enrolada + curr.totals.alta_no_enrolada,
@@ -197,10 +194,7 @@ export async function GET(request: NextRequest) {
   const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.alta / grandTotal.total) * 100) : 0
 
   return NextResponse.json({
-    supervisors: result,
-    grandTotal: {
-      ...grandTotal,
-      conv: `${grandConv}%`
-    }
+    supervisors: finalSupervisors,
+    grandTotal: { ...grandTotal, conv: `${grandConv}%` }
   })
 }
