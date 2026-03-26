@@ -52,7 +52,17 @@ export default function ExecutiveStatsTable() {
   }
 
   if (!data || data.sellers.length === 0) {
-    return null
+    return (
+      <div className="bg-white border border-[#e5e7eb] rounded-xl p-8 flex flex-col items-center justify-center gap-3 shadow-sm mb-8 border-dashed">
+        <Calendar className="text-[#94a3b8]" size={32} />
+        <p className="text-[13px] font-medium text-[#64748b]">
+          No se detectaron registros para <span className="font-bold text-[#1a2744]">{data?.month}</span>.
+        </p>
+        <p className="text-[11px] text-[#94a3b8] max-w-xs text-center">
+          Verifica que tus hojas de Google Sheets tengan la columna <span className="font-mono bg-slate-100 px-1 rounded">MES</span> con el valor correcto en mayúsculas.
+        </p>
+      </div>
+    )
   }
 
   // Calcular la semana del año
