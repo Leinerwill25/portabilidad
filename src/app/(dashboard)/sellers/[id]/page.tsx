@@ -37,9 +37,15 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    
     const [sellerRes, sheetsRes] = await Promise.all([
-      supabase.from('sellers').select('*').eq('id', sellerId).single(),
-      supabase.from('seller_sheets').select('*').eq('seller_id', sellerId).order('created_at', { ascending: false })
+      supabase.from('sellers').select('*').eq('id', sellerId).eq('created_by', user?.id).single(),
+      supabase.from('seller_sheets')
+        .select('*, sellers!inner(*)')
+        .eq('seller_id', sellerId)
+        .eq('sellers.created_by', user?.id)
+        .order('created_at', { ascending: false })
     ])
 
     if (sellerRes.error) {

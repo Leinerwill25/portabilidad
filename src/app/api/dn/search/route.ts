@@ -65,11 +65,15 @@ export async function GET(request: NextRequest) {
     weekOnly
   )
 
+  // Obtener usuario si está logueado para atribución
+  const { data: { user } } = await supabase.auth.getUser()
+
   // Guardar búsqueda en auditoría (sin bloquear la respuesta)
   supabase.from('dn_searches').insert({
     dn_code: dnCode,
     results: results,
     ip_address: request.headers.get('x-forwarded-for') ?? 'unknown',
+    user_id: user?.id
   }).then(() => {}) // fire and forget
 
   return NextResponse.json({

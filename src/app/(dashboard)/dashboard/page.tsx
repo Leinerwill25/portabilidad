@@ -4,19 +4,28 @@ import Link from 'next/link'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id
 
-  // Fetch metrics
+  // Fetch metrics filtered by the current user
   const [
     { count: sellersCount },
     { count: sheetsCount },
     { data: recentSearches },
     { count: todaySearchesCount }
   ] = await Promise.all([
-    supabase.from('sellers').select('*', { count: 'exact', head: true }),
-    supabase.from('seller_sheets').select('*', { count: 'exact', head: true }),
-    supabase.from('dn_searches').select('*').order('searched_at', { ascending: false }).limit(10),
+    supabase.from('sellers').select('*', { count: 'exact', head: true }).eq('created_by', userId),
+    supabase.from('seller_sheets')
+      .select('*, sellers!inner(*)', { count: 'exact', head: true })
+      .eq('sellers.created_by', userId),
+    supabase.from('dn_searches')
+      .select('*')
+      .eq('user_id', userId)
+      .order('searched_at', { ascending: false })
+      .limit(10),
     supabase.from('dn_searches')
       .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
       .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString())
   ])
 

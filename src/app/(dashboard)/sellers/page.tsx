@@ -26,9 +26,12 @@ export default function SellersPage() {
 
   const fetchSellers = useCallback(async () => {
     setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    
     const { data, error } = await supabase
       .from('sellers')
       .select('*')
+      .eq('created_by', user?.id)
       .order('created_at', { ascending: false })
 
     if (error) {
