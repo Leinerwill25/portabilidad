@@ -28,7 +28,7 @@ interface DashboardStats {
   }
 }
 
-export default function ExecutiveStatsTable() {
+export default function ExecutiveStatsTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -48,6 +48,7 @@ export default function ExecutiveStatsTable() {
       let url = `/api/dashboard/stats?t=${ts}`
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (supervisorId) url += `&supervisorId=${supervisorId}`
 
       console.log(`[ExecutiveStatsTable] Fetching stats from ${url}`)
       const res = await fetch(url)

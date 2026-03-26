@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
 import DailyFvcTable from '@/components/dashboard/DailyFvcTable'
+import SupervisorManager from '@/components/dashboard/SupervisorManager'
 
 interface SearchAudit {
   id: string
@@ -20,10 +21,41 @@ interface SearchAudit {
   ip_address: string
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ supervisorId?: string }> }) {
+  const params = await searchParams
+  const selectedSupervisorId = params.supervisorId
+  
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id
+
+  // 1. Obtener Rol del Usuario Actual
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+  
+  const isCoordinator = profile?.role === 'coordinator'
+
+  // 2. Si es coordinador, obtener sus supervisores asignados para el filtro
+  let assignedSupervisors: { id: string, name: string }[] = []
+  if (isCoordinator) {
+    const { data: assignments } = await supabase
+      .from('coordinator_supervisors')
+      .select('supervisor_id, profiles!inner(full_name, email)')
+      .eq('coordinator_id', userId)
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assignedSupervisors = (assignments || []).map((a: any) => ({
+      id: a.supervisor_id,
+      name: a.profiles?.full_name || a.profiles?.email
+    }))
+  }
+
+  // 3. Determinar el dueño del contenido a visualizar (Contexto de Supervisión)
+  // Si no hay supervisor seleccionado, se usa el propio userId (comportamiento estándar para supervisores)
+  const contextSupervisorId = selectedSupervisorId || userId
 
   // Fetch metrics filtered by the current user
   const [
@@ -33,10 +65,10 @@ export default async function DashboardPage() {
     { count: todaySearchesCount },
     { count: totalSearchesOverall }
   ] = await Promise.all([
-    supabase.from('sellers').select('*', { count: 'exact', head: true }).eq('created_by', userId),
+    supabase.from('sellers').select('*', { count: 'exact', head: true }).eq('created_by', contextSupervisorId),
     supabase.from('seller_sheets')
       .select('*, sellers!inner(*)', { count: 'exact', head: true })
-      .eq('sellers.created_by', userId),
+      .eq('sellers.created_by', contextSupervisorId),
     supabase.from('dn_searches')
       .select('*')
       .order('searched_at', { ascending: false })
@@ -67,29 +99,36 @@ export default async function DashboardPage() {
         </div>
       </div>
       
-      {/* Cuadro de Estadísticas Ejecutivas (Semana Actual / Mes) */}
-      <ExecutiveStatsTable />
-      
-      <div className="mt-8">
-        <DailyFvcTable />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* 2. Resumen de Métricas (Tarjetas) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
           <div 
-            key={i}
-            className="bg-white border border-[#e5e7eb] p-5 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-col gap-3 group hover:border-[#bfdbfe] transition-colors"
+            key={i} 
+            className="group bg-white p-6 rounded-2xl border border-[#e2e8f0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
           >
-            <div className="h-9 w-9 bg-[#eff6ff] rounded-md flex items-center justify-center text-[#1a56db]">
-              <stat.icon size={18} />
-            </div>
-            <div>
-              <p className="text-[13px] font-medium text-[#6b7280]">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-[#1a2744] tracking-tight">{stat.value}</h3>
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500 opacity-[0.03] rounded-bl-full group-hover:opacity-[0.08] transition-opacity`} />
+            
+            <div className="flex items-center gap-4 relative">
+              <div className={`p-3 rounded-xl bg-${stat.color}-100 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500`}>
+                <stat.icon size={22} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[12px] font-black text-[#64748b] uppercase tracking-widest">{stat.label}</span>
+                <span className="text-[28px] font-black text-[#1e293b] leading-tight">{stat.value}</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* 3. Cuadro de Estadísticas Ejecutivas */}
+      <ExecutiveStatsTable supervisorId={selectedSupervisorId} />
+
+      {/* 4. Cuadro de Seguimiento Diario (VAN) */}
+      <div className="mt-8">
+        <DailyFvcTable supervisorId={selectedSupervisorId} />
+      </div>
+
 
       <div className="bg-white border border-[#e5e7eb] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] overflow-hidden">
         <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between bg-white">

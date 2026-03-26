@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const ts = searchParams.get('t')
   const filterMonth = searchParams.get('month')?.toUpperCase()
   const filterWeek = searchParams.get('week')
+  const supervisorId = searchParams.get('supervisorId')
 
   console.log(`[API] Processing stats request (t: ${ts}, m: ${filterMonth}, w: ${filterWeek})`)
   
@@ -28,11 +29,32 @@ export async function GET(request: NextRequest) {
   const currentMonthIndex = new Date().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
-  // 1. Obtener vendedores del usuario actual
+  // 1. Determinar el owner de los sellers (Supervisor)
+  let targetOwnerId = user.id
+
+  if (supervisorId) {
+    // Si se pasa un supervisorId, verificar si el usuario actual es coordinador y tiene permiso
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    
+    if (profile?.role === 'coordinator') {
+      const { data: assignment } = await supabase
+        .from('coordinator_supervisors')
+        .select('*')
+        .eq('coordinator_id', user.id)
+        .eq('supervisor_id', supervisorId)
+        .single()
+      
+      if (!assignment) {
+        return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
+      }
+      targetOwnerId = supervisorId
+    }
+  }
+
   const { data: sellers, error: sellersError } = await supabase
     .from('sellers')
     .select('id, first_name, last_name')
-    .eq('created_by', user.id)
+    .eq('created_by', targetOwnerId)
 
   if (sellersError) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })

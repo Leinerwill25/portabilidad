@@ -24,7 +24,7 @@ interface DailyStatsResponse {
   dailyTotals: Record<string, DayStat>
 }
 
-export default function DailyFvcTable() {
+export default function DailyFvcTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<DailyStatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -39,6 +39,7 @@ export default function DailyFvcTable() {
       const ts = Date.now()
       let url = `/api/dashboard/daily-stats?t=${ts}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (supervisorId) url += `&supervisorId=${supervisorId}`
 
       const res = await fetch(url)
       const result = await res.json()
@@ -57,7 +58,7 @@ export default function DailyFvcTable() {
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [weekFilter, activeDay])
+  }, [weekFilter, activeDay, supervisorId])
 
   useEffect(() => {
     fetchDailyStats()

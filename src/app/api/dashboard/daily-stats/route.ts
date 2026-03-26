@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const ts = searchParams.get('t')
   const filterWeek = searchParams.get('week')
+  const supervisorId = searchParams.get('supervisorId')
 
-  console.log(`[Daily Stats API] Processing request (t: ${ts}, w: ${filterWeek})`)
+  console.log(`[Daily Stats API] Processing request (t: ${ts}, w: ${filterWeek}, s: ${supervisorId})`)
   
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,10 +22,30 @@ export async function GET(request: NextRequest) {
   }
 
   // 1. Obtener vendedores del usuario actual
+  // 1. Determinar el owner de los sellers (Supervisor)
+  let targetOwnerId = user.id
+
+  if (supervisorId) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role === 'coordinator') {
+      const { data: assignment } = await supabase
+        .from('coordinator_supervisors')
+        .select('*')
+        .eq('coordinator_id', user.id)
+        .eq('supervisor_id', supervisorId)
+        .single()
+      
+      if (!assignment) {
+        return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
+      }
+      targetOwnerId = supervisorId
+    }
+  }
+
   const { data: sellers, error: sellersError } = await supabase
     .from('sellers')
     .select('id, first_name, last_name')
-    .eq('created_by', user.id)
+    .eq('created_by', targetOwnerId)
 
   if (sellersError) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })
