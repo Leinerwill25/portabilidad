@@ -1,14 +1,21 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { 
-  Search, Loader2, Database, User, Calendar, Tag, AlertCircle, ChevronRight, 
+  Search, Loader2, Database, User, Calendar, AlertCircle, 
   FileText, Smartphone, Palette, Shield, Layout, Headphones, CheckCircle2, 
   Hash, CreditCard, BadgePercent 
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+
+interface SearchResult {
+  sheetId: string;
+  sellerName: string;
+  sheetDisplayName: string;
+  row: Record<string, string>;
+}
 
 export default function SearchPage() {
   return (
@@ -22,19 +29,12 @@ function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [query, setQuery] = useState(searchParams.get('dn') || '')
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    const dn = searchParams.get('dn')
-    if (dn) {
-      handleSearch(dn)
-    }
-  }, [searchParams])
-
-  const handleSearch = async (code: string) => {
+  const handleSearch = useCallback(async (code: string) => {
     if (code.length < 2) return
     
     setLoading(true)
@@ -51,12 +51,19 @@ function SearchContent() {
       } else {
         setResults(data.results || [])
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión con el servidor')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const dn = searchParams.get('dn')
+    if (dn) {
+      handleSearch(dn)
+    }
+  }, [searchParams, handleSearch])
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()

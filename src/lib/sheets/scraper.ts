@@ -165,15 +165,30 @@ function parseCSVLine(line: string): string[] {
 
 // ─── Parser gviz/tq JSON ──────────────────────────────────────────────────────
 
-function parseGvizResponse(json: any): SheetFetchResult {
+interface GvizCell {
+  v?: unknown;
+  f?: string;
+}
+
+interface GvizRow {
+  c: (GvizCell | null)[];
+}
+
+interface GvizTable {
+  cols: { label: string; id: string }[];
+  rows: GvizRow[];
+}
+
+function parseGvizResponse(json: { table?: GvizTable } | unknown): SheetFetchResult {
   try {
-    const table = json?.table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const table = (json as any)?.table as GvizTable
     if (!table) return { success: false, rows: [], headers: [], error: 'Estructura inválida' }
 
-    const headers: string[] = table.cols.map((col: any) => col.label || col.id)
-    const rows: SheetRow[] = table.rows.map((row: any) => {
+    const headers: string[] = table.cols.map(col => col.label || col.id)
+    const rows: SheetRow[] = table.rows.map(row => {
       const obj: SheetRow = {}
-      row.c?.forEach((cell: any, idx: number) => {
+      row.c?.forEach((cell, idx: number) => {
         obj[headers[idx]] = cell?.v?.toString() ?? cell?.f ?? ''
       })
       return obj

@@ -45,12 +45,13 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const sheetsToSearch = sellerSheets.map((s: any) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sheetsToSearch = (sellerSheets as unknown as any[] || []).map((s) => ({
     sheetId: s.sheet_id,
     gid: extractGid(s.sheet_url),
     displayName: s.display_name,
     sheetUrl: s.sheet_url,
-    sellerName: s.sellers ? `${s.sellers.first_name} ${s.sellers.last_name}` : 'Socio / Vendedor',
+    sellerName: s.sellers ? (Array.isArray(s.sellers) ? `${s.sellers[0]?.first_name} ${s.sellers[0]?.last_name}` : `${s.sellers.first_name} ${s.sellers.last_name}`) : 'Socio / Vendedor',
     dateColumn: 'FECHA ALTA', // Sincronizado con el spreadsheet del usuario
     dnColumn: 'DN',
   }))

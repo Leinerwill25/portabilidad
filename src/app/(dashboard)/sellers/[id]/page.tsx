@@ -1,27 +1,41 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, FileSpreadsheet, Globe, ChevronLeft, Loader2, ExternalLink, Mail, Phone, X, Eye } from 'lucide-react'
+import { Plus, Trash2, FileSpreadsheet, ChevronLeft, Loader2, Mail, Phone, Globe, X, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { extractSheetId } from '@/lib/sheets/scraper'
 
+interface Seller {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+interface Sheet {
+  id: string;
+  seller_id: string;
+  sheet_url: string;
+  sheet_id: string;
+  sheet_name: string;
+  display_name: string;
+  created_at: string;
+}
+
 export default function SellerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: sellerId } = use(params)
-  const [seller, setSeller] = useState<any>(null)
-  const [sheets, setSheets] = useState<any[]>([])
+  const [seller, setSeller] = useState<Seller | null>(null)
+  const [sheets, setSheets] = useState<Sheet[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddSheet, setShowAddSheet] = useState(false)
   
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchData()
-  }, [sellerId])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     const [sellerRes, sheetsRes] = await Promise.all([
       supabase.from('sellers').select('*').eq('id', sellerId).single(),
@@ -35,7 +49,11 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
       setSheets(sheetsRes.data || [])
     }
     setLoading(false)
-  }
+  }, [sellerId, supabase])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleDeleteSheet = async (id: string) => {
     if (!confirm('¿Eliminar este sheet?')) return

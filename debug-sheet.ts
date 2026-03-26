@@ -1,5 +1,5 @@
 
-import { fetchSheetAsCSV, extractGid, searchDNAcrossSheets } from './src/lib/sheets/scraper.ts'
+import { fetchSheetAsCSV, extractGid, searchDNAcrossSheets } from './src/lib/sheets/scraper'
 import fs from 'fs'
 
 async function debugSheet() {

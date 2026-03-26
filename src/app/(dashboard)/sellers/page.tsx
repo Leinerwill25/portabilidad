@@ -1,25 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Search, User, Phone, Mail, ChevronRight, Loader2, Trash2, X, Eye } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Loader2, Trash2, X, Eye } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
+interface Seller {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+}
+
 export default function SellersPage() {
-  const [sellers, setSellers] = useState<any[]>([])
+  const [sellers, setSellers] = useState<Seller[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchSellers()
-  }, [])
-
-  const fetchSellers = async () => {
+  const fetchSellers = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('sellers')
@@ -32,7 +37,11 @@ export default function SellersPage() {
       setSellers(data || [])
     }
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchSellers()
+  }, [fetchSellers])
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -109,7 +118,7 @@ export default function SellersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredSellers.map((seller, index) => (
+                filteredSellers.map((seller) => (
                   <tr key={seller.id} className="hover:bg-[#f8fafc] transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
