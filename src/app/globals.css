@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+:root {
+  /* ── Colores base ── */
+  --color-navy:        #1a2744;   /* títulos principales, logo */
+  --color-blue:        #1a56db;   /* botones primarios, links, acento */
+  --color-blue-hover:  #1649c0;   /* hover de botones azules */
+  --color-blue-light:  #eff6ff;   /* fondos de badges y highlights */
+  --color-blue-border: #bfdbfe;   /* bordes de elementos blue */
+  --color-blue-mid:    #3b82f6;   /* íconos, indicadores */
+
+  /* ── Grises funcionales ── */
+  --color-bg-page:     #f8fafc;   /* fondo de toda la app */
+  --color-bg-card:     #ffffff;   /* fondo de cards, panels, sidebar */
+  --color-bg-row:      #f8fafc;   /* filas alternas de tabla */
+  --color-bg-input:    #ffffff;   /* fondo de inputs */
+  --color-bg-hover:    #f1f5f9;   /* hover de filas y nav items */
+
+  /* ── Bordes ── */
+  --color-border:      #e5e7eb;   /* borde universal */
+  --color-border-focus:#1a56db;   /* foco de inputs */
+
+  /* ── Texto ── */
+  --color-text-primary:   #1a2744; /* títulos, datos importantes */
+  --color-text-body:      #374151; /* texto de contenido general */
+  --color-text-muted:     #6b7280; /* labels, captions, secondary */
+  --color-text-blue:      #1a56db; /* links, texto sobre bg azul pálido */
+  --color-text-on-blue:   #ffffff; /* texto sobre botones azules sólidos */
+
+  /* ── Semánticos ── */
+  --color-success-bg:   #f0fdf4;
+  --color-success-text: #166534;
+  --color-success-border:#bbf7d0;
+  --color-danger-bg:    #fef2f2;
+  --color-danger-text:  #991b1b;
+  --color-danger-border:#fecaca;
+  --color-warning-bg:   #fffbeb;
+  --color-warning-text: #92400e;
+
+  /* ── Espaciado ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* ── Sombra ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Tailwind mapping variables */
+  --background: var(--color-bg-page);
+  --foreground: var(--color-text-body);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy: var(--color-navy);
+  --color-enterprise-blue: var(--color-blue);
+  --color-enterprise-border: var(--color-border);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--color-border);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--color-bg-page);
+  color: var(--color-text-body);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Componentes Base Utility Classes ── */
+
+.card-enterprise {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-enterprise-primary {
+  background: var(--color-blue);
+  color: var(--color-text-on-blue);
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-enterprise-primary:hover {
+  background: var(--color-blue-hover);
+}
+
+.input-enterprise {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-text-body);
+  background: var(--color-bg-input);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-enterprise:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton {
+  background: #f1f5f9;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
