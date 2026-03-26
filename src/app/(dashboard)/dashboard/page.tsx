@@ -12,6 +12,7 @@ import {
 import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
 import DailyFvcTable from '@/components/dashboard/DailyFvcTable'
 import SupervisorManager from '@/components/dashboard/SupervisorManager'
+import SupervisorSelector from '@/components/dashboard/SupervisorSelector'
 
 interface SearchAudit {
   id: string
@@ -90,14 +91,32 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="space-y-8 max-w-[1200px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-bold text-[#1a2744] mb-1">Dashboard Administrativo</h1>
-          <p className="text-[13px] text-[#6b7280]">Gestión institucional de la red de portabilidad</p>
+          <h1 className="text-[22px] font-bold text-[#1a2744] mb-1">
+            {isCoordinator ? 'Panel de Coordinación' : 'Dashboard Administrativo'}
+          </h1>
+          <p className="text-[13px] text-[#6b7280]">
+            {isCoordinator 
+              ? 'Gestión jerárquica de supervisores y rendimiento global' 
+              : 'Gestión institucional de la red de portabilidad'}
+          </p>
         </div>
-        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-[#e5e7eb] rounded-lg shadow-sm">
+        
+        {isCoordinator && assignedSupervisors.length > 0 && (
+          <SupervisorSelector supervisors={assignedSupervisors} />
+        )}
+
+        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-[#e5e7eb] rounded-lg shadow-sm self-start sm:self-center">
           <div className="h-2 w-2 rounded-full bg-[#166534] animate-pulse" />
           <span className="text-[12px] font-semibold text-[#374151] uppercase tracking-wider">Sistema Operativo</span>
         </div>
       </div>
+
+      {/* 2. Herramientas de Coordinador (Gestión de Supervisores) */}
+      {isCoordinator && (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+          <SupervisorManager />
+        </div>
+      )}
       
       {/* 2. Resumen de Métricas (Tarjetas) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
