@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // Si se pasa un supervisorId, verificar si el usuario actual es coordinador y tiene permiso
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     
-    if (profile?.role === 'coordinator') {
+    if (profile?.role === 'superadmin') {
       const { data: assignment } = await supabase
         .from('coordinator_supervisors')
         .select('*')

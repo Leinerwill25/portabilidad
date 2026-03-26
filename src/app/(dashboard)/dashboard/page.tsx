@@ -36,7 +36,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .eq('id', userId)
     .single()
   
-  const isCoordinator = profile?.role === 'coordinator'
+  const isCoordinator = profile?.role === 'superadmin'
 
   // 2. Si es coordinador, obtener sus supervisores asignados para el filtro
   let assignedSupervisors: { id: string, name: string }[] = []

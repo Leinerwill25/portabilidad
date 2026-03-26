@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   if (supervisorId) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role === 'coordinator') {
+    if (profile?.role === 'superadmin') {
       const { data: assignment } = await supabase
         .from('coordinator_supervisors')
         .select('*')

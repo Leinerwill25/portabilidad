@@ -18,7 +18,7 @@ export async function GET() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'coordinator') {
+  if (profile?.role !== 'superadmin') {
     return NextResponse.json({ error: 'Solo coordinadores pueden ver todos los perfiles' }, { status: 403 })
   }
 

@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'admin' | 'coordinator'>('admin')
+  const [role, setRole] = useState<'admin' | 'superadmin'>('admin')
   const [loading, setLoading] = useState(false)
   
   // Security State
@@ -50,6 +50,7 @@ export default function RegisterPage() {
           full_name: fullName,
           role: role,
         },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
@@ -188,14 +189,14 @@ export default function RegisterPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setRole('coordinator')}
+                      onClick={() => setRole('superadmin')}
                       className={`flex flex-col p-3 rounded-lg border-2 text-left transition-all ${
-                        role === 'coordinator' 
+                        role === 'superadmin' 
                           ? 'border-[#1a56db] bg-blue-50/30 ring-4 ring-blue-500/5' 
                           : 'border-[#e5e7eb] hover:border-[#cbd5e1]'
                       }`}
                     >
-                      <span className={`text-[12px] font-black uppercase tracking-tight ${role === 'coordinator' ? 'text-[#1a56db]' : 'text-[#4b5563]'}`}>Coordinador</span>
+                      <span className={`text-[12px] font-black uppercase tracking-tight ${role === 'superadmin' ? 'text-[#1a56db]' : 'text-[#4b5563]'}`}>Coordinador</span>
                       <span className="text-[10px] text-[#94a3b8] font-bold uppercase mt-0.5 leading-tight">Super Admín (Jerárquico)</span>
                     </button>
                   </div>
