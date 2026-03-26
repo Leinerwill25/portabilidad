@@ -9,6 +9,7 @@ export async function createClient() {
   if (!url || !key) {
     // Return a proxy that fails gracefully or a simple object
     // to prevent build-time crashes if this is called during prerender
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return {} as any
   }
 

@@ -8,6 +8,7 @@ export function createClient() {
     if (typeof window === 'undefined') {
        // Silent fail during SSR/Prerender if vars are missing
        // This prevents Vercel build from crashing
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
        return {} as any
     }
     throw new Error('Supabase environment variables are missing')
