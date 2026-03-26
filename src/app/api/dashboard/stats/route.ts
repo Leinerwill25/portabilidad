@@ -10,6 +10,13 @@ const MONTHS_ES = [
 ]
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const ts = searchParams.get('t')
+  const filterMonth = searchParams.get('month')?.toUpperCase()
+  const filterWeek = searchParams.get('week')
+
+  console.log(`[API] Processing stats request (t: ${ts}, m: ${filterMonth}, w: ${filterWeek})`)
+  
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -17,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  // Obtener el mes actual en español y mayúsculas
+  // Valores predeterminados si no hay filtros
   const currentMonthIndex = new Date().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Error al obtener sheets' }, { status: 500 })
   }
 
-  // 3. Procesar sheets en paralelo para agregar estadísticas
+  // 3. Procesar sheets en paralelo
   const sellerStatsMap: Record<string, { 
     name: string, 
     ventas: number, 
@@ -49,7 +56,9 @@ export async function GET(request: NextRequest) {
     altas: number 
   }> = {}
 
-  // Inicializar mapa de vendedores
+  const availableMonths = new Set<string>()
+  const availableWeeks = new Set<string>()
+
   sellers.forEach((s: { id: string, first_name: string, last_name: string }) => {
     sellerStatsMap[s.id] = {
       name: `${s.first_name} ${s.last_name}`,
@@ -65,44 +74,64 @@ export async function GET(request: NextRequest) {
 
     if (fetched.success && fetched.rows.length > 0) {
       const rows = fetched.rows
-      
-      // Encontrar nombres reales de columnas (insensible a mayúsculas)
       const headers = fetched.headers
       const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
+      const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
 
       const stats = sellerStatsMap[sheet.seller_id]
       if (!stats) return
 
+      const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
+
       rows.forEach(row => {
-        // Filtrar por mes actual
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
-        if (rowMonth !== currentMonthName) return
+        const rawWeek = row[semanaCol || 'SEMANA']?.trim()
+        // Extraer solo números de la semana (ej: "SEMANA 13" -> "13")
+        const rowWeek = rawWeek?.replace(/\D/g, '')
 
-        // 1. Ventas: Si tiene DN válido
-        if (row[dnCol || 'DN']) {
-          stats.ventas++
+        if (rowMonth) availableMonths.add(rowMonth)
+        
+        const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
+
+        // Solo agregar semanas válidas al filtro (con datos y no futuras)
+        if (rowWeek && Number(rowWeek) > 0 && Number(rowWeek) <= currentWeekNum) {
+          if (row[dnCol || 'DN'] || row[fvcCol || 'FVC']) {
+             availableWeeks.add(rowWeek)
+          }
         }
 
-        // 2. FVC: Sumar si existe registro (o valor si es numérico)
-        // Según el usuario, es la cantidad de FVC registrados en el mes
-        if (row[fvcCol || 'FVC']) {
-          stats.fvc++
+        // Lógica de Filtrado:
+        // Si se especifica semana, prima la semana.
+        // Si no, se usa el mes filtrado o el mes actual por defecto.
+        let match = false
+        if (filterWeek) {
+          match = rowWeek === filterWeek
+        } else if (filterMonth) {
+          match = rowMonth === filterMonth
+        } else {
+          match = rowMonth === currentMonthName
         }
 
-        // 3. Altas: Si el estatus es 'ALTA'
+        if (!match) return
+
+        // 1. Ventas
+        if (row[dnCol || 'DN']) stats.ventas++
+
+        // 2. FVC
+        if (row[fvcCol || 'FVC']) stats.fvc++
+
+        // 3. Altas (Validando cruce con FVC)
         const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-        if (estatus === 'ALTA') {
-          stats.altas++
-        }
+        const fvcValue = row[fvcCol || 'FVC']?.trim().toUpperCase()
+        if (estatus === 'ALTA' && fvcValue === 'FVC') stats.altas++
       })
     }
   }))
 
   const sellerStatsList = Object.values(sellerStatsMap)
-    .filter(s => s.ventas > 0 || s.fvc > 0 || s.altas > 0)
     .map(s => {
       const porcentajeAltas = s.fvc > 0 ? Math.round((s.altas / s.fvc) * 100) : 0
       return {
@@ -112,7 +141,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-  // Global totals
   const global = sellerStatsList.reduce((acc, curr) => ({
     ventas: acc.ventas + curr.ventas,
     fvc: acc.fvc + curr.fvc,
@@ -122,7 +150,12 @@ export async function GET(request: NextRequest) {
   const globalPorcentaje = global.fvc > 0 ? Math.round((global.altas / global.fvc) * 100) : 0
 
   return NextResponse.json({
-    month: currentMonthName,
+    selectedMonth: filterMonth || (filterWeek ? 'Variante' : currentMonthName),
+    selectedWeek: filterWeek || 'Todas',
+    filterOptions: {
+      months: Array.from(availableMonths).sort((a, b) => MONTHS_ES.indexOf(a) - MONTHS_ES.indexOf(b)),
+      weeks: Array.from(availableWeeks).sort((a, b) => Number(a) - Number(b))
+    },
     sellers: sellerStatsList,
     global: {
       ...global,

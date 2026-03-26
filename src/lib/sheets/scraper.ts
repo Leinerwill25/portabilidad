@@ -40,15 +40,16 @@ export async function fetchSheetAsCSV(
   sheetId: string,
   gid: string = '0'
 ): Promise<SheetFetchResult> {
-  const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}`
+  // Agregar parámetro de tiempo para evitar cache de Google CDN
+  const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}&t=${Date.now()}`
 
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; DNSearchBot/1.0)',
       },
-      // Revalidar cada 5 minutos en el cache de Next.js
-      next: { revalidate: 300 },
+      // Desactivar cache para permitir actualizaciones en vivo
+      cache: 'no-store',
     })
 
     if (!response.ok) {

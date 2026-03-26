@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Users, 
@@ -11,6 +10,15 @@ import {
   ArrowUpRight
 } from 'lucide-react'
 import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
+import DailyFvcTable from '@/components/dashboard/DailyFvcTable'
+
+interface SearchAudit {
+  id: string
+  dn_code: string
+  results: unknown
+  searched_at: string
+  ip_address: string
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -22,7 +30,8 @@ export default async function DashboardPage() {
     { count: sellersCount },
     { count: sheetsCount },
     { data: recentSearches },
-    { count: todaySearchesCount }
+    { count: todaySearchesCount },
+    { count: totalSearchesOverall }
   ] = await Promise.all([
     supabase.from('sellers').select('*', { count: 'exact', head: true }).eq('created_by', userId),
     supabase.from('seller_sheets')
@@ -30,13 +39,13 @@ export default async function DashboardPage() {
       .eq('sellers.created_by', userId),
     supabase.from('dn_searches')
       .select('*')
-      .eq('user_id', userId)
       .order('searched_at', { ascending: false })
-      .limit(10),
+      .limit(7), // User requested max 7
     supabase.from('dn_searches')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString())
+      .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
+    supabase.from('dn_searches')
+      .select('*', { count: 'exact', head: true })
   ])
 
   const stats = [
@@ -60,6 +69,10 @@ export default async function DashboardPage() {
       
       {/* Cuadro de Estadísticas Ejecutivas (Semana Actual / Mes) */}
       <ExecutiveStatsTable />
+      
+      <div className="mt-8">
+        <DailyFvcTable />
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat, i) => (
@@ -108,19 +121,18 @@ export default async function DashboardPage() {
                   </td>
                 </tr>
               ) : (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (recentSearches as any[])?.map((s: any) => (
+                (recentSearches as unknown as SearchAudit[])?.map((s) => (
                   <tr key={s.id} className="hover:bg-[#f1f5f9] transition-colors group">
                     <td className="px-6 py-4">
                       <span className="text-[#1a2744] font-bold font-mono tracking-tight">{s.dn_code}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        s.results?.length > 0 
+                        s.results && Array.isArray(s.results) && s.results.length > 0 
                           ? 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]' 
                           : 'bg-[#f9fafb] text-[#374151] border-[#e5e7eb]'
                       }`}>
-                        {s.results?.length > 0 ? (
+                        {s.results && Array.isArray(s.results) && s.results.length > 0 ? (
                           <><Check size={10} /> {s.results.length} Hallazgos</>
                         ) : 'Sin registros'}
                       </span>
@@ -142,7 +154,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Mobile Card View */}
-        <div className="sm:hidden divide-y divide-[#e5e7eb]">
+        <div className="sm:hidden divide-y divide-[#e5e7eb] border-b border-[#e5e7eb]">
           {recentSearches?.length === 0 ? (
             <div className="px-6 py-12 text-center text-[#9ca3af] text-[13px]">
               No se registran actividades recientes.
@@ -152,7 +164,7 @@ export default async function DashboardPage() {
             (recentSearches as any[])?.map((s: any) => (
               <div key={s.id} className="p-4 flex flex-col gap-3 active:bg-[#f8fafc] transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-bold text-[#1a2744] font-mono">{s.dn_code}</span>
+                  <span className="text-[15px] font-bold text-[#1a2744] font-mono">{s.dn_code || s.dn_code}</span>
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                     s.results?.length > 0 
                       ? 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]' 
@@ -168,6 +180,17 @@ export default async function DashboardPage() {
               </div>
             ))
           )}
+        </div>
+
+        {/* Total Summary Footer */}
+        <div className="px-6 py-4 bg-[#f8fafc] border-t border-[#e5e7eb] flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black text-[#64748b] uppercase tracking-widest">Total histórico de consultas</span>
+           </div>
+           <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-[#e2e8f0] shadow-sm">
+              <span className="text-[14px] font-black text-[#1e293b]">{totalSearchesOverall || 0}</span>
+              <span className="text-[10px] font-bold text-[#64748b] uppercase">Vistas</span>
+           </div>
         </div>
       </div>
     </div>
