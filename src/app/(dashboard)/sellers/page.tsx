@@ -96,7 +96,7 @@ export default function SellersPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden min-[1000px]:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-[#f8fafc] border-b border-[#e5e7eb]">
@@ -172,6 +172,61 @@ export default function SellersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Integrated Cards */}
+        <div className="min-[1000px]:hidden divide-y divide-[#e5e7eb]">
+          {loading ? (
+            <div className="p-12 text-center text-[#9ca3af]">
+              <Loader2 className="animate-spin inline-block mb-3" size={24} />
+              <p className="text-[13px]">Sincronizando vendedores...</p>
+            </div>
+          ) : filteredSellers.length === 0 ? (
+            <div className="p-12 text-center text-[#9ca3af] italic text-[13px]">
+              No se han encontrado registros.
+            </div>
+          ) : (
+            filteredSellers.map((seller) => (
+              <div key={seller.id} className="p-5 flex flex-col gap-4 active:bg-[#f8fafc] transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-[#eff6ff] rounded-full flex items-center justify-center text-[#1a56db] font-bold text-sm border border-[#bfdbfe]">
+                      {seller.first_name[0]}{seller.last_name[0]}
+                    </div>
+                    <div>
+                      <h4 className="text-[15px] font-bold text-[#1a2744]">{seller.first_name} {seller.last_name}</h4>
+                      <p className="text-[11px] text-[#6b7280] font-mono leading-none mt-1">ID: {seller.id.split('-')[0]}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Link 
+                      href={`/sellers/${seller.id}`}
+                      className="p-2.5 text-[#1a56db] bg-[#eff6ff] rounded-lg active:scale-95 transition-all"
+                    >
+                      <Eye size={18} />
+                    </Link>
+                    <button 
+                      onClick={(e) => handleDelete(seller.id, e)}
+                      className="p-2.5 text-[#991b1b] bg-[#fef2f2] rounded-lg active:scale-95 transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">Email</p>
+                    <p className="text-[12px] text-[#374151] truncate">{seller.email || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">Teléfono</p>
+                    <p className="text-[12px] text-[#374151]">{seller.phone || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

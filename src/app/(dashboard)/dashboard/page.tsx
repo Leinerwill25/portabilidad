@@ -77,7 +77,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8fafc] border-b border-[#e5e7eb]">
@@ -126,6 +126,35 @@ export default async function DashboardPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="sm:hidden divide-y divide-[#e5e7eb]">
+          {recentSearches?.length === 0 ? (
+            <div className="px-6 py-12 text-center text-[#9ca3af] text-[13px]">
+              No se registran actividades recientes.
+            </div>
+          ) : (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (recentSearches as any[])?.map((s: any) => (
+              <div key={s.id} className="p-4 flex flex-col gap-3 active:bg-[#f8fafc] transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-bold text-[#1a2744] font-mono">{s.dn_code}</span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    s.results?.length > 0 
+                      ? 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]' 
+                      : 'bg-[#f9fafb] text-[#374151] border-[#e5e7eb]'
+                  }`}>
+                    {s.results?.length > 0 ? `${s.results.length} Hallazgos` : 'Sin registros'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-[#6b7280]">
+                  <span>{new Date(s.searched_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className="font-mono text-[10px] opacity-70">IP: {s.ip_address}</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

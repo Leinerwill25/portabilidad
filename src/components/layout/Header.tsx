@@ -6,9 +6,9 @@ export default async function Header() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <header className="h-[60px] border-b border-[#e5e7eb] bg-white flex items-center justify-between px-8 sticky top-0 z-20 shadow-sm">
+    <header className="h-[56px] lg:h-[60px] border-b border-[#e5e7eb] bg-white flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20 shadow-sm transition-all">
       <div className="flex items-center gap-2">
-        <span className="text-[14px] font-medium text-[#374151]">Panel de Control</span>
+        <span className="text-[14px] font-medium text-[#374151] hidden xs:block">Panel de Control</span>
       </div>
 
       <div className="flex items-center gap-5">

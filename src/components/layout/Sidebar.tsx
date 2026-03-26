@@ -34,7 +34,8 @@ export default function Sidebar() {
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 border border-slate-800 rounded-lg text-white"
+        aria-label="Toggle Sidebar"
+        className="lg:hidden fixed top-3 left-4 z-50 p-2.5 bg-white border border-[#e5e7eb] rounded-xl text-[#374151] shadow-sm active:scale-95"
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
