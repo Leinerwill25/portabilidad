@@ -33,11 +33,18 @@ interface SupervisorStats {
     chargeback: number
     total: number
   }
+interface GrandTotal {
+  activacion_no_alta: number
+  alta: number
+  alta_no_enrolada: number
+  sin_status: number
+  chargeback: number
+  total: number
   conv: string
 }
 
 export default function CoordinatorStatsTable() {
-  const [data, setData] = useState<{ supervisors: SupervisorStats[], grandTotal: any } | null>(null)
+  const [data, setData] = useState<{ supervisors: SupervisorStats[], grandTotal: GrandTotal } | null>(null)
   const [loading, setLoading] = useState(true)
   const [expandedSupervisors, setExpandedSupervisors] = useState<Record<string, boolean>>({})
 
