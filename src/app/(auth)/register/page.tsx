@@ -52,7 +52,7 @@ export default function RegisterPage() {
           full_name: fullName,
           role: role,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.hostname === 'localhost' ? 'https://portabilidad-m.vercel.app' : window.location.origin}/auth/callback`,
       },
     })
 
