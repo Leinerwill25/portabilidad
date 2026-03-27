@@ -4,7 +4,6 @@ import {
   Users, 
   FileSpreadsheet, 
   Search as SearchIcon, 
-  TrendingUp,
   Check,
   Clock,
   ArrowUpRight

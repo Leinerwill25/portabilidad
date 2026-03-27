@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ supervisors: [] })
   }
 
-  const supervisorIds = assignments.map(a => a.supervisor_id)
+  const supervisorIds = (assignments || []).map((a: { supervisor_id: string }) => a.supervisor_id)
   console.log('[Hierarchy API] IDs Asignados:', supervisorIds)
 
   // 3. Obtener nombres de perfiles
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
   const hierarchyData: Record<string, any> = {}
 
   supervisorIds.forEach(sid => {
-    const p = profiles?.find(prof => prof.id === sid)
+    const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
     hierarchyData[sid] = {
       id: sid,
       name: p?.full_name || p?.email || 'Supervisor Desconocido',
