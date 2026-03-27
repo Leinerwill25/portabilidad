@@ -1,0 +1,63 @@
+﻿
+> dn-portabilidad@0.1.0 lint C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad
+> eslint
+
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\debug-sheet.ts
+  2:27  warning  'extractGid' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\app\(dashboard)\dashboard\page.tsx
+   13:8   warning  'SupervisorManager' is defined but never used            @typescript-eslint/no-unused-vars
+   15:8   warning  'CoordinatorStatsTable' is defined but never used        @typescript-eslint/no-unused-vars
+   16:8   warning  'RejectionStatsTable' is defined but never used          @typescript-eslint/no-unused-vars
+   17:8   warning  'CoordinatorDailyGlobalTable' is defined but never used  @typescript-eslint/no-unused-vars
+  120:53  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\app\api\admin\coordinator\supervisors\route.ts
+  29:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\app\api\admin\stats\daily-global\route.ts
+   36:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   86:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\app\api\admin\stats\rejections\route.ts
+   75:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\CoordinatorDailyGlobalTable.tsx
+   7:3  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+  13:3  warning  'Search' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\CoordinatorDashboardContainer.tsx
+   3:27  warning  'useEffect' is defined but never used        @typescript-eslint/no-unused-vars
+  16:12  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  32:9   warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\CoordinatorStatsTable.tsx
+  101:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  278:53  warning  'idx' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\CoordinatorTabs.tsx
+   9:3  warning  'Users' is defined but never used            @typescript-eslint/no-unused-vars
+  11:3  warning  'LayoutDashboard' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\CoordinatorVanTable.tsx
+  136:17  warning  'hasData' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+  373:64  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  373:72  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\RejectionStatsTable.tsx
+   7:3  warning  'Users' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+  91:6  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Dereck\.gemini\antigravity\scratch\dn-portabilidad\src\components\dashboard\SupervisorManager.tsx
+  33:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Ô£û 31 problems (15 errors, 16 warnings)
+
+ÔÇëELIFECYCLEÔÇë Command failed with exit code 1.

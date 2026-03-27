@@ -29,7 +29,8 @@ export default function SupervisorManager() {
       const assignedData = await assignedRes.json()
       
       setProfiles(Array.isArray(profilesData) ? profilesData : [])
-      setAssignedIds(Array.isArray(assignedData) ? assignedData : [])
+      // El API ahora retorna objetos {id, name}, extraemos solo los ID para el estado de selección
+      setAssignedIds(Array.isArray(assignedData) ? assignedData.map((d: { id?: string } | string) => typeof d === 'string' ? d : d.id || '') : [])
     } catch (error) {
       console.error('Error fetching coordination data:', error)
     } finally {
@@ -81,7 +82,23 @@ export default function SupervisorManager() {
   const supervisors = profiles.filter(p => p.role === 'admin')
 
   return (
-    <div className="bg-white border border-[#334155] rounded-xl overflow-hidden shadow-xl mb-8 border-t-4 border-t-[#3b82f6]">
+    <div className="space-y-6">
+      {/* Informative Legend */}
+      <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm mb-4">
+        <div className="p-4 bg-white rounded-2xl shadow-sm border border-emerald-200">
+           <UserCheck className="text-emerald-600" size={24} />
+        </div>
+        <div className="flex-1">
+           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Gestión de Site</h4>
+           <p className="text-[12px] text-slate-600 leading-relaxed max-w-3xl">
+              Administra la estructura jerárquica de tu red de ventas. 
+              Vincule supervisores específicos a tu coordinación para que su producción y conversión se reflejen en tus dashboards ejecutivos. 
+              <strong> Beneficio:</strong> Asegura un seguimiento preciso de cada equipo y facilita el crecimiento escalable de tu operación.
+           </p>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#334155] rounded-xl overflow-hidden shadow-xl mb-8 border-t-4 border-t-[#3b82f6]">
       <div className="px-6 py-4 bg-[#f8fafc] border-b border-[#e2e8f0] flex items-center justify-between">
         <div className="flex items-center gap-3">
            <div className="p-2 bg-[#3b82f6]/10 rounded-lg">
@@ -107,10 +124,10 @@ export default function SupervisorManager() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#1e293b] text-white">
-                <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest border-r border-white/5">Estado</th>
-                <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest border-r border-white/5">Nombre Completo</th>
-                <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest">Email Corporativo</th>
+              <tr className="bg-slate-50 text-black">
+                <th className="px-6 py-3 text-[11px] font-black uppercase tracking-widest border-r border-slate-200">Estado</th>
+                <th className="px-6 py-3 text-[11px] font-black uppercase tracking-widest border-r border-slate-200">Nombre Completo</th>
+                <th className="px-6 py-3 text-[11px] font-black uppercase tracking-widest">Email Corporativo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e2e8f0]">
@@ -165,6 +182,7 @@ export default function SupervisorManager() {
           {message.text}
         </div>
       )}
+    </div>
     </div>
   )
 }

@@ -129,3 +129,12 @@ body {
   border-radius: 4px;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
+
+/* ── Hide Scrollbar Utilities ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

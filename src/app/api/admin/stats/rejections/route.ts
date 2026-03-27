@@ -27,15 +27,12 @@ interface Sheet {
   sheet_url: string
 }
 
-interface SellerStats {
+interface RejectionStats {
   id: string
   name: string
   stats: {
-    activacion_no_alta: number
-    alta: number
-    alta_no_enrolada: number
-    sin_status: number
-    chargeback: number
+    ingresada: number
+    rechazo: number
     total: number
   }
 }
@@ -43,13 +40,10 @@ interface SellerStats {
 interface HierarchySupervisor {
   id: string
   name: string
-  sellers: Record<string, SellerStats>
+  sellers: Record<string, RejectionStats>
   totals: {
-    activacion_no_alta: number
-    alta: number
-    alta_no_enrolada: number
-    sin_status: number
-    chargeback: number
+    ingresada: number
+    rechazo: number
     total: number
   }
 }
@@ -64,31 +58,27 @@ export async function GET(request: NextRequest) {
 
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  // 1. Verificar si es superadmin o coordinator
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'superadmin' && profile?.role !== 'coordinator') {
     return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
   }
 
-  // 2. Obtener IDs de supervisores asignados
-  const { data: assignments, error: assignError } = await supabase
+  const { data: assignments } = await supabase
     .from('coordinator_supervisors')
     .select('supervisor_id')
     .eq('coordinator_id', user.id)
 
-  if (assignError || !assignments || assignments.length === 0) {
+  if (!assignments || assignments.length === 0) {
     return NextResponse.json({ supervisors: [] })
   }
 
-  const supervisorIds = (assignments || []).map((a: { supervisor_id: string }) => a.supervisor_id)
+  const supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
 
-  // 3. Obtener nombres de perfiles
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, full_name, email')
     .in('id', supervisorIds)
 
-  // 4. Obtener todos los sellers de estos supervisores
   const { data: sellersData } = await supabase
     .from('sellers')
     .select('id, first_name, last_name, created_by')
@@ -96,7 +86,6 @@ export async function GET(request: NextRequest) {
   
   const sellers = sellersData as Seller[] | null
 
-  // 5. Obtener todos los sheets de estos sellers
   let sheets: Sheet[] = []
   if (sellers && sellers.length > 0) {
     const sellerIds = sellers.map(s => s.id)
@@ -107,26 +96,18 @@ export async function GET(request: NextRequest) {
     sheets = (sheetsData as Sheet[]) || []
   }
 
-  // 6. Preparar Mapas de Agregación
   const currentMonthIndex = new Date().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
   const hierarchyData: Record<string, HierarchySupervisor> = {}
 
   supervisorIds.forEach((sid: string) => {
-    const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
+    const p = (profiles as { id: string, full_name: string | null, email: string | null }[] | null)?.find(prof => prof.id === sid)
     hierarchyData[sid] = {
       id: sid,
       name: p?.full_name || p?.email || 'Supervisor Desconocido',
       sellers: {},
-      totals: {
-        activacion_no_alta: 0,
-        alta: 0,
-        alta_no_enrolada: 0,
-        sin_status: 0,
-        chargeback: 0,
-        total: 0
-      }
+      totals: { ingresada: 0, rechazo: 0, total: 0 }
     }
   })
 
@@ -137,14 +118,7 @@ export async function GET(request: NextRequest) {
         hierarchyData[sid].sellers[s.id] = {
           id: s.id,
           name: `${s.first_name} ${s.last_name}`,
-          stats: {
-            activacion_no_alta: 0,
-            alta: 0,
-            alta_no_enrolada: 0,
-            sin_status: 0,
-            chargeback: 0,
-            total: 0
-          }
+          stats: { ingresada: 0, rechazo: 0, total: 0 }
         }
       }
     })
@@ -153,7 +127,6 @@ export async function GET(request: NextRequest) {
   const allMonths = new Set<string>()
   const allWeeks = new Set<string>()
 
-  // 7. Procesar Sheets
   await Promise.all(sheets.map(async (sheet) => {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid)
@@ -194,57 +167,40 @@ export async function GET(request: NextRequest) {
         const targetStats = sellerEntry.stats
         const targetTotals = hierarchyData[sid].totals
 
-        if (estatus === 'AA') {
-          targetStats.activacion_no_alta++
-          targetTotals.activacion_no_alta++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'ALTA') {
-          targetStats.alta++
-          targetTotals.alta++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'NO ENROLADO') {
-          targetStats.alta_no_enrolada++
-          targetTotals.alta_no_enrolada++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'CHARGE BACK') {
-          targetStats.chargeback++
-          targetTotals.chargeback++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'SIN STATUS') {
-          targetStats.sin_status++
-          targetTotals.sin_status++
-          targetStats.total++
-          targetTotals.total++
+        // Always increment total for any valid DN entry in the period
+        targetStats.total++
+        targetTotals.total++
+
+        if (estatus === 'RECHAZO') {
+          targetStats.rechazo++
+          targetTotals.rechazo++
+        } else {
+          // Ingresada counts any entries that are NOT rejections
+          targetStats.ingresada++
+          targetTotals.ingresada++
         }
       })
     }
   }))
 
   const finalSupervisors = Object.values(hierarchyData).map((supervisor: HierarchySupervisor) => {
-    const sellersList = Object.values(supervisor.sellers).map((s: SellerStats) => {
-      const conv = s.stats.total > 0 ? Math.round((s.stats.alta / s.stats.total) * 100) : 0
-      return { ...s, conv: `${conv}%` }
+    const sellersList = Object.values(supervisor.sellers).map((s: RejectionStats) => {
+      const pct = s.stats.ingresada > 0 ? Math.round((s.stats.rechazo / s.stats.ingresada) * 100) : 0
+      return { ...s, pct: `${pct}%` }
     })
-    const supervisorConv = supervisor.totals.total > 0 
-      ? Math.round((supervisor.totals.alta / supervisor.totals.total) * 100) 
+    const supervisorPct = supervisor.totals.ingresada > 0 
+      ? Math.round((supervisor.totals.rechazo / supervisor.totals.ingresada) * 100) 
       : 0
-    return { ...supervisor, sellers: sellersList, conv: `${supervisorConv}%` }
+    return { ...supervisor, sellers: sellersList, pct: `${supervisorPct}%` }
   })
 
   const grandTotal = finalSupervisors.reduce((acc, curr) => ({
-    activacion_no_alta: acc.activacion_no_alta + curr.totals.activacion_no_alta,
-    alta: acc.alta + curr.totals.alta,
-    alta_no_enrolada: acc.alta_no_enrolada + curr.totals.alta_no_enrolada,
-    sin_status: acc.sin_status + curr.totals.sin_status,
-    chargeback: acc.chargeback + curr.totals.chargeback,
+    ingresada: acc.ingresada + curr.totals.ingresada,
+    rechazo: acc.rechazo + curr.totals.rechazo,
     total: acc.total + curr.totals.total
-  }), { activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, total: 0 })
+  }), { ingresada: 0, rechazo: 0, total: 0 })
 
-  const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.alta / grandTotal.total) * 100) : 0
+  const grandPct = grandTotal.ingresada > 0 ? Math.round((grandTotal.rechazo / grandTotal.ingresada) * 100) : 0
 
   return NextResponse.json({
     selectedMonth: filterMonth || currentMonthName,
@@ -254,6 +210,6 @@ export async function GET(request: NextRequest) {
       weeks: Array.from(allWeeks).sort((a,b) => parseInt(a) - parseInt(b))
     },
     supervisors: finalSupervisors,
-    grandTotal: { ...grandTotal, conv: `${grandConv}%` }
+    grandTotal: { ...grandTotal, pct: `${grandPct}%` }
   })
 }

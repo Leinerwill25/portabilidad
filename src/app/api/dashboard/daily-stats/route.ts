@@ -21,24 +21,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  // 1. Obtener vendedores del usuario actual
-  // 1. Determinar el owner de los sellers (Supervisor)
+  // Determine the target owner (supervisor)
   let targetOwnerId = user.id
 
-  if (supervisorId) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role === 'superadmin') {
-      const { data: assignment } = await supabase
-        .from('coordinator_supervisors')
-        .select('*')
-        .eq('coordinator_id', user.id)
-        .eq('supervisor_id', supervisorId)
-        .single()
-      
-      if (!assignment) {
+  if (supervisorId && supervisorId !== 'undefined' && supervisorId !== user.id) {
+    // 1. Check if the user is a coordinator who has this supervisor assigned
+    const { data: assignment } = await supabase
+      .from('coordinator_supervisors')
+      .select('*')
+      .eq('coordinator_id', user.id)
+      .eq('supervisor_id', supervisorId)
+      .single()
+    
+    if (assignment) {
+      targetOwnerId = supervisorId
+    } else {
+      // 2. Fallback: check if the user is a superadmin
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'superadmin') {
+        targetOwnerId = supervisorId
+      } else {
+        // Forbidden access
         return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
       }
-      targetOwnerId = supervisorId
     }
   }
 

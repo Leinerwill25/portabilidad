@@ -141,8 +141,7 @@ export async function GET(request: NextRequest) {
         if (row[fvcCol || 'FVC']) stats.fvc++
 
         const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-        const fvcValue = row[fvcCol || 'FVC']?.trim().toUpperCase()
-        if (estatus === 'ALTA' && fvcValue === 'FVC') stats.altas++
+        if (estatus === 'ALTA') stats.altas++
       })
     }
   }))

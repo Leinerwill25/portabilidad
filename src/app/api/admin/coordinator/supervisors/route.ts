@@ -13,14 +13,28 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('coordinator_supervisors')
-    .select('supervisor_id')
+    .select(`
+      supervisor_id,
+      profiles:supervisor_id (
+        full_name,
+        email
+      )
+    `)
     .eq('coordinator_id', user.id)
 
   if (error) {
     return NextResponse.json({ error: 'Error al obtener asignaciones' }, { status: 500 })
   }
 
-  return NextResponse.json(data.map((d: { supervisor_id: string }) => d.supervisor_id))
+  const supervisors = (data as unknown as { 
+    supervisor_id: string, 
+    profiles: { full_name: string | null, email: string | null } | null 
+  }[]).map(d => ({
+    id: d.supervisor_id,
+    name: d.profiles?.full_name || d.profiles?.email || 'Supervisor Desconocido'
+  }))
+
+  return NextResponse.json(supervisors)
 }
 
 export async function POST(request: NextRequest) {

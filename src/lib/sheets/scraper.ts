@@ -6,6 +6,20 @@ export interface SheetRow {
   [key: string]: string
 }
 
+// ─── Caching System ──────────────────────────────────────────────────────────
+const CACHE_TTL = 120 * 1000 // 2 minutes in milliseconds
+
+interface CacheEntry {
+  data: SheetFetchResult
+  timestamp: number
+}
+
+const sheetCache = new Map<string, CacheEntry>()
+
+function getCacheKey(sheetId: string, gid: string): string {
+  return `${sheetId}-${gid}`
+}
+
 export interface DNSearchResult {
   sellerName: string
   sheetDisplayName: string
@@ -38,10 +52,22 @@ export function extractGid(url: string): string {
 
 export async function fetchSheetAsCSV(
   sheetId: string,
-  gid: string = '0'
+  gid: string = '0',
+  forceFresh: boolean = false
 ): Promise<SheetFetchResult> {
-  // Agregar parámetro de tiempo para evitar cache de Google CDN
-  const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}&t=${Date.now()}`
+  const cacheKey = getCacheKey(sheetId, gid)
+  const now = Date.now()
+
+  // 1. Check Cache
+  if (!forceFresh) {
+    const cached = sheetCache.get(cacheKey)
+    if (cached && (now - cached.timestamp < CACHE_TTL)) {
+      return cached.data
+    }
+  }
+
+  // 2. Fetch fresh data
+  const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}&t=${now}`
 
   try {
     const response = await fetch(url, {
@@ -58,7 +84,14 @@ export async function fetchSheetAsCSV(
     }
 
     const csvText = await response.text()
-    return parseCSV(csvText)
+    const result = parseCSV(csvText)
+
+    // Save to cache if successful
+    if (result.success) {
+      sheetCache.set(cacheKey, { data: result, timestamp: now })
+    }
+
+    return result
 
   } catch (error) {
     console.error(`Error fetching sheet ${sheetId}:`, error)
@@ -99,7 +132,16 @@ async function fetchSheetAsGviz(
     }
 
     const json = JSON.parse(text.slice(jsonStart, jsonEnd + 1))
-    return parseGvizResponse(json)
+    const result = parseGvizResponse(json)
+
+    // Cache key is handled in the main fetchSheetAsCSV wrapper usually, 
+    // but we can cache here too if called directly
+    const cacheKey = getCacheKey(sheetId, gid)
+    if (result.success) {
+      sheetCache.set(cacheKey, { data: result, timestamp: Date.now() })
+    }
+
+    return result
 
   } catch (error) {
     return {
