@@ -13,6 +13,47 @@ interface RowData {
   [key: string]: string | undefined
 }
 
+interface Seller {
+  id: string
+  first_name: string
+  last_name: string
+  created_by: string
+}
+
+interface Sheet {
+  id: string
+  seller_id: string
+  sheet_id: string
+  sheet_url: string
+}
+
+interface SellerStats {
+  id: string
+  name: string
+  stats: {
+    activacion_no_alta: number
+    alta: number
+    alta_no_enrolada: number
+    sin_status: number
+    chargeback: number
+    total: number
+  }
+}
+
+interface HierarchySupervisor {
+  id: string
+  name: string
+  sellers: Record<string, SellerStats>
+  totals: {
+    activacion_no_alta: number
+    alta: number
+    alta_no_enrolada: number
+    sin_status: number
+    chargeback: number
+    total: number
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterMonth = searchParams.get('month')?.toUpperCase()
@@ -27,19 +68,17 @@ export async function GET(request: NextRequest) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'superadmin') return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
 
-  // 2. Obtener IDs de supervisores asignados (SIN JOIN INICIAL PARA EVITAR BLOQUEOS RLS)
+  // 2. Obtener IDs de supervisores asignados
   const { data: assignments, error: assignError } = await supabase
     .from('coordinator_supervisors')
     .select('supervisor_id')
     .eq('coordinator_id', user.id)
 
   if (assignError || !assignments || assignments.length === 0) {
-    console.log('[Hierarchy API] No se encontraron asignaciones en la DB para:', user.id)
     return NextResponse.json({ supervisors: [] })
   }
 
   const supervisorIds = (assignments || []).map((a: { supervisor_id: string }) => a.supervisor_id)
-  console.log('[Hierarchy API] IDs Asignados:', supervisorIds)
 
   // 3. Obtener nombres de perfiles
   const { data: profiles } = await supabase
@@ -47,34 +86,30 @@ export async function GET(request: NextRequest) {
     .select('id, full_name, email')
     .in('id', supervisorIds)
 
-  console.log('[Hierarchy API] Perfiles encontrados:', profiles?.length || 0)
-
   // 4. Obtener todos los sellers de estos supervisores
-  const { data: sellers } = await supabase
+  const { data: sellersData } = await supabase
     .from('sellers')
     .select('id, first_name, last_name, created_by')
-    .in('created_by', supervisorIds) as { data: any[] | null }
-
-  console.log('[Hierarchy API] Vendedores encontrados:', sellers?.length || 0)
+    .in('created_by', supervisorIds)
+  
+  const sellers = sellersData as Seller[] | null
 
   // 5. Obtener todos los sheets de estos sellers
-  let sheets: any[] = []
+  let sheets: Sheet[] = []
   if (sellers && sellers.length > 0) {
     const sellerIds = sellers.map(s => s.id)
     const { data: sheetsData } = await supabase
       .from('seller_sheets')
       .select('id, seller_id, sheet_id, sheet_url')
       .in('seller_id', sellerIds)
-    sheets = sheetsData || []
+    sheets = (sheetsData as Sheet[]) || []
   }
-  console.log('[Hierarchy API] Hojas encontradas:', sheets.length)
 
   // 6. Preparar Mapas de Agregación
   const currentMonthIndex = new Date().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const hierarchyData: Record<string, any> = {}
+  const hierarchyData: Record<string, HierarchySupervisor> = {}
 
   supervisorIds.forEach((sid: string) => {
     const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
@@ -94,7 +129,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (sellers) {
-    sellers.forEach((s: any) => {
+    sellers.forEach((s: Seller) => {
       const sid = s.created_by
       if (hierarchyData[sid]) {
         hierarchyData[sid].sellers[s.id] = {
@@ -125,7 +160,7 @@ export async function GET(request: NextRequest) {
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
 
-      const seller = sellers?.find((s: any) => s.id === sheet.seller_id)
+      const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
       
       const sid = seller.created_by
@@ -171,8 +206,8 @@ export async function GET(request: NextRequest) {
     }
   }))
 
-  const finalSupervisors = Object.values(hierarchyData).map((supervisor: any) => {
-    const sellersList = Object.values(supervisor.sellers).map((s: any) => {
+  const finalSupervisors = Object.values(hierarchyData).map((supervisor: HierarchySupervisor) => {
+    const sellersList = Object.values(supervisor.sellers).map((s: SellerStats) => {
       const conv = s.stats.total > 0 ? Math.round((s.stats.alta / s.stats.total) * 100) : 0
       return { ...s, conv: `${conv}%` }
     })
