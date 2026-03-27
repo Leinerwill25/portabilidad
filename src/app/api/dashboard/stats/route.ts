@@ -104,11 +104,7 @@ export async function GET(request: NextRequest) {
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
 
       const stats = sellerStatsMap[sheet.seller_id]
-      if (!stats) return
 
-      const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
-
-      rows.forEach(row => {
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         // Extraer solo números de la semana (ej: "SEMANA 13" -> "13")

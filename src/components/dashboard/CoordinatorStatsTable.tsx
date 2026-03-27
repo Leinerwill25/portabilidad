@@ -33,6 +33,9 @@ interface SupervisorStats {
     chargeback: number
     total: number
   }
+  conv: string
+}
+
 interface GrandTotal {
   activacion_no_alta: number
   alta: number
