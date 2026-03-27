@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Search, ShieldAlert, Key, ArrowRight, Lock } from 'lucide-react'
+import { Search, ShieldAlert, Key, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 // Base64 of '25101025' = 'MjUxMDEwMjU='
@@ -20,6 +20,8 @@ export default function RegisterPage() {
   
   // Security State
   const [accessCode, setAccessCode] = useState('')
+  const [showAccessCode, setShowAccessCode] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [authError, setAuthError] = useState(false)
 
@@ -108,12 +110,19 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={16} />
                   <input
-                    type="password"
+                    type={showAccessCode ? "text" : "password"}
                     placeholder="Código de Acceso"
                     value={accessCode}
                     onChange={(e) => setAccessCode(e.target.value)}
-                    className={`w-full bg-white border ${authError ? 'border-red-500 ring-4 ring-red-500/5' : 'border-[#e5e7eb]'} text-[#1a2744] rounded-md pl-10 pr-4 py-3 text-[14px] font-mono focus:outline-none focus:border-[#1a56db] transition-all`}
+                    className={`w-full bg-white border ${authError ? 'border-red-500 ring-4 ring-red-500/5' : 'border-[#e5e7eb]'} text-[#1a2744] rounded-md pl-10 pr-10 py-3 text-[14px] font-mono focus:outline-none focus:border-[#1a56db] transition-all`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowAccessCode(!showAccessCode)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#1a2744] transition-colors"
+                  >
+                    {showAccessCode ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 <button
                   type="submit"
@@ -204,14 +213,23 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-[12px] font-bold text-[#64748b] uppercase tracking-wider mb-1.5 px-0.5">Nueva Contraseña</label>
+                <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white border border-[#e5e7eb] text-[#374151] rounded-md px-4 py-2.5 text-[14px] focus:outline-none focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 transition-all"
+                    className="w-full bg-white border border-[#e5e7eb] text-[#374151] rounded-md px-4 py-2.5 text-[14px] focus:outline-none focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 transition-all pr-10"
                     placeholder="8+ caracteres"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#1a56db] transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 </div>
 
                 <button
