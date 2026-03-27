@@ -121,7 +121,22 @@ export default function CoordinatorDailyGlobalTable() {
   return (
     <div className="flex flex-col gap-8 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       
-      {/* 1. Global Daily Cards */}
+      {/* 1. Global Legend / Guidance */}
+      <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm">
+        <div className="p-4 bg-white rounded-2xl shadow-sm border border-blue-200">
+           <LayoutDashboard className="text-blue-600" size={24} />
+        </div>
+        <div className="flex-1">
+           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Resumen Diario</h4>
+           <p className="text-[12px] text-slate-600 leading-relaxed max-w-3xl">
+              Vista unificada que compara las ventas ingresadas (**FVC**) contra las **Altas** efectivas procesadas en el día. 
+              Esta visualización permite un control de mermas en tiempo real por cada Site vinculado.
+              <strong> Beneficio:</strong> Te permite intervenir de inmediato en equipos con baja **Conversión** antes del cierre operativo.
+           </p>
+        </div>
+      </div>
+
+      {/* 2. Global Daily Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {DAYS.map((day) => {
           const dayTotal = data?.dailyTotals[day]
@@ -167,21 +182,6 @@ export default function CoordinatorDailyGlobalTable() {
             </button>
           )
         })}
-      </div>
-
-      {/* 2. Global Legend / Guidance */}
-      <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm">
-        <div className="p-4 bg-white rounded-2xl shadow-sm border border-blue-200">
-           <LayoutDashboard className="text-blue-600" size={24} />
-        </div>
-        <div className="flex-1">
-           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Resumen Global</h4>
-           <p className="text-[12px] text-slate-600 leading-relaxed max-w-3xl">
-              Vista unificada que compara las ventas ingresadas (**FVC**) contra las **Altas** efectivas procesadas en el día. 
-              Esta visualización permite un control de mermas en tiempo real por cada Site vinculado.
-              <strong> Beneficio:</strong> Te permite intervenir de inmediato en equipos con baja **Conversión** antes del cierre operativo.
-           </p>
-        </div>
       </div>
 
       {/* 3. Global Comparison Table + Drill-down */}

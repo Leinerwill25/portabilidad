@@ -8,8 +8,10 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
-  ChevronRight
+  ChevronRight,
+  Camera
 } from 'lucide-react'
+import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
 interface SellerStats {
   id: string
@@ -168,21 +170,21 @@ export default function RejectionStatsTable() {
       </div>
 
       <div className="bg-white rounded-xl border-2 border-slate-900 shadow-2xl overflow-hidden mb-16">
-      {/* Amber Title Bar */}
-      <div className="px-6 py-5 bg-[#d97706] border-b-2 border-slate-900 flex items-center justify-between">
+      {/* Navy Title Bar */}
+      <div className="px-6 py-5 bg-[#0f172a] border-b-2 border-slate-900 flex items-center justify-between">
          <div className="flex items-center gap-4">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-md">
               <AlertCircle className="text-white" size={20} strokeWidth={2.5} />
             </div>
             <div>
               <h3 className="text-[15px] font-black text-white uppercase tracking-[0.1em]">Dashboard de Rechazos y Recuperación</h3>
-              <p className="text-[9px] font-black text-amber-100 uppercase tracking-widest opacity-80 mt-0.5">Control de Calidad & Merma</p>
+              <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest opacity-80 mt-0.5">Control de Calidad & Merma</p>
             </div>
          </div>
          <div className="flex items-center gap-4">
             {/* Month Filter */}
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black text-amber-100 uppercase tracking-widest opacity-80 text-right">Mes</span>
+              <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80 text-right">Mes</span>
               <select 
                 value={monthFilter || data?.selectedMonth || ''}
                 onChange={(e) => {
@@ -200,7 +202,7 @@ export default function RejectionStatsTable() {
 
             {/* Week Filter */}
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black text-amber-100 uppercase tracking-widest opacity-80 text-right">Semana</span>
+              <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80 text-right">Semana</span>
               <select 
                 value={weekFilter || data?.selectedWeek || ''}
                 onChange={(e) => setWeekFilter(e.target.value)}
@@ -213,7 +215,17 @@ export default function RejectionStatsTable() {
               </select>
             </div>
 
-            <div className="w-[1px] h-8 bg-white/20 mx-2" />
+            <div className="w-[1px] h-8 bg-white/20 mx-2 hidden sm:block" />
+
+            {/* Screenshot Button */}
+            <button 
+              onClick={() => copyElementToClipboard('rejections-table')}
+              className="flex items-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-full transition-all active:scale-95 shadow-lg shadow-sky-500/20 group/btn border-b-4 border-sky-700"
+              title="Capturar Tabla"
+            >
+              <Camera size={14} className="group-hover/btn:scale-110 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white">Capturar</span>
+            </button>
 
             <button 
               onClick={() => fetchData(true)}
@@ -228,7 +240,7 @@ export default function RejectionStatsTable() {
          </div>
       </div>
 
-      <div className="w-full">
+      <div className="w-full" id="rejections-table">
         <table className="w-full text-left border-collapse table-fixed">
           <thead>
             <tr className="bg-slate-50 text-black">

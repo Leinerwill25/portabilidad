@@ -7,14 +7,16 @@ import {
   BarChart3, 
   AlertCircle, 
   Search,
-  BarChart,
-  UserRoundCheck,
-  ShieldCheck
+  ShieldAlert,
+  ShieldCheck,
+  Settings,
+  Trophy
 } from 'lucide-react'
 
 const TABS = [
-  { id: 'global', label: 'Resumen Global', icon: Globe, color: '#3b82f6' },
-  { id: 'stats', label: 'Estadísticas', icon: BarChart3, color: '#6366f1' },
+  { id: 'global', label: 'Resumen Diario', icon: Globe, color: '#3b82f6' },
+  { id: 'stats', label: 'Resumen Mes/Semana', icon: BarChart3, color: '#6366f1' },
+  { id: 'ranking', label: 'Ranking', icon: Trophy, color: '#f59e0b' },
   { id: 'rejections', label: 'Rechazos', icon: AlertCircle, color: '#d97706' },
   { id: 'team', label: 'Gestión Site', icon: ShieldCheck, color: '#059669' },
   { id: 'searches', label: 'Búsquedas', icon: Search, color: '#8b5cf6' },

@@ -9,6 +9,7 @@ import CoordinatorDailyGlobalTable from './CoordinatorDailyGlobalTable'
 import CoordinatorStatsTable from './CoordinatorStatsTable'
 import RejectionStatsTable from './RejectionStatsTable'
 import SupervisorManager from './SupervisorManager'
+import CoordinatorRankingTable from './CoordinatorRankingTable'
 
 interface SearchAudit {
   id: string
@@ -48,6 +49,7 @@ export default function CoordinatorDashboardContainer({
       <div className="mt-4 transition-all duration-300 min-h-[400px]">
         {activeTab === 'global' && <CoordinatorDailyGlobalTable />}
         {activeTab === 'stats' && <CoordinatorStatsTable />}
+        {activeTab === 'ranking' && <CoordinatorRankingTable />}
         {activeTab === 'rejections' && <RejectionStatsTable />}
         {activeTab === 'team' && <SupervisorManager />}
         

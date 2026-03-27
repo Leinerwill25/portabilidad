@@ -6,8 +6,10 @@ import {
   ChevronRight, 
   Users,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  Camera
 } from 'lucide-react'
+import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
 interface SellerStats {
   id: string
@@ -156,12 +158,12 @@ export default function CoordinatorStatsTable() {
   return (
     <div className="space-y-6">
       {/* Informative Legend */}
-      <div className="bg-amber-50/50 border border-amber-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm mb-4">
-        <div className="p-4 bg-white rounded-2xl shadow-sm border border-amber-200">
-           <BarChart3 className="text-amber-600" size={24} />
+      <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm mb-4">
+        <div className="p-4 bg-white rounded-2xl shadow-sm border border-blue-200">
+           <BarChart3 className="text-blue-600" size={24} />
         </div>
         <div className="flex-1">
-           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Estadísticas Ejecutivas</h4>
+           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Resumen Mes/Semana</h4>
            <p className="text-[12px] text-slate-600 leading-relaxed max-w-3xl">
               Análisis profundo de la **calidad de carga** y resultados mensuales/semanales. 
               Visualiza el desglose completo desde ventas ingresadas hasta **Altas** efectivas y **Chargebacks** (bajas). 
@@ -170,9 +172,9 @@ export default function CoordinatorStatsTable() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border-2 border-slate-900 shadow-2xl overflow-hidden mb-16">
-      {/* Amber Title Bar */}
-      <div className="px-6 py-5 bg-[#d97706] border-b-2 border-slate-900 flex items-center justify-between">
+      <div className="bg-white rounded-xl border-2 border-slate-900 shadow-2xl overflow-hidden mb-16" id="stats-table">
+      {/* Navy Title Bar */}
+      <div className="px-6 py-5 bg-[#0f172a] border-b-2 border-slate-900 flex items-center justify-between">
          <div className="flex items-center gap-4">
             <div className="w-1.5 h-6 bg-white rounded-full shadow-lg" />
             <h3 className="text-[15px] font-black text-white uppercase tracking-[0.1em]">Dashboard Gerencial Site Analytics</h3>
@@ -180,7 +182,7 @@ export default function CoordinatorStatsTable() {
           <div className="flex items-center gap-4">
             {/* Month Filter */}
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black text-amber-100 uppercase tracking-widest opacity-80">Mes</span>
+              <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Mes</span>
               <select 
                 value={monthFilter || data?.selectedMonth || ''}
                 onChange={(e) => {
@@ -198,7 +200,7 @@ export default function CoordinatorStatsTable() {
 
             {/* Week Filter */}
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black text-amber-100 uppercase tracking-widest opacity-80">Semana</span>
+              <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Semana</span>
               <select 
                 value={weekFilter || data?.selectedWeek || ''}
                 onChange={(e) => setWeekFilter(e.target.value)}
@@ -213,16 +215,26 @@ export default function CoordinatorStatsTable() {
 
             <div className="w-[1px] h-8 bg-white/20 mx-2" />
 
-            <button 
-              onClick={() => fetchData(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2.5 px-5 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 rounded-full transition-all active:scale-95 group/btn"
-            >
-              <RefreshCw size={14} className={`text-white ${refreshing ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-500'}`} />
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                {refreshing ? 'Actualizando...' : 'Actualizar'}
-              </span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => copyElementToClipboard('stats-table')}
+                className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all active:scale-90 border border-white/20 shadow-lg"
+                title="Capturar Reporte"
+              >
+                <Camera size={18} />
+              </button>
+
+              <button 
+                onClick={() => fetchData(true)}
+                disabled={refreshing}
+                className="flex items-center gap-2.5 px-5 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 rounded-full transition-all active:scale-95 group/btn"
+              >
+                <RefreshCw size={14} className={`text-white ${refreshing ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-500'}`} />
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                  {refreshing ? 'Actualizando...' : 'Actualizar'}
+                </span>
+              </button>
+            </div>
           </div>
       </div>
 
