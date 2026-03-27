@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { RotateCw, Calendar, TrendingUp, ChevronRight, BarChart3, Users } from 'lucide-react'
+import { RotateCw, TrendingUp, ChevronRight, BarChart3, Users } from 'lucide-react'
 
 const DAYS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']
 

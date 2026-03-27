@@ -60,7 +60,7 @@ export default function ExecutiveStatsTable({ supervisorId }: { supervisorId?: s
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [monthFilter, weekFilter])
+  }, [monthFilter, weekFilter, supervisorId])
 
   useEffect(() => {
     fetchStats()
@@ -98,7 +98,7 @@ export default function ExecutiveStatsTable({ supervisorId }: { supervisorId?: s
     const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
     return weekNo
   }
-  const currentWeek = getWeekNumber(new Date())
+
 
   return (
     <div className="bg-white border border-[#334155] rounded-xl overflow-hidden shadow-2xl mb-12 border-t-4 border-t-[#1e293b]">
