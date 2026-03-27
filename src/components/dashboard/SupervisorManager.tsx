@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, Users, Save, Loader2, UserCheck, Shield } from 'lucide-react'
+import { Check, Save, Loader2, UserCheck, Shield } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -60,10 +60,8 @@ export default function SupervisorManager() {
       if (res.ok) {
         setMessage({ type: 'success', text: 'Asignaciones guardadas correctamente' })
         setTimeout(() => setMessage(null), 3000)
-      } else {
-        setMessage({ type: 'error', text: 'Error al guardar las asignaciones' })
       }
-    } catch (error) {
+    } catch (e) {
       setMessage({ type: 'error', text: 'Error de conexión' })
     } finally {
       setSaving(false)
