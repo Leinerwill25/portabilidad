@@ -9,6 +9,10 @@ const MONTHS_ES = [
   'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
 ]
 
+interface RowData {
+  [key: string]: string | undefined
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const ts = searchParams.get('t')
@@ -56,7 +60,7 @@ export async function GET(request: NextRequest) {
     .select('id, first_name, last_name')
     .eq('created_by', targetOwnerId)
 
-  if (sellersError) {
+  if (sellersError || !sellers) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })
   }
 
@@ -66,7 +70,7 @@ export async function GET(request: NextRequest) {
     .select('id, seller_id, sheet_id, sheet_url, display_name')
     .in('seller_id', sellers.map((s: { id: string }) => s.id))
 
-  if (sheetsError) {
+  if (sheetsError || !sheets) {
     return NextResponse.json({ error: 'Error al obtener sheets' }, { status: 500 })
   }
 
@@ -90,7 +94,8 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  await Promise.all(sheets.map(async (sheet: { seller_id: string, sheet_id: string, sheet_url: string }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await Promise.all(sheets.map(async (sheet: any) => {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid)
 
@@ -104,29 +109,26 @@ export async function GET(request: NextRequest) {
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
 
       const stats = sellerStatsMap[sheet.seller_id]
+      if (!stats) return
 
+      rows.forEach((row: RowData) => {
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
-        // Extraer solo números de la semana (ej: "SEMANA 13" -> "13")
-        const rowWeek = rawWeek?.replace(/\D/g, '')
+        const rowWeekNum = rawWeek?.replace(/\D/g, '')
 
         if (rowMonth) availableMonths.add(rowMonth)
         
         const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
 
-        // Solo agregar semanas válidas al filtro (con datos y no futuras)
-        if (rowWeek && Number(rowWeek) > 0 && Number(rowWeek) <= currentWeekNum) {
+        if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
           if (row[dnCol || 'DN'] || row[fvcCol || 'FVC']) {
-             availableWeeks.add(rowWeek)
+             availableWeeks.add(rowWeekNum)
           }
         }
 
-        // Lógica de Filtrado:
-        // Si se especifica semana, prima la semana.
-        // Si no, se usa el mes filtrado o el mes actual por defecto.
         let match = false
         if (filterWeek) {
-          match = rowWeek === filterWeek
+          match = rowWeekNum === filterWeek
         } else if (filterMonth) {
           match = rowMonth === filterMonth
         } else {
@@ -135,13 +137,9 @@ export async function GET(request: NextRequest) {
 
         if (!match) return
 
-        // 1. Ventas
         if (row[dnCol || 'DN']) stats.ventas++
-
-        // 2. FVC
         if (row[fvcCol || 'FVC']) stats.fvc++
 
-        // 3. Altas (Validando cruce con FVC)
         const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
         const fvcValue = row[fvcCol || 'FVC']?.trim().toUpperCase()
         if (estatus === 'ALTA' && fvcValue === 'FVC') stats.altas++
