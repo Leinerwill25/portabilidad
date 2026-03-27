@@ -57,7 +57,14 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      toast.error(error.message)
+      if (error.message.includes('rate limit exceeded')) {
+        toast.error('Límite de registros alcanzado. Por favor, espera 60 segundos antes de intentar nuevamente.', {
+          duration: 5000,
+          description: 'Esta es una restricción de seguridad de Supabase para evitar spam.'
+        })
+      } else {
+        toast.error(error.message)
+      }
       setLoading(false)
     } else {
       toast.success('Registro exitoso. Revisa tu email para confirmar.')

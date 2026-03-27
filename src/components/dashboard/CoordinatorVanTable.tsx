@@ -198,7 +198,7 @@ export default function CoordinatorVanTable() {
                 <Users size={24} className="text-white" strokeWidth={2.5} />
              </div>
              <div>
-                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">Detalle de Retiros (VAN)</h3>
+                <h3 className="text-[16px] font-black text-slate-900 uppercase tracking-tight">Resumen Diario</h3>
                 <div className="flex items-center gap-2 mt-0.5">
                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest italic">Análisis Diario de Desembolsos</p>
@@ -274,13 +274,13 @@ export default function CoordinatorVanTable() {
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-slate-900 text-white uppercase tracking-[0.2em] font-black text-[10px]">
-                  <th className="px-10 py-5 w-[40%] border-r border-white/5">Ejecutivo de Cuenta</th>
-                  <th className="px-6 py-5 text-center w-[20%] border-r border-white/5">FVC Registrados</th>
-                  <th className="px-6 py-5 text-center w-[20%] border-r border-white/5">VAN (Retiraron)</th>
+                  <th className="px-10 py-5 w-[40%] border-r border-white/5">Ejecutivo</th>
+                  <th className="px-6 py-5 text-center w-[20%] border-r border-white/5">FVC</th>
+                  <th className="px-6 py-5 text-center w-[20%] border-r border-white/5">Altas</th>
                   <th className="px-10 py-5 text-center w-[20%]">
                      <div className="flex items-center justify-center gap-2">
                         <TrendingUp size={14} className="text-blue-400" />
-                        % Efectividad
+                        Conversión
                      </div>
                   </th>
                 </tr>
@@ -340,7 +340,7 @@ export default function CoordinatorVanTable() {
                <TrendingUp size={100} strokeWidth={3} />
             </div>
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Métrica Destacada</p>
-            <h4 className="text-[18px] font-black uppercase tracking-tight">Efectividad Global</h4>
+            <h4 className="text-[18px] font-black uppercase tracking-tight">Conversión Global</h4>
             <div className="flex items-baseline gap-2 mt-4">
                <span className="text-[36px] font-black leading-none">{selectedDayStats.pct}</span>
                <span className="text-[12px] font-bold text-blue-400 uppercase tracking-widest">Performance</span>
@@ -370,7 +370,7 @@ export default function CoordinatorVanTable() {
             </h4>
             <div className="mt-8">
                <p className="text-[13px] font-bold leading-snug opacity-90">
-                   Este panel muestra el desglose exacto de los &quot;Retiros&quot; (VAN) procesados durante la semana seleccionada por site.
+                   Este panel muestra el desglose exacto de las &quot;Altas&quot; procesadas durante la semana seleccionada por site.
                </p>
             </div>
          </div>

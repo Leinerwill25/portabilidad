@@ -61,7 +61,7 @@ interface HierarchyData {
   }
 }
 
-export default function CoordinatorStatsTable() {
+export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<HierarchyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -77,6 +77,7 @@ export default function CoordinatorStatsTable() {
       let url = '/api/admin/stats/hierarchy?'
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (supervisorId) url += `&supervisorId=${supervisorId}`
 
       const res = await fetch(url)
       const json = await res.json()

@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const periodType = searchParams.get('periodType') || 'week' // 'day' | 'week' | 'month'
   const periodValue = searchParams.get('periodValue')
+  const supervisorId = searchParams.get('supervisorId')
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,8 +43,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  // 1. Obtener todos los vendedores y sus supervisores (sites)
-  const { data: sellersData, error: sellersError } = await supabase
+  // 1. Determinar el dueño de los sellers (Supervisor)
+  let targetOwnerId = user.id
+
+  // Obtener el rol del usuario para validación
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const userRole = profile?.role
+
+  if (supervisorId) {
+    // Si se pasa un supervisorId, verificar si el usuario actual es coordinador y tiene permiso
+    if (userRole === 'superadmin' || userRole === 'coordinator') {
+      const { data: assignment } = await supabase
+        .from('coordinator_supervisors')
+        .select('*')
+        .eq('coordinator_id', user.id)
+        .eq('supervisor_id', supervisorId)
+        .single()
+      
+      if (!assignment) {
+        return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
+      }
+      targetOwnerId = supervisorId
+    } else if (user.id !== supervisorId) {
+      return NextResponse.json({ error: 'No tienes permiso para ver otros supervisores' }, { status: 403 })
+    }
+  }
+
+  // 2. Obtener los vendedores filtrados
+  const query = supabase
     .from('sellers')
     .select(`
       id,
@@ -53,7 +80,13 @@ export async function GET(request: NextRequest) {
         full_name,
         email
       )
-    `) as { data: SellerWithProfile[] | null, error: unknown }
+    `)
+
+  if (userRole === 'admin' || supervisorId) {
+    query.eq('created_by', targetOwnerId)
+  }
+
+  const { data: sellersData, error: sellersError } = await query as { data: SellerWithProfile[] | null, error: unknown }
 
   if (sellersError || !sellersData) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })

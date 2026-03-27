@@ -156,11 +156,11 @@ export default function ExecutiveStatsTable({ supervisorId }: { supervisorId?: s
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#1e293b] text-white">
-              <th className="px-8 py-5 text-[12px] font-black uppercase tracking-[0.1em] border-r border-white/5">Ejecutivo de Cuenta</th>
-              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">Meta Ventas</th>
-              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">Fvc Bruto</th>
-              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">Altas Netas</th>
-              <th className="px-8 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center">Cumplimiento</th>
+              <th className="px-8 py-5 text-[12px] font-black uppercase tracking-[0.1em] border-r border-white/5">Ejecutivo</th>
+              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">Venta</th>
+              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">FVC</th>
+              <th className="px-6 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center border-r border-white/5">Altas</th>
+              <th className="px-8 py-5 text-[12px] font-black uppercase tracking-[0.1em] text-center">Conversión</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e2e8f0]">

@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterMonth = searchParams.get('month')?.toUpperCase()
   const filterWeek = searchParams.get('week')
+  const supervisorId = searchParams.get('supervisorId')
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,20 +60,45 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'superadmin' && profile?.role !== 'coordinator') {
+  const userRole = profile?.role
+
+  if (userRole !== 'superadmin' && userRole !== 'coordinator' && userRole !== 'admin') {
     return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
   }
 
-  const { data: assignments } = await supabase
-    .from('coordinator_supervisors')
-    .select('supervisor_id')
-    .eq('coordinator_id', user.id)
+  let supervisorIds: string[] = []
 
-  if (!assignments || assignments.length === 0) {
-    return NextResponse.json({ supervisors: [] })
+  if (userRole === 'admin') {
+    // Si es supervisor, solo se ve a sí mismo
+    supervisorIds = [user.id]
+  } else {
+    // Si es coordinador o superadmin
+    if (supervisorId) {
+      // Verificar si tiene asignado a este supervisor
+      const { data: assignment } = await supabase
+        .from('coordinator_supervisors')
+        .select('*')
+        .eq('coordinator_id', user.id)
+        .eq('supervisor_id', supervisorId)
+        .single()
+      
+      if (!assignment) {
+        return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+      }
+      supervisorIds = [supervisorId]
+    } else {
+      // Obtener todos sus supervisores asignados
+      const { data: assignments } = await supabase
+        .from('coordinator_supervisors')
+        .select('supervisor_id')
+        .eq('coordinator_id', user.id)
+
+      if (!assignments || assignments.length === 0) {
+        return NextResponse.json({ supervisors: [] })
+      }
+      supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
+    }
   }
-
-  const supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
 
   const { data: profiles } = await supabase
     .from('profiles')

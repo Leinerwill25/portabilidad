@@ -40,7 +40,7 @@ interface SellerDaily {
   days: Record<string, DayStat>
 }
 
-export default function CoordinatorDailyGlobalTable() {
+export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<DailyGlobalResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -60,6 +60,7 @@ export default function CoordinatorDailyGlobalTable() {
       const ts = Date.now()
       let url = `/api/admin/stats/daily-global?t=${ts}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (supervisorId) url += `&supervisorId=${supervisorId}`
 
       const res = await fetch(url)
       const result = await res.json()

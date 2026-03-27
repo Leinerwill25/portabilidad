@@ -154,7 +154,7 @@ export default function DailyFvcTable({ supervisorId }: { supervisorId?: string 
                 <Users size={20} className="text-[#3b82f6]" />
              </div>
              <div>
-                <h3 className="text-[14px] font-black text-[#1e293b] uppercase tracking-tight">Detalle de Retiros (VAN)</h3>
+                <h3 className="text-[14px] font-black text-[#1e293b] uppercase tracking-tight">Resumen Diario</h3>
                 <p className="text-[11px] font-bold text-[#64748b] uppercase">Desglose por Ejecutivo - {activeDay}</p>
              </div>
           </div>
@@ -188,12 +188,12 @@ export default function DailyFvcTable({ supervisorId }: { supervisorId?: string 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#1e293b] text-white border-b border-white/5">
-                <th className="px-8 py-4 text-[11px] font-black uppercase tracking-wider border-r border-white/5">Ejecutivo de Cuenta</th>
-                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-center border-r border-white/5">FVC Registrados</th>
-                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-center border-r border-white/5">VAN (Retiraron)</th>
+                <th className="px-8 py-4 text-[11px] font-black uppercase tracking-wider border-r border-white/5">Ejecutivo</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-center border-r border-white/5">FVC</th>
+                <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-center border-r border-white/5">Altas</th>
                 <th className="px-8 py-4 text-[11px] font-black uppercase tracking-wider text-center flex items-center justify-center gap-2">
                    <TrendingUp size={12} className="text-[#3b82f6]" />
-                   % Efectividad
+                   Conversión
                 </th>
               </tr>
             </thead>

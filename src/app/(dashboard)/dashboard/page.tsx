@@ -1,17 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { 
-  Users, 
-  FileSpreadsheet, 
-  Search as SearchIcon, 
   Check,
   Clock,
   ArrowUpRight
 } from 'lucide-react'
-import ExecutiveStatsTable from '@/components/dashboard/ExecutiveStatsTable'
-import DailyFvcTable from '@/components/dashboard/DailyFvcTable'
 import SupervisorSelector from '@/components/dashboard/SupervisorSelector'
 import CoordinatorDashboardContainer from '@/components/dashboard/CoordinatorDashboardContainer'
+
+import SupervisorDashboardContainer from '@/components/dashboard/SupervisorDashboardContainer'
 
 interface SearchAudit {
   id: string
@@ -24,7 +21,7 @@ interface SearchAudit {
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ supervisorId?: string, tab?: string }> }) {
   const params = await searchParams
   const selectedSupervisorId = params.supervisorId
-  const initialTab = params.tab || 'global'
+  const initialTab = params.tab
   
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,7 +34,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .eq('id', userId)
     .single()
   
-  const isCoordinator = profile?.role === 'superadmin'
+  const isCoordinator = profile?.role === 'superadmin' || profile?.role === 'coordinator'
 
   // 2. Si es coordinador, obtener sus supervisores asignados para el filtro
   let assignedSupervisors: { id: string, name: string }[] = []
@@ -77,14 +74,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
     supabase.from('dn_searches')
       .select('*', { count: 'exact', head: true })
-      .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString())
   ])
-
-  const stats = [
-    { label: 'Vendedores Totales', value: sellersCount || 0, icon: Users, color: 'blue' },
-    { label: 'Sheets Registrados', value: sheetsCount || 0, icon: FileSpreadsheet, color: 'green' },
-    { label: 'Búsquedas Hoy', value: todaySearchesCount || 0, icon: SearchIcon, color: 'violet' },
-  ]
 
   return (
     <div className="space-y-8 max-w-[1200px] mx-auto">
@@ -112,44 +102,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {isCoordinator ? (
         <CoordinatorDashboardContainer 
-          initialTab={initialTab}
+          initialTab={initialTab || 'global'}
           recentSearches={(recentSearches || []) as unknown as SearchAudit[]}
           totalSearchesOverall={totalSearchesOverall || 0}
         />
-      ) : null}
-
-      {/* 2. Resumen de Métricas (Tarjetas) - OCULTAR PARA COORDINADOR */}
-      {!isCoordinator && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat, i) => (
-            <div 
-              key={i} 
-              className="group bg-white p-6 rounded-2xl border border-[#e2e8f0] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-            >
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500 opacity-[0.03] rounded-bl-full group-hover:opacity-[0.08] transition-opacity`} />
-              
-              <div className="flex items-center gap-4 relative">
-                <div className={`p-3 rounded-xl bg-${stat.color}-100 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500`}>
-                  <stat.icon size={22} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[12px] font-black text-[#64748b] uppercase tracking-widest">{stat.label}</span>
-                  <span className="text-[28px] font-black text-[#1e293b] leading-tight">{stat.value}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 3. Cuadro de Estadísticas Ejecutivas y Seguimiento - OCULTAR PARA COORDINADOR */}
-      {!isCoordinator && (
-        <>
-          <ExecutiveStatsTable supervisorId={selectedSupervisorId} />
-          <div className="mt-8">
-            <DailyFvcTable supervisorId={selectedSupervisorId} />
-          </div>
-        </>
+      ) : (
+        <SupervisorDashboardContainer 
+          initialTab={initialTab || 'daily'}
+          supervisorId={userId}
+          stats={{
+            sellersCount: sellersCount || 0,
+            sheetsCount: sheetsCount || 0,
+            todaySearchesCount: todaySearchesCount || 0
+          }}
+        />
       )}
 
 

@@ -35,7 +35,7 @@ interface RankingData {
   ranking: SellerRank[]
 }
 
-export default function CoordinatorRankingTable() {
+export default function CoordinatorRankingTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<RankingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,6 +55,7 @@ export default function CoordinatorRankingTable() {
       const url = new URL('/api/admin/stats/ranking', window.location.origin)
       url.searchParams.set('periodType', periodType)
       if (periodValue) url.searchParams.set('periodValue', periodValue)
+      if (supervisorId) url.searchParams.set('supervisorId', supervisorId)
       
       const res = await fetch(url.toString())
       const result = await res.json()

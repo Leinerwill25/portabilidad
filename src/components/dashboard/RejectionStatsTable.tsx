@@ -54,7 +54,7 @@ interface RejectionData {
   }
 }
 
-export default function RejectionStatsTable() {
+export default function RejectionStatsTable({ supervisorId }: { supervisorId?: string }) {
   const [data, setData] = useState<RejectionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -70,6 +70,7 @@ export default function RejectionStatsTable() {
       let url = '/api/admin/stats/rejections?'
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (supervisorId) url += `&supervisorId=${supervisorId}`
 
       const res = await fetch(url)
       const json = await res.json()

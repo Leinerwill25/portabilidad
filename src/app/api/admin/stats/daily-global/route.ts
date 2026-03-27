@@ -44,6 +44,7 @@ interface AssignmentData {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterWeek = searchParams.get('week')
+  const supervisorId = searchParams.get('supervisorId')
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -52,28 +53,64 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  // 1. Obtener supervisores asignados al coordinador
-  const { data: assignmentsData, error: assignError } = await supabase
-    .from('coordinator_supervisors')
-    .select(`
-      supervisor_id,
-      profiles:supervisor_id (
-        full_name,
-        email
-      )
-    `)
-    .eq('coordinator_id', user.id)
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const userRole = profile?.role
 
-  if (assignError || !assignmentsData) {
-    return NextResponse.json({ error: 'Error al obtener asignaciones' }, { status: 500 })
+  if (userRole !== 'superadmin' && userRole !== 'coordinator' && userRole !== 'admin') {
+    return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
   }
 
-  const assignments = assignmentsData as unknown as AssignmentData[]
+  let assignments: AssignmentData[] = []
+
+  if (userRole === 'admin') {
+    // Si es supervisor, solo se ve a sí mismo
+    const { data: selfProfile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single()
+    assignments = [{
+      supervisor_id: user.id,
+      profiles: selfProfile || { full_name: user?.user_metadata?.full_name || 'Site', email: user.email || '' }
+    }]
+  } else {
+    // Si es coordinador o superadmin
+    if (supervisorId) {
+      // Verificar si tiene asignado a este supervisor
+      const { data: assignmentCheck } = await supabase
+        .from('coordinator_supervisors')
+        .select(`
+          supervisor_id,
+          profiles:supervisor_id (
+            full_name,
+            email
+          )
+        `)
+        .eq('coordinator_id', user.id)
+        .eq('supervisor_id', supervisorId)
+        .single()
+      
+      if (!assignmentCheck) {
+        return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+      }
+      assignments = [assignmentCheck as unknown as AssignmentData]
+    } else {
+      // Obtener todos sus supervisores asignados
+      const { data: assignmentsData } = await supabase
+        .from('coordinator_supervisors')
+        .select(`
+          supervisor_id,
+          profiles:supervisor_id (
+            full_name,
+            email
+          )
+        `)
+        .eq('coordinator_id', user.id)
+
+      if (!assignmentsData || assignmentsData.length === 0) {
+        return NextResponse.json({ supervisors: [], dailyTotals: {}, availableWeeks: [] })
+      }
+      assignments = assignmentsData as unknown as AssignmentData[]
+    }
+  }
+
   const supervisorIds = assignments.map(a => a.supervisor_id)
-  
-  if (supervisorIds.length === 0) {
-    return NextResponse.json({ supervisors: [], dailyTotals: {}, availableWeeks: [] })
-  }
 
   // 2. Obtener todos los vendedores para estos supervisores
   const { data: sellersData, error: sellersError } = await supabase
