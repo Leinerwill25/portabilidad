@@ -61,7 +61,7 @@ export default function SupervisorManager() {
         setMessage({ type: 'success', text: 'Asignaciones guardadas correctamente' })
         setTimeout(() => setMessage(null), 3000)
       }
-    } catch (e) {
+    } catch {
       setMessage({ type: 'error', text: 'Error de conexión' })
     } finally {
       setSaving(false)
