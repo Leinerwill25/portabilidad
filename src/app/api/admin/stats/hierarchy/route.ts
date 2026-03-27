@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hierarchyData: Record<string, any> = {}
 
-  supervisorIds.forEach(sid => {
+  supervisorIds.forEach((sid: string) => {
     const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
     hierarchyData[sid] = {
       id: sid,
