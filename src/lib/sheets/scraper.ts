@@ -8,6 +8,8 @@ export interface SheetRow {
 
 // ─── Caching System ──────────────────────────────────────────────────────────
 const CACHE_TTL = 120 * 1000 // 2 minutes in milliseconds
+const FETCH_TIMEOUT = 10000 // 10 seconds timeout
+const MAX_CONCURRENT_FETCHES = 10
 
 interface CacheEntry {
   data: SheetFetchResult
@@ -71,6 +73,26 @@ export function extractGid(url: string): string {
   return match ? match[1] : '0'
 }
 
+// ─── Concurrency Control Helper ──────────────────────────────────────────
+const pendingTasks: Array<() => void> = []
+let activeTasks = 0
+
+async function withConcurrencyLimit<T>(fn: () => Promise<T>): Promise<T> {
+  if (activeTasks >= MAX_CONCURRENT_FETCHES) {
+    await new Promise<void>(resolve => pendingTasks.push(resolve))
+  }
+  activeTasks++
+  try {
+    return await fn()
+  } finally {
+    activeTasks--
+    if (pendingTasks.length > 0) {
+      const next = pendingTasks.shift()
+      if (next) next()
+    }
+  }
+}
+
 // ─── Fetch del sheet como CSV (sin API key) ───────────────────────────────────
 
 export async function fetchSheetAsCSV(
@@ -78,65 +100,74 @@ export async function fetchSheetAsCSV(
   gid: string = '0',
   forceFresh: boolean = false
 ): Promise<SheetFetchResult> {
-  const cacheKey = getCacheKey(sheetId, gid)
-  const now = Date.now()
+  return withConcurrencyLimit(async () => {
+    const cacheKey = getCacheKey(sheetId, gid)
+    const now = Date.now()
 
-  // 1. Check Cache
-  if (!forceFresh) {
-    const cached = sheetCache.get(cacheKey)
-    if (cached && (now - cached.timestamp < CACHE_TTL)) {
-      console.log(`[Cache] Found valid entry for ${cacheKey}`)
-      return cached.data
-    }
-  } else {
-    console.log(`[Cache] Bypassing cache for ${cacheKey} (forceFresh)`)
-  }
-
-  // 2. Fetch fresh data
-  const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}&t=${now}`
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; DNSearchBot/1.0)',
-      },
-      // Desactivar cache para permitir actualizaciones en vivo
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      // Si falla CSV, intentar con gviz/tq (más permisivo)
-      return await fetchSheetAsGviz(sheetId, gid)
+    // 1. Check Cache
+    if (!forceFresh) {
+      const cached = sheetCache.get(cacheKey)
+      if (cached && (now - cached.timestamp < CACHE_TTL)) {
+        console.log(`[Cache] Found valid entry for ${cacheKey}`)
+        return cached.data
+      }
+    } else {
+      console.log(`[Cache] Bypassing cache for ${cacheKey} (forceFresh)`)
     }
 
-    const csvText = await response.text()
-    const result = parseCSV(csvText)
+    // 2. Fetch fresh data
+    const url = `${SHEET_BASE_URL}/${sheetId}/export?format=csv&gid=${gid}&t=${now}`
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
 
-    // Save to cache if successful
-    if (result.success) {
-      sheetCache.set(cacheKey, { data: result, timestamp: now })
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; DNSearchBot/1.0)',
+        },
+        cache: forceFresh ? 'no-store' : 'default',
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        return await fetchSheetAsGviz(sheetId, gid, forceFresh)
+      }
+
+      const rawText = await response.text()
+      // Limpiar BOM (\uFEFF) y espacios extra
+      const cleanText = rawText.replace(/^\uFEFF/, '').trim()
+      const result = parseCSV(cleanText)
+
+      if (result.success) {
+        sheetCache.set(cacheKey, { data: result, timestamp: now })
+      }
+
+      return result
+
+    } catch (error) {
+      clearTimeout(timeoutId)
+      console.error(`Error fetching sheet ${sheetId}:`, error)
+      return await fetchSheetAsGviz(sheetId, gid, forceFresh)
     }
-
-    return result
-
-  } catch (error) {
-    console.error(`Error fetching sheet ${sheetId}:`, error)
-    // Fallback al método gviz
-    return await fetchSheetAsGviz(sheetId, gid)
-  }
+  })
 }
 
 // ─── Método alternativo: gviz/tq (Google Visualization API, también público) ──
 
 async function fetchSheetAsGviz(
   sheetId: string,
-  gid: string = '0'
+  gid: string = '0',
+  forceFresh: boolean = false
 ): Promise<SheetFetchResult> {
-  const url = `${SHEET_BASE_URL}/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`
+  const now = Date.now()
+  const url = `${SHEET_BASE_URL}/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}&t=${now}`
 
   try {
     const response = await fetch(url, {
-      next: { revalidate: 300 },
+      next: { revalidate: forceFresh ? 0 : 60 },
+      cache: forceFresh ? 'no-store' : 'default',
     })
 
     if (!response.ok) {
@@ -182,6 +213,9 @@ async function fetchSheetAsGviz(
 // ─── Parser CSV ───────────────────────────────────────────────────────────────
 
 function parseCSV(csv: string): SheetFetchResult {
+  if (!csv) {
+    return { success: false, rows: [], headers: [], error: 'El sheet está vacío' }
+  }
   const lines = csv.trim().split('\n').filter(Boolean)
 
   if (lines.length < 2) {

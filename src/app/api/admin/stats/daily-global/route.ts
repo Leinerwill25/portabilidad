@@ -178,6 +178,16 @@ export async function GET(request: NextRequest) {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
 
+    if (!fetched.success) {
+      console.error(`[Daily Global API] Failed to fetch sheet for seller ${sheet.seller_id}: ${fetched.error}`)
+      return
+    }
+
+    if (fetched.rows.length === 0) {
+      console.warn(`[Daily Global API] Sheet for seller ${sheet.seller_id} is empty or has only headers`)
+      return
+    }
+
     if (fetched.success && fetched.rows.length > 0) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
