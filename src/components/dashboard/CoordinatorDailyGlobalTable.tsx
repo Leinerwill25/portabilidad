@@ -165,10 +165,10 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
               
               <div className="flex items-baseline gap-1.5">
                 <span className={`text-[26px] font-black tabular-nums tracking-tighter ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                   {dayTotal?.van || 0}
+                   {dayTotal?.fvc || 0}
                 </span>
                 <span className={`text-[12px] font-bold ${isSelected ? 'text-white/40' : 'text-slate-400'}`}>
-                   / {dayTotal?.fvc || 0}
+                   / {dayTotal?.van || 0}
                 </span>
               </div>
 
