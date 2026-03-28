@@ -20,6 +20,8 @@ interface SellerStats {
     alta_no_enrolada: number
     sin_status: number
     chargeback: number
+    promesa: number
+    fvc: number
     total: number
   }
   conv: string
@@ -35,6 +37,8 @@ interface SupervisorStats {
     alta_no_enrolada: number
     sin_status: number
     chargeback: number
+    promesa: number
+    fvc: number
     total: number
   }
   conv: string
@@ -46,6 +50,8 @@ interface GrandTotal {
   alta_no_enrolada: number
   sin_status: number
   chargeback: number
+  promesa: number
+  fvc: number
   total: number
   conv: string
 }
@@ -133,14 +139,15 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
   }
 
   const columns = [
-    { label: 'Site / Vendedor', key: 'name', weight: 'w-[25%]' },
+    { label: 'Site / Vendedor', key: 'name', weight: 'w-[20%]' },
     { label: 'ACT. NO ALTA', key: 'ana', weight: 'w-[10%]' },
     { label: 'ALTA', key: 'alta', weight: 'w-[10%]' },
     { label: 'NO ENROLADO', key: 'ne', weight: 'w-[10%]' },
     { label: 'SIN ESTATUS', key: 'pend', weight: 'w-[10%]' },
     { label: 'CHBACK', key: 'cb', weight: 'w-[10%]' },
+    { label: 'PROMESA', key: 'prom', weight: 'w-[10%]' },
     { label: 'TOTAL', key: 'total', weight: 'w-[10%]' },
-    { label: 'CONVERSION', key: 'conv', weight: 'w-[15%]' },
+    { label: 'CONVERSION', key: 'conv', weight: 'w-[10%]' },
   ]
 
   const getEfficacyStyle = (convStr: string) => {
@@ -275,6 +282,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                   <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.alta_no_enrolada, true)}</td>
                   <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.sin_status, true)}</td>
                   <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-red-700">{formatNum(supervisor.totals.chargeback, true)}</td>
+                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-amber-600">{formatNum(supervisor.totals.promesa, true)}</td>
                   <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black bg-sky-300/50 tabular-nums">
                      {formatNum(supervisor.totals.total, true)}
                   </td>
@@ -301,6 +309,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                         <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-bold">{formatNum(seller.stats.alta_no_enrolada)}</td>
                         <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-bold">{formatNum(seller.stats.sin_status)}</td>
                         <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-red-600 font-black">{formatNum(seller.stats.chargeback)}</td>
+                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-amber-700 font-bold">{formatNum(seller.stats.promesa)}</td>
                         <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-black bg-black/5">{formatNum(seller.stats.total)}</td>
                         <td className="px-4 py-3 text-center bg-slate-50/30">
                           <span className={`text-[11px] font-black px-2 py-0.5 rounded border border-black/5 ${getEfficacyStyle(seller.conv)}`}>
@@ -311,7 +320,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                     ))
                   ) : (
                     <tr className="border-b-2 border-slate-900">
-                      <td colSpan={8} className="px-16 py-4 text-[11px] text-slate-400 font-bold italic">
+                      <td colSpan={9} className="px-16 py-4 text-[11px] text-slate-400 font-bold italic">
                         Sin actividad registrada en este SITE
                       </td>
                     </tr>
@@ -331,6 +340,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
               <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.alta_no_enrolada ?? 0}</td>
               <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.sin_status ?? 0}</td>
               <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-red-400">{data.grandTotal.chargeback ?? 0}</td>
+              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-amber-400">{data.grandTotal.promesa ?? 0}</td>
               <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[22px] font-black tabular-nums bg-white/10 text-white">
                 {data.grandTotal.total ?? 0}
               </td>

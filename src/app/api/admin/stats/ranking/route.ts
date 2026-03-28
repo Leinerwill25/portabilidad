@@ -41,7 +41,8 @@ interface SheetData {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const periodType = searchParams.get('periodType') || 'week' // 'day' | 'week' | 'month'
-  const periodValue = searchParams.get('periodValue')
+  const periodValue = searchParams.get('periodValue') // The week number or month name or day name
+  const dayValue = searchParams.get('day')?.toUpperCase() // Specific day if week is selected
   const supervisorId = searchParams.get('supervisorId')
 
   const supabase = await createClient()
@@ -137,10 +138,8 @@ export async function GET(request: NextRequest) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
       const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
-      const fechaCol = headers.find(h => {
-        const hh = h.trim().toUpperCase()
-        return hh === 'DIA FVC' || hh === 'DIA DE LA VENTA' || ['FECHA', 'DIA', 'DÍA'].includes(hh)
-      })
+      const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
@@ -163,44 +162,72 @@ export async function GET(request: NextRequest) {
         // 3. Extraer metadatos de tiempo
         const rowWeek = row[semanaCol || 'SEMANA']?.trim().replace(/\D/g, '')
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
-        const rowDayRaw = row[fechaCol || 'FECHA' || 'DIA' || 'DÍA']?.trim()
         
-        let rowDay = ''
-        if (rowDayRaw) {
-          rowDay = normalizeDay(rowDayRaw.split(' ')[0])
-        }
+        const rowDayVentaRaw = row[diaVentaCol || 'DIA DE LA VENTA']?.trim()
+        const rowDayFvcRaw = row[diaFvcCol || 'DIA FVC']?.trim()
 
-        // 4. Poblar opciones disponibles solo si la fila es válida y la semana es razonable (1-53)
+        const rowDayVenta = rowDayVentaRaw ? normalizeDay(rowDayVentaRaw.split(' ')[0]) : ''
+        const rowDayFvc = rowDayFvcRaw ? normalizeDay(rowDayFvcRaw.split(' ')[0]) : ''
+
+        // 4. Poblar opciones disponibles (usamos DIA FVC para el selector de días)
         if (rowWeek) {
           const wNum = parseInt(rowWeek)
-          if (wNum > 0 && wNum <= 53) {
-            availableWeeks.add(rowWeek)
-          }
+          if (wNum > 0 && wNum <= 53) availableWeeks.add(rowWeek)
         }
-        if (rowMonth && rowMonth.length > 2) availableMonths.add(rowMonth) // Evitar meses basura de 1-2 letras
-        if (rowDay && rowDay.length >= 8) availableDays.add(rowDay) // Validar formato fecha mínima
+        if (rowMonth && rowMonth.length > 2) availableMonths.add(rowMonth)
+        if (rowDayFvcRaw && rowDayFvcRaw.length >= 5) availableDays.add(rowDayFvc)
 
-        // 5. Lógica de coincidencia según periodType
-        let matches = false
-        if (periodType === 'week' && rowWeek === (periodValue || '')) matches = true
-        if (periodType === 'month' && rowMonth === (periodValue || '').toUpperCase()) matches = true
-        if (periodType === 'day' && rowDay === periodValue) matches = true
+        const activePeriodValue = (periodValue || '').toUpperCase()
+
+        // 5. Lógica de coincidencia por métrica (Split Logic)
         
-        if (!periodValue && periodType === 'week' && rowWeek === '1') matches = true 
+        // A. Match para VENTAS (DIA DE LA VENTA)
+        let vMatch = false
+        if (periodType === 'week') {
+          if (rowWeek === periodValue) {
+            // If dayValue is provided, it MUST also match the sale day
+            if (dayValue) {
+              vMatch = rowDayVenta === normalizeDay(dayValue)
+            } else {
+              vMatch = true
+            }
+          }
+        } else if (periodType === 'month' && rowMonth === activePeriodValue) {
+          vMatch = true
+        } else if (periodType === 'day' && rowDayVenta === activePeriodValue) {
+          vMatch = true
+        } else if (!periodValue && periodType === 'week' && rowWeek === '1') {
+          vMatch = true
+        }
 
-        if (matches) {
-          // Total FVC: Se usa como denominador para la conversión
+        if (vMatch && dnVal && dnVal !== '') {
+          rankEntry.ventas++
+        }
+
+        // B. Match para FVC y ALTAS (DIA FVC)
+        let fMatch = false
+        if (periodType === 'week') {
+          if (rowWeek === periodValue) {
+            // If dayValue is provided, it MUST also match the FVC day
+            if (dayValue) {
+              fMatch = rowDayFvc === normalizeDay(dayValue)
+            } else {
+              fMatch = true
+            }
+          }
+        } else if (periodType === 'month' && rowMonth === activePeriodValue) {
+          fMatch = true
+        } else if (periodType === 'day' && rowDayFvc === activePeriodValue) {
+          fMatch = true
+        } else if (!periodValue && periodType === 'week' && rowWeek === '1') {
+          fMatch = true
+        }
+
+        if (fMatch) {
           if (fvcVal && fvcVal !== '') {
             rankEntry.fvc++
           }
-
-          // Total Ventas: Se calcula por la cantidad de DN registrados
-          if (dnVal && dnVal !== '') {
-            rankEntry.ventas++
-          }
-
-          // Altas (VAN): Marcación explícita
-          if (vanVal === 'VAN' || vanVal === 'SI' || vanVal === '1' || vanVal === 'X' || estatusVal === 'ALTA') {
+          if (estatusVal === 'ALTA') {
             rankEntry.altas++
           }
         }

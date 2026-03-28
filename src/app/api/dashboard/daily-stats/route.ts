@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
   // Estructura de datos: Mapa de vendedores -> Mapa de días
   const sellerDailyMap: Record<string, {
     name: string,
-    days: Record<string, { fvc: number, van: number }>
+    days: Record<string, { ventas: number, fvc: number, van: number }>
   }> = {}
 
   const availableWeeks = new Set<string>()
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     }
     DAYS_ES.forEach(day => {
       const normalizedDay = normalizeDay(day)
-      sellerDailyMap[s.id].days[normalizedDay] = { fvc: 0, van: 0 }
+      sellerDailyMap[s.id].days[normalizedDay] = { ventas: 0, fvc: 0, van: 0 }
     })
   })
 
@@ -108,10 +108,8 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
-      const diaCol = headers.find(h => {
-        const hh = h.trim().toUpperCase()
-        return hh === 'DIA FVC' || hh === 'DIA DE LA VENTA' || hh === 'DIA'
-      })
+      const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
@@ -125,27 +123,39 @@ export async function GET(request: NextRequest) {
         if (!dn) return
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
-        const rowWeek = rawWeek?.replace(/\D/g, '') // "13"
-        const rowDia = normalizeDay(row[diaCol || 'DIA DE LA VENTA'])
+        const rowWeekNum = rawWeek?.replace(/\D/g, '') // "13"
+        
+        // Determinar días por métrica
+        const rowDiaVenta = normalizeDay(row[diaVentaCol || 'DIA DE LA VENTA'])
+        const rowDiaFvc = normalizeDay(row[diaFvcCol || 'DIA FVC'])
         
         // Solo agregar semanas válidas al filtro (con datos y no futuras)
-        if (rowWeek && Number(rowWeek) > 0 && Number(rowWeek) <= currentWeekNum) {
+        if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
           if (row[fvcCol || 'FVC'] || row[vanCol || 'VAN']) {
-            availableWeeks.add(rowWeek)
+            availableWeeks.add(rowWeekNum)
           }
         }
 
         // Solo procesar si coincide con la semana activa
-        if (rowWeek === activeWeekStr && rowDia && sellerStats.days[rowDia]) {
-          // Contar FVC
-          if (row[fvcCol || 'FVC']) {
-            sellerStats.days[rowDia].fvc++
+        if (rowWeekNum === activeWeekStr) {
+          // 1. Contar Venta (Hacia el día de la venta)
+          if (rowDiaVenta && sellerStats.days[rowDiaVenta]) {
+            sellerStats.days[rowDiaVenta].ventas++
           }
-          // Contar VAN (Retiro)
-          const vanVal = row[vanCol || 'VAN']?.trim().toUpperCase()
-          const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-          if (vanVal === 'VAN' || vanVal === 'SI' || vanVal === '1' || vanVal === 'X' || estatusVal === 'ALTA') {
-            sellerStats.days[rowDia].van++
+
+          // 2. Contar FVC (Hacia el día de entrega/FVC)
+          if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
+            if (row[fvcCol || 'FVC']) {
+              sellerStats.days[rowDiaFvc].fvc++
+            }
+          }
+
+          // 3. Contar Altas (Hacia el día de entrega/FVC)
+          if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
+            const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+            if (estatusVal === 'ALTA') {
+              sellerStats.days[rowDiaFvc].van++
+            }
           }
         }
       })
@@ -154,11 +164,12 @@ export async function GET(request: NextRequest) {
 
   const sellerList = Object.values(sellerDailyMap)
     .map(s => {
-      const processedDays: Record<string, { fvc: number, van: number, pct: string, pctRaw: number }> = {}
+      const processedDays: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number }> = {}
       DAYS_ES.forEach(day => {
-        const d = s.days[day]
+        const normalizedDay = normalizeDay(day)
+        const d = s.days[normalizedDay]
         const pct = d.fvc > 0 ? Math.round((d.van / d.fvc) * 100) : 0
-        processedDays[day] = {
+        processedDays[normalizedDay] = {
           ...d,
           pct: `${pct}%`,
           pctRaw: pct
@@ -168,13 +179,15 @@ export async function GET(request: NextRequest) {
     })
 
   // Calcular totales globales por día
-  const dailyTotals: Record<string, { fvc: number, van: number, pct: string, pctRaw: number }> = {}
+  const dailyTotals: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number }> = {}
   DAYS_ES.forEach(day => {
     const normalizedDay = normalizeDay(day)
+    const ventas = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.ventas || 0), 0)
     const fvc = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.fvc || 0), 0)
     const van = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.van || 0), 0)
     const pct = fvc > 0 ? Math.round((van / fvc) * 100) : 0
     dailyTotals[normalizedDay] = {
+      ventas,
       fvc,
       van,
       pct: `${pct}%`,

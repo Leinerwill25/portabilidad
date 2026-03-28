@@ -15,6 +15,7 @@ function normalizeDay(day: string): string {
 }
 
 interface DayStat {
+  ventas: number
   fvc: number
   van: number
   pct?: string
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest) {
     }
     DAYS_ES.forEach(day => {
       const normalizedDay = normalizeDay(day)
-      supervisorDailyMap[a.supervisor_id].days[normalizedDay] = { fvc: 0, van: 0 }
+      supervisorDailyMap[a.supervisor_id].days[normalizedDay] = { ventas: 0, fvc: 0, van: 0 }
     })
   })
 
@@ -179,10 +180,8 @@ export async function GET(request: NextRequest) {
     if (fetched.success && fetched.rows.length > 0) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
-      const diaCol = headers.find(h => {
-        const hh = h.trim().toUpperCase()
-        return hh === 'DIA FVC' || hh === 'DIA DE LA VENTA' || hh === 'DIA'
-      })
+      const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
@@ -198,22 +197,35 @@ export async function GET(request: NextRequest) {
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
-        const rowDia = normalizeDay(row[diaCol || 'DIA DE LA VENTA'])
+        
+        // Determinar días por métrica
+        const rowDiaVenta = normalizeDay(row[diaVentaCol || 'DIA DE LA VENTA'])
+        const rowDiaFvc = normalizeDay(row[diaFvcCol || 'DIA FVC'])
 
         if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
           availableWeeks.add(rowWeekNum)
         }
 
-        if (rowWeekNum === activeWeekStr && rowDia && supervisorStats.days[rowDia]) {
-          // Contar FVC
-          if (row[fvcCol || 'FVC']) {
-            supervisorStats.days[rowDia].fvc++
+        // Solo procesar si coincide con la semana activa
+        if (rowWeekNum === activeWeekStr) {
+          // 1. Contar Venta (Hacia el día de la venta)
+          if (rowDiaVenta && supervisorStats.days[rowDiaVenta]) {
+            supervisorStats.days[rowDiaVenta].ventas++
           }
-          // Contar VAN
-          const vanVal = row[vanCol || 'VAN']?.trim().toUpperCase()
-          const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-          if (vanVal === 'VAN' || vanVal === 'SI' || vanVal === '1' || vanVal === 'X' || estatusVal === 'ALTA') {
-            supervisorStats.days[rowDia].van++
+
+          // 2. Contar FVC (Hacia el día de entrega/FVC)
+          if (rowDiaFvc && supervisorStats.days[rowDiaFvc]) {
+            if (row[fvcCol || 'FVC']) {
+              supervisorStats.days[rowDiaFvc].fvc++
+            }
+          }
+
+          // 3. Contar Altas (Hacia el día de entrega/FVC)
+          if (rowDiaFvc && supervisorStats.days[rowDiaFvc]) {
+            const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+            if (estatusVal === 'ALTA') {
+              supervisorStats.days[rowDiaFvc].van++
+            }
           }
         }
       })
@@ -235,10 +247,11 @@ export async function GET(request: NextRequest) {
   const dailyTotals: Record<string, DayStat> = {}
   DAYS_ES.forEach(day => {
     const normalizedDay = normalizeDay(day)
+    const ventas = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.ventas || 0), 0)
     const fvc = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.fvc || 0), 0)
     const van = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.van || 0), 0)
     const pct = fvc > 0 ? Math.round((van / fvc) * 100) : 0
-    dailyTotals[normalizedDay] = { fvc, van, pct: `${pct}%`, pctRaw: pct }
+    dailyTotals[normalizedDay] = { ventas, fvc, van, pct: `${pct}%`, pctRaw: pct }
   })
 
   return NextResponse.json({

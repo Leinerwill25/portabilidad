@@ -16,6 +16,7 @@ import {
 const DAYS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']
 
 interface DayStat {
+  ventas: number
   fvc: number
   van: number
   pct: string
@@ -249,7 +250,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                 <tr className="bg-slate-50 text-black uppercase tracking-widest font-black text-[11px] border-b border-slate-100">
                   <th className="px-10 py-6 w-[40%] border-r border-slate-100">Site / Supervisor</th>
                   <th className="px-6 py-6 text-center w-[20%] border-r border-slate-100">Total FVC</th>
-                  <th className="px-6 py-6 text-center w-[20%] border-r border-slate-100">Altas</th>
+                  <th className="px-6 py-6 text-center w-[20%] border-r border-slate-100 text-blue-600">Altas</th>
                   <th className="px-10 py-6 text-center w-[20%]">Conversión %</th>
                 </tr>
               </thead>
@@ -263,7 +264,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                   </tr>
                 ) : (
                   data.supervisors.map((supervisor, idx) => {
-                    const dayStat = supervisor.days[activeDay] || { fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
+                    const dayStat = supervisor.days[activeDay] || { ventas: 0, fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
                     const isExpanded = expandedSupId === supervisor.id
 
                     return (
@@ -299,7 +300,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                         {/* Drill-down Seller Details */}
                         {isExpanded && (
                           <tr className="bg-slate-50/30">
-                            <td colSpan={4} className="px-10 py-6 border-b-2 border-slate-900/10">
+                            <td colSpan={5} className="px-10 py-6 border-b-2 border-slate-900/10">
                               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="bg-slate-100/50 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
                                    <Users size={14} className="text-slate-500" />
@@ -327,7 +328,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                       {expandedSellers.map((seller, sidx) => {
-                                        const sStat = seller.days[activeDay] || { fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
+                                        const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
                                         return (
                                           <tr key={sidx} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-8 py-3 text-[12px] font-bold text-slate-700 flex items-center gap-3">

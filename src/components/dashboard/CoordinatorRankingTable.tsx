@@ -41,6 +41,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
   
   const [periodType, setPeriodType] = useState<'day' | 'week' | 'month'>('week')
   const [periodValue, setPeriodValue] = useState('')
+  const [selectedDay, setSelectedDay] = useState('') // Specific day filter (Lunes-Sabado)
   const [rankingMode, setRankingMode] = useState<'ventas' | 'altas' | 'conversion'>('ventas')
   
   const [sortBy, setSortBy] = useState<'ventas' | 'altas' | 'conversion'>('ventas')
@@ -54,6 +55,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
       const url = new URL('/api/admin/stats/ranking', window.location.origin)
       url.searchParams.set('periodType', periodType)
       if (periodValue) url.searchParams.set('periodValue', periodValue)
+      if (periodType === 'week' && selectedDay) url.searchParams.set('day', selectedDay)
       if (supervisorId) url.searchParams.set('supervisorId', supervisorId)
       
       const res = await fetch(url.toString())
@@ -75,7 +77,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
       setLoading(false)
       setRefreshing(false)
     }
-  }, [periodType, periodValue, data])
+  }, [periodType, periodValue, selectedDay, supervisorId, data])
 
   useEffect(() => {
     if (rankingMode === 'ventas') setSortBy('ventas')
@@ -149,6 +151,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
                       onClick={() => {
                         setPeriodType(t)
                         setPeriodValue('')
+                        setSelectedDay('')
                       }}
                       className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                         periodType === t 
@@ -179,8 +182,25 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
                       <option key={d} value={d} className="bg-slate-900">{d}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-hover/select:text-blue-500 transition-colors" size={14} />
+                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-hover/select:text-blue-500 transition-colors" size={14} />
                </div>
+
+               {/* Day Selector (Conditional for Week) */}
+               {periodType === 'week' && (
+                 <div className="relative group/select min-w-[140px] animate-in slide-in-from-left-4 duration-300">
+                    <select 
+                      value={selectedDay}
+                      onChange={(e) => setSelectedDay(e.target.value)}
+                      className="appearance-none bg-blue-600/10 text-blue-400 text-[11px] font-black pl-5 pr-10 py-3 rounded-2xl outline-none cursor-pointer uppercase tracking-widest border border-blue-500/30 focus:border-blue-500 transition-all w-full shadow-lg"
+                    >
+                      <option value="" className="bg-slate-900">Todos los días</option>
+                      {['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'].map(d => (
+                        <option key={d} value={d} className="bg-slate-900">{d}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none" size={14} />
+                 </div>
+               )}
 
                <div className="flex items-center gap-3">
                  <button 
@@ -259,6 +279,9 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
                     {sortBy === 'ventas' && (sortOrder === 'desc' ? <ChevronDown size={14} className="animate-bounce" /> : <ChevronUp size={14} />)}
                   </div>
                 </th>
+                <th className="px-10 py-6 text-[11px] font-[900] text-slate-900 uppercase tracking-widest border-r border-slate-200/60 text-center">
+                  Total FVC
+                </th>
                 <th 
                   className={`px-10 py-6 text-[11px] font-[900] uppercase tracking-widest border-r border-slate-200/60 cursor-pointer hover:bg-slate-200 transition-colors text-center ${rankingMode === 'altas' ? 'bg-amber-100 text-amber-700' : 'text-slate-900'}`}
                   onClick={() => { setRankingMode('altas'); handleSort('altas'); }}
@@ -282,7 +305,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
             <tbody className="bg-white">
               {sortedRanking.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-10 py-32 text-center bg-slate-50/50">
+                  <td colSpan={6} className="px-10 py-32 text-center bg-slate-50/50">
                     <div className="flex flex-col items-center gap-4 text-slate-300">
                       <div className="p-8 bg-slate-100 rounded-full">
                         <Users size={64} strokeWidth={1} />
@@ -339,6 +362,10 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
                       {/* Metric Columns */}
                       <td className={`px-10 py-5 text-center border-r border-slate-100 tabular-nums ${rankingMode === 'ventas' ? 'bg-blue-600/[0.03]' : ''}`}>
                         <span className={`text-[18px] font-black ${rankingMode === 'ventas' ? 'text-blue-700' : 'text-slate-500'}`}>{s.ventas}</span>
+                      </td>
+
+                      <td className="px-10 py-5 text-center border-r border-slate-100 tabular-nums">
+                        <span className="text-[18px] font-black text-slate-400">{s.fvc}</span>
                       </td>
                       
                       <td className={`px-10 py-5 text-center border-r border-slate-100 tabular-nums ${rankingMode === 'altas' ? 'bg-amber-600/[0.03]' : ''}`}>

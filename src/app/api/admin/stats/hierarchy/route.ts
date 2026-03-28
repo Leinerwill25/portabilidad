@@ -36,6 +36,8 @@ interface SellerStats {
     alta_no_enrolada: number
     sin_status: number
     chargeback: number
+    promesa: number
+    fvc: number
     total: number
   }
 }
@@ -50,6 +52,8 @@ interface HierarchySupervisor {
     alta_no_enrolada: number
     sin_status: number
     chargeback: number
+    promesa: number
+    fvc: number
     total: number
   }
 }
@@ -149,6 +153,8 @@ export async function GET(request: NextRequest) {
         alta_no_enrolada: 0,
         sin_status: 0,
         chargeback: 0,
+        promesa: 0,
+        fvc: 0,
         total: 0
       }
     }
@@ -167,6 +173,8 @@ export async function GET(request: NextRequest) {
             alta_no_enrolada: 0,
             sin_status: 0,
             chargeback: 0,
+            promesa: 0,
+            fvc: 0,
             total: 0
           }
         }
@@ -218,6 +226,7 @@ export async function GET(request: NextRequest) {
         const targetStats = sellerEntry.stats
         const targetTotals = hierarchyData[sid].totals
 
+        // 3. Contar Status específicos e incrementar Total solo para estos casos
         if (estatus === 'AA') {
           targetStats.activacion_no_alta++
           targetTotals.activacion_no_alta++
@@ -243,6 +252,11 @@ export async function GET(request: NextRequest) {
           targetTotals.sin_status++
           targetStats.total++
           targetTotals.total++
+        } else if (estatus === 'PROMESA DE VISITA') {
+          targetStats.promesa++
+          targetTotals.promesa++
+          targetStats.total++
+          targetTotals.total++
         }
       })
     }
@@ -265,8 +279,9 @@ export async function GET(request: NextRequest) {
     alta_no_enrolada: acc.alta_no_enrolada + curr.totals.alta_no_enrolada,
     sin_status: acc.sin_status + curr.totals.sin_status,
     chargeback: acc.chargeback + curr.totals.chargeback,
+    promesa: acc.promesa + curr.totals.promesa,
     total: acc.total + curr.totals.total
-  }), { activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, total: 0 })
+  }), { activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, total: 0 })
 
   const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.alta / grandTotal.total) * 100) : 0
 
