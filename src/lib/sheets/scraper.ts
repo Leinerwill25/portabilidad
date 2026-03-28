@@ -16,6 +16,29 @@ interface CacheEntry {
 
 const sheetCache = new Map<string, CacheEntry>()
 
+/**
+ * Calculates current week number matching Google Sheets WEEKNUM(date, 1) logic.
+ * Week starts on Sunday.
+ */
+export function getGoogleSheetsWeek(date: Date = new Date()): number {
+  const d = new Date(date.getTime())
+  d.setHours(0, 0, 0, 0)
+  
+  // Set to the first day of the year
+  const startOfYear = new Date(d.getFullYear(), 0, 1)
+  
+  // Find the first Sunday of the year (or Jan 1 if it's Sunday)
+  // In Google Sheets WEEKNUM(date, 1), Jan 1 is ALWAYS Week 1.
+  // The next week starts on the next Sunday.
+  const diffDays = Math.floor((d.getTime() - startOfYear.getTime()) / 86400000)
+  
+  // Day of week for Jan 1 (0=Sun, 1=Mon, ..., 6=Sat)
+  const firstDay = startOfYear.getDay()
+  
+  // Week number = ceil((diffDays + firstDayOfWeekOffset) / 7)
+  return Math.ceil((diffDays + firstDay + 1) / 7)
+}
+
 function getCacheKey(sheetId: string, gid: string): string {
   return `${sheetId}-${gid}`
 }
@@ -62,8 +85,11 @@ export async function fetchSheetAsCSV(
   if (!forceFresh) {
     const cached = sheetCache.get(cacheKey)
     if (cached && (now - cached.timestamp < CACHE_TTL)) {
+      console.log(`[Cache] Found valid entry for ${cacheKey}`)
       return cached.data
     }
+  } else {
+    console.log(`[Cache] Bypassing cache for ${cacheKey} (forceFresh)`)
   }
 
   // 2. Fetch fresh data

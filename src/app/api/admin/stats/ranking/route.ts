@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +44,10 @@ export async function GET(request: NextRequest) {
   const periodValue = searchParams.get('periodValue') // The week number or month name or day name
   const dayValue = searchParams.get('day')?.toUpperCase() // Specific day if week is selected
   const supervisorId = searchParams.get('supervisorId')
+  const forceFresh = searchParams.get('force') === 'true'
+
+  const currentWeek = getGoogleSheetsWeek()
+  const activePeriodValue = (periodValue || (periodType === 'week' ? String(currentWeek) : '')).toUpperCase()
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -132,7 +136,7 @@ export async function GET(request: NextRequest) {
   // 3. Procesar Sheets en paralelo
   await Promise.all(sheetsData.map(async (sheet) => {
     const gid = extractGid(sheet.sheet_url)
-    const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid)
+    const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
 
     if (fetched.success && fetched.rows.length > 0) {
       const { rows, headers } = fetched
@@ -196,8 +200,6 @@ export async function GET(request: NextRequest) {
           vMatch = true
         } else if (periodType === 'day' && rowDayVenta === activePeriodValue) {
           vMatch = true
-        } else if (!periodValue && periodType === 'week' && rowWeek === '1') {
-          vMatch = true
         }
 
         if (vMatch && dnVal && dnVal !== '') {
@@ -218,8 +220,6 @@ export async function GET(request: NextRequest) {
         } else if (periodType === 'month' && rowMonth === activePeriodValue) {
           fMatch = true
         } else if (periodType === 'day' && rowDayFvc === activePeriodValue) {
-          fMatch = true
-        } else if (!periodValue && periodType === 'week' && rowWeek === '1') {
           fMatch = true
         }
 
@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     periodType,
-    periodValue,
+    periodValue: activePeriodValue,
     availableWeeks: Array.from(availableWeeks).sort((a, b) => Number(a) - Number(b)),
     availableMonths: Array.from(availableMonths).sort(),
     availableDays: Array.from(availableDays).sort(),

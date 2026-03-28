@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
   const ts = searchParams.get('t')
   const filterWeek = searchParams.get('week')
   const supervisorId = searchParams.get('supervisorId')
+  const forceFresh = searchParams.get('force') === 'true'
 
   console.log(`[Daily Stats API] Processing request (t: ${ts}, w: ${filterWeek}, s: ${supervisorId})`)
   
@@ -74,8 +75,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Error al obtener sheets' }, { status: 500 })
   }
 
-  // Determinar la semana actual si no se provee filtro
-  const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
+  // Determinar la semana actual (Google Sheets compatible)
+  const currentWeekNum = getGoogleSheetsWeek()
   const activeWeek = filterWeek || String(currentWeekNum)
   const activeWeekStr = String(activeWeek)
 
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
 
   await Promise.all(sheets.map(async (sheet: { seller_id: string, sheet_id: string, sheet_url: string }) => {
     const gid = extractGid(sheet.sheet_url)
-    const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid)
+    const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
 
     if (fetched.success && fetched.rows.length > 0) {
       const rows = fetched.rows

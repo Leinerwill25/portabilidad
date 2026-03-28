@@ -84,6 +84,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
+      if (isManual) url += `&force=true`
 
       const res = await fetch(url)
       const json = await res.json()

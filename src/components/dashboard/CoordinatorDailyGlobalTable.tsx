@@ -62,6 +62,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       let url = `/api/admin/stats/daily-global?t=${ts}`
       if (weekFilter) url += `&week=${weekFilter}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
+      if (isManual) url += `&force=true`
 
       const res = await fetch(url)
       const result = await res.json()
@@ -98,6 +99,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       const ts = Date.now()
       let url = `/api/dashboard/daily-stats?t=${ts}&supervisorId=${supId}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (isRefreshing) url += `&force=true`
       
       const res = await fetch(url)
       const result = await res.json()
@@ -113,7 +115,9 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
     return (
       <div className="bg-white border-2 border-slate-900 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 mb-12 shadow-xl animate-pulse">
         <RotateCw className="text-slate-900 animate-spin" size={40} strokeWidth={3} />
-        <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.3em]">Consolidando Reporte Global...</p>
+        <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.3em]">
+          {isRefreshing ? 'Sincronizando con Google Sheets...' : 'Consolidando Reporte Global...'}
+        </p>
       </div>
     )
   }

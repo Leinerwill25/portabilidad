@@ -57,6 +57,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
       if (periodValue) url.searchParams.set('periodValue', periodValue)
       if (periodType === 'week' && selectedDay) url.searchParams.set('day', selectedDay)
       if (supervisorId) url.searchParams.set('supervisorId', supervisorId)
+      if (isRefresh) url.searchParams.set('force', 'true')
       
       const res = await fetch(url.toString())
       const result = await res.json()
