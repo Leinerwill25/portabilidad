@@ -4,6 +4,14 @@ import { fetchSheetAsCSV, extractGid } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
+function normalizeDay(day: string): string {
+  if (!day) return ''
+  return day.trim().toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z]/g, '')
+}
+
 interface SellerRank {
   id: string
   name: string
@@ -129,7 +137,10 @@ export async function GET(request: NextRequest) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
       const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
-      const fechaCol = headers.find(h => ['FECHA', 'DÍA', 'DIA'].includes(h.trim().toUpperCase()))
+      const fechaCol = headers.find(h => {
+        const hh = h.trim().toUpperCase()
+        return hh === 'DIA FVC' || hh === 'DIA DE LA VENTA' || ['FECHA', 'DIA', 'DÍA'].includes(hh)
+      })
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
@@ -156,7 +167,7 @@ export async function GET(request: NextRequest) {
         
         let rowDay = ''
         if (rowDayRaw) {
-          rowDay = rowDayRaw.split(' ')[0]
+          rowDay = normalizeDay(rowDayRaw.split(' ')[0])
         }
 
         // 4. Poblar opciones disponibles solo si la fila es válida y la semana es razonable (1-53)

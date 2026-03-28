@@ -179,7 +179,10 @@ export async function GET(request: NextRequest) {
     if (fetched.success && fetched.rows.length > 0) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
-      const diaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      const diaCol = headers.find(h => {
+        const hh = h.trim().toUpperCase()
+        return hh === 'DIA FVC' || hh === 'DIA DE LA VENTA' || hh === 'DIA'
+      })
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
