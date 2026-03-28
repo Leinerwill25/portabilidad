@@ -194,7 +194,6 @@ export async function GET(request: NextRequest) {
       const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
       const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
-      const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
 

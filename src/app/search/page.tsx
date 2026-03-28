@@ -35,6 +35,7 @@ function SearchContent() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState('')
+  const [showEquipModal, setShowEquipModal] = useState(false)
 
   const handleSearch = useCallback(async (code: string) => {
     if (code.length < 2) return
@@ -184,10 +185,65 @@ function SearchContent() {
               </div>
 
               {results.map((result, idx) => (
-                <SearchResultCard key={`${result.sheetId}-${idx}`} result={result} index={idx} />
+                <SearchResultCard 
+                  key={`${result.sheetId}-${idx}`} 
+                  result={result} 
+                  index={idx} 
+                  onEquipClick={() => setShowEquipModal(true)}
+                />
               ))}
             </motion.div>
           ) : null}
+        </AnimatePresence>
+
+        {/* Modal Interactivo "Recibir Equipo" */}
+        <AnimatePresence>
+          {showEquipModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setShowEquipModal(false)}
+                className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-white rounded-3xl p-8 lg:p-12 max-w-xl w-full shadow-2xl border border-white/20 select-none overflow-hidden"
+              >
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl" />
+
+                <div className="relative">
+                  <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-8 mx-auto shadow-lg shadow-blue-500/10">
+                    <Smartphone size={32} />
+                  </div>
+                  
+                  <h3 className="text-2xl lg:text-3xl font-[950] text-[#0f172a] text-center mb-6 tracking-tight leading-tight uppercase italic text-balance">
+                    Instrucciones Para <span className="text-blue-600">Recibir El Equipo</span>
+                  </h3>
+                  
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 lg:p-8 mb-8 text-center">
+                    <p className="text-[14px] lg:text-[18px] text-slate-700 font-bold leading-relaxed px-2">
+                      Debe asistir a la sucursal, retirar el chip, activarlo y completar la vinculación para aprobar la entrega de tu equipo.
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={() => setShowEquipModal(false)}
+                    className="w-full py-4 bg-[#0f172a] hover:bg-slate-900 text-white rounded-xl font-black uppercase tracking-[0.2em] text-[12px] transition-all active:scale-[0.98] shadow-xl shadow-slate-900/20"
+                  >
+                    Entendido, continuar
+                  </button>
+                  
+                  <p className="text-[10px] text-slate-400 font-bold text-center mt-6 uppercase tracking-widest opacity-60">
+                    Protocolo Institucional de Entrega de Dispositivos
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
       </main>
 
@@ -198,7 +254,7 @@ function SearchContent() {
   )
 }
 
-function SearchResultCard({ result, index }: { result: SearchResult, index: number }) {
+function SearchResultCard({ result, index, onEquipClick }: { result: SearchResult, index: number, onEquipClick: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -286,7 +342,7 @@ function SearchResultCard({ result, index }: { result: SearchResult, index: numb
               </div>
             </div>
 
-            <div className="shrink-0">
+            <div className="shrink-0 flex flex-col gap-4">
                <div className="bg-blue-600 px-6 py-4 rounded-xl lg:rounded-2xl shadow-xl shadow-blue-600/10 text-white flex items-center gap-4">
                  <Calendar size={24} className="opacity-50" />
                  <div>
@@ -294,6 +350,14 @@ function SearchResultCard({ result, index }: { result: SearchResult, index: numb
                     <p className="text-sm lg:text-base font-black">{result.row['FECHA DE PRIMER PAGO DEL EQUIPO'] || 'Por definir'}</p>
                  </div>
                </div>
+
+               <button 
+                 onClick={onEquipClick}
+                 className="w-full group bg-white hover:bg-emerald-50 text-emerald-600 border-2 border-emerald-500 px-6 py-3 rounded-xl lg:rounded-2xl font-black uppercase tracking-widest text-[11px] lg:text-[13px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/5 active:scale-95"
+               >
+                 <Smartphone className="group-hover:scale-110 transition-transform" size={18} />
+                 Recibir equipo
+               </button>
             </div>
           </div>
         </section>

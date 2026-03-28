@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 

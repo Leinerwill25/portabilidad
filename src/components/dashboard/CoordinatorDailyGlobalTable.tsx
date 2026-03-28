@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { toast } from 'sonner'
 import { 
   RotateCw, 
   TrendingUp, 
@@ -55,23 +54,15 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
   const [loadingSellers, setLoadingSellers] = useState(false)
 
   const fetchGlobalStats = useCallback(async (isManual = false) => {
-    if (isManual) {
-      setIsRefreshing(true)
-      toast.info('Sincronizando información de la Tabla con Google Sheets...', {
-        description: 'Estamos realizando una consulta forzada para obtener los datos más recientes.'
-      })
-      // Clear expanded sellers to force a visual reload
-      setExpandedSellers([])
-    } else {
-      setLoading(true)
-    }
+    if (isManual) setIsRefreshing(true)
+    else setLoading(true)
 
     try {
       const ts = Date.now()
       let url = `/api/admin/stats/daily-global?t=${ts}`
-      if (weekFilter) url += `&week=${weekFilter}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
-      if (isManual) url += `&force=true`
+      if (weekFilter) url += `&week=${weekFilter}`
+      if (isManual) url += `&update=true`
 
       const res = await fetch(url)
       const result = await res.json()
@@ -83,27 +74,17 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
         const initialDay = DAYS[Math.min(mappedIdx, 5)]
         setActiveDay(initialDay)
       }
-
-      // If there's an expanded supervisor, refresh their details too
-      if (isManual && expandedSupId) {
-        console.log(`[Deep Refresh] Re-fetching details for supervisor: ${expandedSupId}`)
-        fetchSellerDetails(expandedSupId, true)
-      }
     } catch (error) {
       console.error('[CoordinatorDailyGlobalTable] Error:', error)
     } finally {
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [weekFilter, activeDay, supervisorId, expandedSupId])
+  }, [weekFilter, activeDay, supervisorId])
 
-  useEffect(() => {
-    fetchGlobalStats()
-  }, [fetchGlobalStats])
-
-  const fetchSellerDetails = async (supId: string, isManual: boolean = false) => {
-    // If not manual refresh and already expanded, collapse it
-    if (!isManual && expandedSupId === supId) {
+  const fetchSellerDetails = useCallback(async (supId: string) => {
+    // If already expanded, collapse it
+    if (expandedSupId === supId) {
       setExpandedSupId(null)
       return
     }
@@ -114,7 +95,6 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       const ts = Date.now()
       let url = `/api/dashboard/daily-stats?t=${ts}&supervisorId=${supId}`
       if (weekFilter) url += `&week=${weekFilter}`
-      if (isManual || isRefreshing) url += `&force=true`
       
       const res = await fetch(url)
       const result = await res.json()
@@ -124,14 +104,18 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
     } finally {
       setLoadingSellers(false)
     }
-  }
+  }, [expandedSupId, weekFilter])
+
+  useEffect(() => {
+    fetchGlobalStats()
+  }, [fetchGlobalStats])
 
   if (loading && !data) {
     return (
       <div className="bg-white border-2 border-slate-900 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 mb-12 shadow-xl animate-pulse">
         <RotateCw className="text-slate-900 animate-spin" size={40} strokeWidth={3} />
         <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.3em]">
-          {isRefreshing ? 'Sincronizando con Google Sheets...' : 'Consolidando Reporte Global...'}
+          {isRefreshing ? 'Sincronizando...' : 'Consolidando Reporte Global...'}
         </p>
       </div>
     )
