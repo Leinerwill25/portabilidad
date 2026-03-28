@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })
   }
 
+  console.log(`[Daily Stats API] Found ${sellers?.length || 0} sellers for targetOwnerId: ${targetOwnerId}`)
+
   // 2. Obtener sheets vinculados
   const { data: sheets, error: sheetsError } = await supabase
     .from('seller_sheets')

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { 
   RotateCw, 
   TrendingUp, 
@@ -54,8 +55,16 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
   const [loadingSellers, setLoadingSellers] = useState(false)
 
   const fetchGlobalStats = useCallback(async (isManual = false) => {
-    if (isManual) setIsRefreshing(true)
-    else setLoading(true)
+    if (isManual) {
+      setIsRefreshing(true)
+      toast.info('Sincronizando información de la Tabla con Google Sheets...', {
+        description: 'Estamos realizando una consulta forzada para obtener los datos más recientes.'
+      })
+      // Clear expanded sellers to force a visual reload
+      setExpandedSellers([])
+    } else {
+      setLoading(true)
+    }
 
     try {
       const ts = Date.now()
