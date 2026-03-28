@@ -68,12 +68,17 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       const result = await res.json()
       setData(result)
 
-      // Set default active day if not set or invalid
       if (!activeDay || !DAYS.includes(activeDay)) {
         const todayIdx = new Date().getDay()
         const mappedIdx = todayIdx === 0 ? 5 : todayIdx - 1
         const initialDay = DAYS[Math.min(mappedIdx, 5)]
         setActiveDay(initialDay)
+      }
+
+      // If there's an expanded supervisor, refresh their details too
+      if (isManual && expandedSupId) {
+        console.log(`[Deep Refresh] Re-fetching details for supervisor: ${expandedSupId}`)
+        fetchSellerDetails(expandedSupId, true)
       }
     } catch (error) {
       console.error('[CoordinatorDailyGlobalTable] Error:', error)
@@ -81,14 +86,15 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [weekFilter, activeDay, supervisorId])
+  }, [weekFilter, activeDay, supervisorId, expandedSupId])
 
   useEffect(() => {
     fetchGlobalStats()
   }, [fetchGlobalStats])
 
-  const fetchSellerDetails = async (supId: string) => {
-    if (expandedSupId === supId) {
+  const fetchSellerDetails = async (supId: string, isManual: boolean = false) => {
+    // If not manual refresh and already expanded, collapse it
+    if (!isManual && expandedSupId === supId) {
       setExpandedSupId(null)
       return
     }
@@ -99,7 +105,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       const ts = Date.now()
       let url = `/api/dashboard/daily-stats?t=${ts}&supervisorId=${supId}`
       if (weekFilter) url += `&week=${weekFilter}`
-      if (isRefreshing) url += `&force=true`
+      if (isManual || isRefreshing) url += `&force=true`
       
       const res = await fetch(url)
       const result = await res.json()

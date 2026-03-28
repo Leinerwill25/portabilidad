@@ -104,6 +104,11 @@ export async function GET(request: NextRequest) {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
 
+    if (!fetched.success) {
+      console.error(`[Daily Stats API] Error fetching sheet ${sheet.sheet_id}: ${fetched.error}`)
+      return
+    }
+
     if (fetched.success && fetched.rows.length > 0) {
       const rows = fetched.rows
       const headers = fetched.headers
