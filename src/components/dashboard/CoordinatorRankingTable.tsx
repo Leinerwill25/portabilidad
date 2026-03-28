@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   Trophy,
   RotateCw,
-  Search,
   ChevronDown,
   ChevronUp,
   Camera,
