@@ -79,7 +79,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [weekFilter, activeDay])
+  }, [weekFilter, activeDay, supervisorId])
 
   useEffect(() => {
     fetchGlobalStats()

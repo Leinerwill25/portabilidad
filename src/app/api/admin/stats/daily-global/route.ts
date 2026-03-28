@@ -6,6 +6,14 @@ export const dynamic = 'force-dynamic'
 
 const DAYS_ES = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']
 
+function normalizeDay(day: string): string {
+  if (!day) return ''
+  return day.trim().toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z]/g, '')
+}
+
 interface DayStat {
   fvc: number
   van: number
@@ -151,7 +159,8 @@ export async function GET(request: NextRequest) {
       days: {}
     }
     DAYS_ES.forEach(day => {
-      supervisorDailyMap[a.supervisor_id].days[day] = { fvc: 0, van: 0 }
+      const normalizedDay = normalizeDay(day)
+      supervisorDailyMap[a.supervisor_id].days[normalizedDay] = { fvc: 0, van: 0 }
     })
   })
 
@@ -186,7 +195,7 @@ export async function GET(request: NextRequest) {
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
-        const rowDia = row[diaCol || 'DIA DE LA VENTA']?.trim().toUpperCase()
+        const rowDia = normalizeDay(row[diaCol || 'DIA DE LA VENTA'])
 
         if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
           availableWeeks.add(rowWeekNum)
@@ -222,10 +231,11 @@ export async function GET(request: NextRequest) {
   // Totales globales
   const dailyTotals: Record<string, DayStat> = {}
   DAYS_ES.forEach(day => {
-    const fvc = supervisorList.reduce((acc, curr) => acc + curr.days[day].fvc, 0)
-    const van = supervisorList.reduce((acc, curr) => acc + curr.days[day].van, 0)
+    const normalizedDay = normalizeDay(day)
+    const fvc = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.fvc || 0), 0)
+    const van = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.van || 0), 0)
     const pct = fvc > 0 ? Math.round((van / fvc) * 100) : 0
-    dailyTotals[day] = { fvc, van, pct: `${pct}%`, pctRaw: pct }
+    dailyTotals[normalizedDay] = { fvc, van, pct: `${pct}%`, pctRaw: pct }
   })
 
   return NextResponse.json({
