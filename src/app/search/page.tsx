@@ -19,6 +19,59 @@ interface SearchResult {
   row: Record<string, string>;
 }
 
+const EJECUTIVOS = [
+  { id: 1, nombre: "Alejandro", apellido: "Martínez" },
+  { id: 2, nombre: "Valeria", apellido: "Rodríguez" },
+  { id: 3, nombre: "Carlos", apellido: "Hernández" },
+  { id: 4, nombre: "Sofía", apellido: "López" },
+  { id: 5, nombre: "Miguel", apellido: "González" },
+  { id: 6, nombre: "Isabella", apellido: "Pérez" },
+  { id: 7, nombre: "Andrés", apellido: "Sánchez" },
+  { id: 8, nombre: "Gabriela", apellido: "Ramírez" },
+  { id: 9, nombre: "Luis", apellido: "Torres" },
+  { id: 10, nombre: "Camila", apellido: "Flores" },
+  { id: 11, nombre: "José", apellido: "Rivera" },
+  { id: 12, nombre: "Daniela", apellido: "Morales" },
+  { id: 13, nombre: "Ricardo", apellido: "Jiménez" },
+  { id: 14, nombre: "Natalia", apellido: "Álvarez" },
+  { id: 15, nombre: "Fernando", apellido: "Vargas" },
+  { id: 16, nombre: "Paola", apellido: "Castro" },
+  { id: 17, nombre: "Eduardo", apellido: "Rojas" },
+  { id: 18, nombre: "María", apellido: "Herrera" },
+  { id: 19, nombre: "Jorge", apellido: "Medina" },
+  { id: 20, nombre: "Lucía", apellido: "Gutiérrez" },
+  { id: 21, nombre: "Pablo", apellido: "Núñez" },
+  { id: 22, nombre: "Valentina", apellido: "Mendoza" },
+  { id: 23, nombre: "Sergio", apellido: "Reyes" },
+  { id: 24, nombre: "Andrea", apellido: "Cruz" },
+  { id: 25, nombre: "Diego", apellido: "Ortega" },
+  { id: 26, nombre: "Mónica", apellido: "Ruiz" },
+  { id: 27, nombre: "Roberto", apellido: "Aguilar" },
+  { id: 28, nombre: "Claudia", apellido: "Molina" },
+  { id: 29, nombre: "Héctor", apellido: "Silva" },
+  { id: 30, nombre: "Mariana", apellido: "Romero" },
+  { id: 31, nombre: "Óscar", apellido: "Fuentes" },
+  { id: 32, nombre: "Laura", apellido: "Vega" },
+  { id: 33, nombre: "Ramón", apellido: "Cabrera" },
+  { id: 34, nombre: "Patricia", apellido: "Ramos" },
+  { id: 35, nombre: "Víctor", apellido: "Delgado" },
+  { id: 36, nombre: "Carolina", apellido: "Suárez" },
+  { id: 37, nombre: "Gustavo", apellido: "Parra" },
+  { id: 38, nombre: "Ana", apellido: "Contreras" },
+  { id: 39, nombre: "Manuel", apellido: "Espinoza" },
+  { id: 40, nombre: "Diana", apellido: "Guerrero" },
+  { id: 41, nombre: "Rafael", apellido: "Lozano" },
+  { id: 42, nombre: "Stephanie", apellido: "Acosta" },
+  { id: 43, nombre: "Arturo", apellido: "Carrillo" },
+  { id: 44, nombre: "Verónica", apellido: "Domínguez" },
+  { id: 45, nombre: "Ernesto", apellido: "Salinas" },
+  { id: 46, nombre: "Juliana", apellido: "Ríos" },
+  { id: 47, nombre: "César", apellido: "Ibarra" },
+  { id: 48, nombre: "Roxana", apellido: "Serrano" },
+  { id: 49, nombre: "Iván", apellido: "Peña" },
+  { id: 50, nombre: "Beatriz", apellido: "Montes" }
+];
+
 export default function SearchPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#0f172a] flex items-center justify-center"><Loader2 className="animate-spin text-[#3b82f6]" size={40} /></div>}>
@@ -52,7 +105,26 @@ function SearchContent() {
         setError(data.error || 'Ocurrió un error al buscar')
         setResults([])
       } else {
-        setResults(data.results || [])
+        const searchResults = data.results || []
+        
+        // Randomization logic for assigned executive
+        const lastIndexStr = typeof window !== 'undefined' ? localStorage.getItem('last_exec_index') : null
+        let currentIndex = lastIndexStr ? parseInt(lastIndexStr) : Math.floor(Math.random() * 50)
+        
+        const updatedResults = searchResults.map((r: SearchResult) => {
+          currentIndex = (currentIndex + 1) % 50
+          const exec = EJECUTIVOS[currentIndex]
+          return {
+            ...r,
+            sellerName: `${exec.nombre} ${exec.apellido}`
+          }
+        })
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('last_exec_index', currentIndex.toString())
+        }
+        
+        setResults(updatedResults)
       }
     } catch {
       setError('Error de conexión con el servidor')
