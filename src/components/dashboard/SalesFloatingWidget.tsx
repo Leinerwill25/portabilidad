@@ -105,26 +105,29 @@ export default function SalesFloatingWidget() {
                  >
                    <div className="pt-2 mt-2 border-t border-white/5 flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1 pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
                      {data.breakdown.map((b, idx) => {
-                       const isSupExpanded = expandedSupervisors[idx]
+                       const isSingleSupervisor = data.breakdown!.length === 1
+                       const isSupExpanded = isSingleSupervisor || expandedSupervisors[idx]
                        const hasSellers = b.sellers && b.sellers.length > 0
                        return (
                          <div key={idx} className="flex flex-col gap-1">
-                           <div 
-                             className={`flex items-center justify-between text-sm ${hasSellers ? 'cursor-pointer hover:bg-white/5 rounded px-1 -mx-1 transition-colors' : ''}`}
-                             onClick={() => hasSellers && toggleSupervisor(idx)}
-                           >
-                             <div className="flex items-center gap-1.5 overflow-hidden">
-                               <span className="text-slate-300 font-medium truncate" title={b.name}>{b.name}</span>
+                           {!isSingleSupervisor && (
+                             <div 
+                               className={`flex items-center justify-between text-sm ${hasSellers ? 'cursor-pointer hover:bg-white/5 rounded px-1 -mx-1 transition-colors' : ''}`}
+                               onClick={() => hasSellers && toggleSupervisor(idx)}
+                             >
+                               <div className="flex items-center gap-1.5 overflow-hidden">
+                                 <span className="text-slate-300 font-medium truncate" title={b.name}>{b.name}</span>
+                               </div>
+                               <div className="flex items-center gap-2 shrink-0">
+                                 <span className="text-white font-bold">{b.total}</span>
+                                 {hasSellers && (
+                                   <span className="text-slate-500">
+                                     {isSupExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                   </span>
+                                 )}
+                               </div>
                              </div>
-                             <div className="flex items-center gap-2 shrink-0">
-                               <span className="text-white font-bold">{b.total}</span>
-                               {hasSellers && (
-                                 <span className="text-slate-500">
-                                   {isSupExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                 </span>
-                               )}
-                             </div>
-                           </div>
+                           )}
                            <AnimatePresence>
                              {hasSellers && isSupExpanded && (
                                <motion.div
@@ -133,7 +136,7 @@ export default function SalesFloatingWidget() {
                                  exit={{ height: 0, opacity: 0 }}
                                  className="overflow-hidden"
                                >
-                                 <div className="pl-3 py-1 flex flex-col gap-1.5 border-l-2 border-white/5 ml-1 mt-1 mb-1">
+                                 <div className={`py-1 flex flex-col gap-1.5 ${isSingleSupervisor ? '' : 'pl-3 border-l-2 border-white/5 ml-1 mt-1 mb-1'}`}>
                                    {b.sellers.map((s, sIdx) => (
                                      <div key={sIdx} className="flex items-center justify-between text-[11px]">
                                        <span className="text-slate-400 truncate" title={s.name}>{s.name}</span>
