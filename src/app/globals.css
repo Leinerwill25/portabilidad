@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
+html,
 :root {
+  color-scheme: light;
   /* ── Colores base ── */
   --color-navy:        #1a2744;   /* títulos principales, logo */
   --color-blue:        #1a56db;   /* botones primarios, links, acento */

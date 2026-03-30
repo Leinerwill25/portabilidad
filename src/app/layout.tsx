@@ -9,6 +9,14 @@ export const metadata = {
   description: 'Gestión de portabilidad de números DN',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#f8fafc',
+  colorScheme: 'light',
+}
+
 export default function RootLayout({
   children,
 }: {
