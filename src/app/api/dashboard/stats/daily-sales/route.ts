@@ -57,19 +57,36 @@ export async function GET(request: NextRequest) {
   // 2. Obtener vendedores
   const { data: sellers } = await supabase
     .from('sellers')
-    .select('id')
+    .select('id, first_name, last_name, created_by')
     .in('created_by', supervisorIds)
 
   if (!sellers || sellers.length === 0) {
-    return NextResponse.json({ totalToday: 0, supervisorName: profile?.full_name || 'N/A' })
+    return NextResponse.json({ totalToday: 0, supervisorName: profile?.full_name || 'N/A', breakdown: [] })
   }
 
   const sellerIds = sellers.map((s: { id: string }) => s.id)
+  const sellerToSupervisor: Record<string, string> = {}
+  const sellerNameMap: Record<string, string> = {}
+  sellers.forEach((s: { id: string, created_by: string, first_name: string | null, last_name: string | null }) => {
+    sellerToSupervisor[s.id] = s.created_by
+    sellerNameMap[s.id] = `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Vendedor'
+  })
+
+  // Obtener perfiles de los supervisores para los nombres del breakdown
+  const { data: supProfiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', supervisorIds)
+
+  const supProfileMap: Record<string, string> = {}
+  supProfiles?.forEach((p: { id: string, full_name: string | null, email: string | null }) => {
+    supProfileMap[p.id] = p.full_name || p.email || 'Supervisor'
+  })
 
   // 3. Obtener sheets
   const { data: sheets } = await supabase
     .from('seller_sheets')
-    .select('sheet_id, sheet_url')
+    .select('seller_id, sheet_id, sheet_url')
     .in('seller_id', sellers.map((s: { id: string }) => s.id))
 
   if (!sheets || sheets.length === 0) {
@@ -82,8 +99,16 @@ export async function GET(request: NextRequest) {
   const todayNameNormalized = normalizeDay(DAYS_ES[todayIndex])
   
   let totalToday = 0
+  const breakdownMap: Record<string, { total: number, sellers: Record<string, number> }> = {}
 
-  await Promise.all(sheets.map(async (sheet: { sheet_id: string, sheet_url: string }) => {
+  supervisorIds.forEach(id => breakdownMap[id] = { total: 0, sellers: {} })
+  sellers.forEach((s: { id: string, created_by: string }) => {
+    if (breakdownMap[s.created_by]) {
+      breakdownMap[s.created_by].sellers[s.id] = 0
+    }
+  })
+
+  await Promise.all(sheets.map(async (sheet: { seller_id: string, sheet_id: string, sheet_url: string }) => {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
 
@@ -104,15 +129,36 @@ export async function GET(request: NextRequest) {
           const rowDiaVenta = normalizeDay(row[diaVentaCol || 'DIA DE LA VENTA'])
           if (rowDiaVenta === todayNameNormalized) {
             totalToday++
+            const supId = sellerToSupervisor[sheet.seller_id]
+            if (supId && breakdownMap[supId]) {
+              breakdownMap[supId].total++
+              if (breakdownMap[supId].sellers[sheet.seller_id] !== undefined) {
+                breakdownMap[supId].sellers[sheet.seller_id]++
+              }
+            }
           }
         }
       })
     }
   }))
 
+  const breakdown = Object.entries(breakdownMap)
+    .map(([id, data]) => ({
+      name: supProfileMap[id] || 'N/A',
+      total: data.total,
+      sellers: Object.entries(data.sellers)
+        .map(([sId, sTotal]) => ({
+          name: sellerNameMap[sId] || 'N/A',
+          total: sTotal
+        }))
+        .sort((a, b) => b.total - a.total)
+    }))
+    .sort((a, b) => b.total - a.total)
+
   return NextResponse.json({
     totalToday,
     supervisorName: profile?.full_name || 'Mi Equipo',
+    breakdown,
     lastUpdate: new Date().toISOString()
   })
 }

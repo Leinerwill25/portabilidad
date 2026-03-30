@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   const userRole = profile?.role
 
+  let assignedSupervisorIds: string[] = []
+
   if (supervisorId) {
     // Si se pasa un supervisorId, verificar si el usuario actual es coordinador y tiene permiso
     if (userRole === 'superadmin' || userRole === 'coordinator') {
@@ -79,6 +81,18 @@ export async function GET(request: NextRequest) {
       targetOwnerId = supervisorId
     } else if (user.id !== supervisorId) {
       return NextResponse.json({ error: 'No tienes permiso para ver otros supervisores' }, { status: 403 })
+    }
+  } else {
+    // Si no se proporciona supervisorId y es coordinador o superadmin
+    if (userRole === 'coordinator' || userRole === 'superadmin') {
+      const { data: assignments } = await supabase
+        .from('coordinator_supervisors')
+        .select('supervisor_id')
+        .eq('coordinator_id', user.id)
+      
+      if (assignments && assignments.length > 0) {
+        assignedSupervisorIds = assignments.map((a: { supervisor_id: string }) => a.supervisor_id)
+      }
     }
   }
 
@@ -97,6 +111,19 @@ export async function GET(request: NextRequest) {
 
   if (userRole === 'admin' || supervisorId) {
     query.eq('created_by', targetOwnerId)
+  } else if (userRole === 'coordinator' || userRole === 'superadmin') {
+    if (assignedSupervisorIds.length > 0) {
+      query.in('created_by', assignedSupervisorIds)
+    } else {
+      return NextResponse.json({
+        periodType,
+        periodValue: activePeriodValue,
+        availableWeeks: [],
+        availableMonths: [],
+        availableDays: [],
+        ranking: []
+      })
+    }
   }
 
   const { data: sellersData, error: sellersError } = await query as { data: SellerWithProfile[] | null, error: unknown }
