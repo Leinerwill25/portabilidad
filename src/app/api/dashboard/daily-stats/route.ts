@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
+      const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
       const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
       const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
@@ -132,6 +133,9 @@ export async function GET(request: NextRequest) {
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '') // "13"
+
+        const rawWeekFvc = row[semanaFvcCol || 'SEMANA FVC']?.trim()
+        const rowWeekFvcNum = rawWeekFvc && rawWeekFvc !== '' ? rawWeekFvc.replace(/\D/g, '') : rowWeekNum
         
         // Determinar días por métrica
         const rowDiaVenta = normalizeDay(row[diaVentaCol || 'DIA DE LA VENTA'])
@@ -143,22 +147,29 @@ export async function GET(request: NextRequest) {
             availableWeeks.add(rowWeekNum)
           }
         }
+        if (rowWeekFvcNum && Number(rowWeekFvcNum) > 0 && Number(rowWeekFvcNum) <= currentWeekNum) {
+          if (row[fvcCol || 'FVC'] || row[vanCol || 'VAN']) {
+            availableWeeks.add(rowWeekFvcNum)
+          }
+        }
 
         // Solo procesar si coincide con la semana activa
         if (rowWeekNum === activeWeekStr) {
-          // 1. Contar Venta (Hacia el día de la venta)
+          // 1. Contar Venta (Hacia el día de la venta) usando SEMANA
           if (rowDiaVenta && sellerStats.days[rowDiaVenta]) {
             sellerStats.days[rowDiaVenta].ventas++
           }
+        }
 
-          // 2. Contar FVC (Hacia el día de entrega/FVC)
+        if (rowWeekFvcNum === activeWeekStr) {
+          // 2. Contar FVC (Hacia el día de entrega/FVC) usando SEMANA FVC
           if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
             if (row[fvcCol || 'FVC']) {
               sellerStats.days[rowDiaFvc].fvc++
             }
           }
 
-          // 3. Contar Altas (Hacia el día de entrega/FVC)
+          // 3. Contar Altas (Hacia el día de entrega/FVC) usando SEMANA FVC
           if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
             const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
             if (estatusVal === 'ALTA') {
