@@ -83,23 +83,31 @@ export async function GET(request: NextRequest) {
     // Si es coordinador o superadmin
     if (supervisorId) {
       // Verificar si tiene asignado a este supervisor
-      const { data: assignmentCheck } = await supabase
-        .from('coordinator_supervisors')
-        .select(`
-          supervisor_id,
-          profiles:supervisor_id (
-            full_name,
-            email
-          )
-        `)
-        .eq('coordinator_id', user.id)
-        .eq('supervisor_id', supervisorId)
-        .single()
-      
-      if (!assignmentCheck) {
-        return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+      if (supervisorId === user.id) {
+        const { data: selfProfile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single()
+        assignments = [{
+          supervisor_id: user.id,
+          profiles: selfProfile || { full_name: user?.user_metadata?.full_name || 'Mis Vendedores', email: user.email || '' }
+        }]
+      } else {
+        const { data: assignmentCheck } = await supabase
+          .from('coordinator_supervisors')
+          .select(`
+            supervisor_id,
+            profiles:supervisor_id (
+              full_name,
+              email
+            )
+          `)
+          .eq('coordinator_id', user.id)
+          .eq('supervisor_id', supervisorId)
+          .single()
+        
+        if (!assignmentCheck) {
+          return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+        }
+        assignments = [assignmentCheck as unknown as AssignmentData]
       }
-      assignments = [assignmentCheck as unknown as AssignmentData]
     } else {
       // Obtener todos sus supervisores asignados
       const { data: assignmentsData } = await supabase
@@ -113,10 +121,16 @@ export async function GET(request: NextRequest) {
         `)
         .eq('coordinator_id', user.id)
 
-      if (!assignmentsData || assignmentsData.length === 0) {
-        return NextResponse.json({ supervisors: [], dailyTotals: {}, availableWeeks: [] })
+      if (assignmentsData && assignmentsData.length > 0) {
+        assignments = assignmentsData as unknown as AssignmentData[]
       }
-      assignments = assignmentsData as unknown as AssignmentData[]
+      
+      // Inyectar el propio ID del coordinador con su perfil
+      const { data: selfProfile } = await supabase.from('profiles').select('full_name, email').eq('id', user.id).single()
+      assignments.push({
+        supervisor_id: user.id,
+        profiles: selfProfile || { full_name: user?.user_metadata?.full_name || 'Mis Vendedores', email: user.email || '' }
+      })
     }
   }
 

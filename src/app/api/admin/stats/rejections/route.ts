@@ -76,17 +76,21 @@ export async function GET(request: NextRequest) {
     // Si es coordinador o superadmin
     if (supervisorId) {
       // Verificar si tiene asignado a este supervisor
-      const { data: assignment } = await supabase
-        .from('coordinator_supervisors')
-        .select('*')
-        .eq('coordinator_id', user.id)
-        .eq('supervisor_id', supervisorId)
-        .single()
-      
-      if (!assignment) {
-        return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+      if (supervisorId === user.id) {
+        supervisorIds = [user.id]
+      } else {
+        const { data: assignment } = await supabase
+          .from('coordinator_supervisors')
+          .select('*')
+          .eq('coordinator_id', user.id)
+          .eq('supervisor_id', supervisorId)
+          .single()
+        
+        if (!assignment) {
+          return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
+        }
+        supervisorIds = [supervisorId]
       }
-      supervisorIds = [supervisorId]
     } else {
       // Obtener todos sus supervisores asignados
       const { data: assignments } = await supabase
@@ -94,10 +98,14 @@ export async function GET(request: NextRequest) {
         .select('supervisor_id')
         .eq('coordinator_id', user.id)
 
-      if (!assignments || assignments.length === 0) {
-        return NextResponse.json({ supervisors: [] })
+      if (assignments && assignments.length > 0) {
+        supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
+      } else {
+        supervisorIds = []
       }
-      supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
+      
+      // Inyectar el ID propio para sus vendedores directos
+      supervisorIds.push(user.id)
     }
   }
 

@@ -68,17 +68,21 @@ export async function GET(request: NextRequest) {
   if (supervisorId) {
     // Si se pasa un supervisorId, verificar si el usuario actual es coordinador y tiene permiso
     if (userRole === 'superadmin' || userRole === 'coordinator') {
-      const { data: assignment } = await supabase
-        .from('coordinator_supervisors')
-        .select('*')
-        .eq('coordinator_id', user.id)
-        .eq('supervisor_id', supervisorId)
-        .single()
-      
-      if (!assignment) {
-        return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
+      if (supervisorId === user.id) {
+        targetOwnerId = user.id
+      } else {
+        const { data: assignment } = await supabase
+          .from('coordinator_supervisors')
+          .select('*')
+          .eq('coordinator_id', user.id)
+          .eq('supervisor_id', supervisorId)
+          .single()
+        
+        if (!assignment) {
+          return NextResponse.json({ error: 'No tienes acceso a este supervisor' }, { status: 403 })
+        }
+        targetOwnerId = supervisorId
       }
-      targetOwnerId = supervisorId
     } else if (user.id !== supervisorId) {
       return NextResponse.json({ error: 'No tienes permiso para ver otros supervisores' }, { status: 403 })
     }
@@ -93,6 +97,8 @@ export async function GET(request: NextRequest) {
       if (assignments && assignments.length > 0) {
         assignedSupervisorIds = assignments.map((a: { supervisor_id: string }) => a.supervisor_id)
       }
+      // Inyectar el propio ID del coordinador para cargar sus vendedores directos
+      assignedSupervisorIds.push(user.id)
     }
   }
 
