@@ -166,9 +166,6 @@ function SearchContent() {
             <span className="hidden sm:inline tracking-tight">DN Control Center</span>
             <span className="sm:hidden tracking-tight">DN Control</span>
           </Link>
-          <Link href="/login" className="bg-blue-600/10 hover:bg-blue-600 text-[11px] lg:text-[12px] font-bold text-blue-400 hover:text-white transition-all uppercase tracking-widest border border-blue-500/30 px-4 py-2 rounded-lg backdrop-blur-md shadow-sm">
-            Acceso <span className="hidden sm:inline">Corporativo</span>
-          </Link>
         </nav>
 
         {/* Hero Content */}
