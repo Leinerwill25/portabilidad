@@ -168,6 +168,7 @@ export async function GET(request: NextRequest) {
     if (fetched.success && fetched.rows.length > 0) {
       const { rows, headers } = fetched
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
+      const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
       const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
       const diaVentaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
       const diaFvcCol = headers.find(h => h.trim().toUpperCase() === 'DIA FVC')
@@ -191,7 +192,12 @@ export async function GET(request: NextRequest) {
         if (!hasData) return
 
         // 3. Extraer metadatos de tiempo
-        const rowWeek = row[semanaCol || 'SEMANA']?.trim().replace(/\D/g, '')
+        const rawWeek = row[semanaCol || 'SEMANA']?.trim()
+        const rowWeekNum = rawWeek?.replace(/\D/g, '')
+
+        const rawWeekFvc = row[semanaFvcCol || 'SEMANA FVC']?.trim()
+        const rowWeekFvcNum = rawWeekFvc && rawWeekFvc !== '' ? rawWeekFvc.replace(/\D/g, '') : rowWeekNum
+
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
         
         const rowDayVentaRaw = row[diaVentaCol || 'DIA DE LA VENTA']?.trim()
@@ -201,9 +207,13 @@ export async function GET(request: NextRequest) {
         const rowDayFvc = rowDayFvcRaw ? normalizeDay(rowDayFvcRaw.split(' ')[0]) : ''
 
         // 4. Poblar opciones disponibles (usamos DIA FVC para el selector de días)
-        if (rowWeek) {
-          const wNum = parseInt(rowWeek)
-          if (wNum > 0 && wNum <= 53) availableWeeks.add(rowWeek)
+        if (rowWeekNum) {
+          const wNum = parseInt(rowWeekNum)
+          if (wNum > 0 && wNum <= 53) availableWeeks.add(rowWeekNum)
+        }
+        if (rowWeekFvcNum) {
+          const wNumFvc = parseInt(rowWeekFvcNum)
+          if (wNumFvc > 0 && wNumFvc <= 53) availableWeeks.add(rowWeekFvcNum)
         }
         if (rowMonth && rowMonth.length > 2) availableMonths.add(rowMonth)
         if (rowDayFvcRaw && rowDayFvcRaw.length >= 5) availableDays.add(rowDayFvc)
@@ -212,10 +222,10 @@ export async function GET(request: NextRequest) {
 
         // 5. Lógica de coincidencia por métrica (Split Logic)
         
-        // A. Match para VENTAS (DIA DE LA VENTA)
+        // A. Match para VENTAS (SEMANA -> DIA DE LA VENTA)
         let vMatch = false
         if (periodType === 'week') {
-          if (rowWeek === periodValue) {
+          if (rowWeekNum === periodValue) {
             // If dayValue is provided, it MUST also match the sale day
             if (dayValue) {
               vMatch = rowDayVenta === normalizeDay(dayValue)
@@ -233,10 +243,10 @@ export async function GET(request: NextRequest) {
           rankEntry.ventas++
         }
 
-        // B. Match para FVC y ALTAS (DIA FVC)
+        // B. Match para FVC y ALTAS (SEMANA FVC -> DIA FVC)
         let fMatch = false
         if (periodType === 'week') {
-          if (rowWeek === periodValue) {
+          if (rowWeekFvcNum === periodValue) {
             // If dayValue is provided, it MUST also match the FVC day
             if (dayValue) {
               fMatch = rowDayFvc === normalizeDay(dayValue)

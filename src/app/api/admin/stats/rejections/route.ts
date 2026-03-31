@@ -164,6 +164,7 @@ export async function GET(request: NextRequest) {
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
+      const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
@@ -180,11 +181,15 @@ export async function GET(request: NextRequest) {
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
 
+        const rawWeekFvc = row[semanaFvcCol || 'SEMANA FVC']?.trim()
+        const rowWeekFvcNum = rawWeekFvc && rawWeekFvc !== '' ? rawWeekFvc.replace(/\D/g, '') : rowWeekNum
+
         if (rowMonth) allMonths.add(rowMonth)
         if (rowWeekNum) allWeeks.add(rowWeekNum)
+        if (rowWeekFvcNum) allWeeks.add(rowWeekFvcNum)
 
         let match = false
-        if (filterWeek) match = rowWeekNum === filterWeek
+        if (filterWeek) match = rowWeekFvcNum === filterWeek
         else if (filterMonth) match = rowMonth === filterMonth
         else match = rowMonth === currentMonthName
 

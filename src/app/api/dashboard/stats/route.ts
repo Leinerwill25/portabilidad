@@ -107,41 +107,62 @@ export async function GET(request: NextRequest) {
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
+      const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
 
       const stats = sellerStatsMap[sheet.seller_id]
       if (!stats) return
 
       rows.forEach((row: RowData) => {
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
+        
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
+
+        const rawWeekFvc = row[semanaFvcCol || 'SEMANA FVC']?.trim()
+        const rowWeekFvcNum = rawWeekFvc && rawWeekFvc !== '' ? rawWeekFvc.replace(/\D/g, '') : rowWeekNum
 
         if (rowMonth) availableMonths.add(rowMonth)
         
         const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
 
         if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
-          if (row[dnCol || 'DN'] || row[fvcCol || 'FVC']) {
+          if (row[dnCol || 'DN']) {
              availableWeeks.add(rowWeekNum)
           }
         }
-
-        let match = false
-        if (filterWeek) {
-          match = rowWeekNum === filterWeek
-        } else if (filterMonth) {
-          match = rowMonth === filterMonth
-        } else {
-          match = rowMonth === currentMonthName
+        if (rowWeekFvcNum && Number(rowWeekFvcNum) > 0 && Number(rowWeekFvcNum) <= currentWeekNum) {
+          if (row[fvcCol || 'FVC']) {
+             availableWeeks.add(rowWeekFvcNum)
+          }
         }
 
-        if (!match) return
+        let matchVentas = false
+        if (filterWeek) {
+          matchVentas = rowWeekNum === filterWeek
+        } else if (filterMonth) {
+          matchVentas = rowMonth === filterMonth
+        } else {
+          matchVentas = rowMonth === currentMonthName
+        }
 
-        if (row[dnCol || 'DN']) stats.ventas++
-        if (row[fvcCol || 'FVC']) stats.fvc++
+        let matchFvc = false
+        if (filterWeek) {
+          matchFvc = rowWeekFvcNum === filterWeek
+        } else if (filterMonth) {
+          matchFvc = rowMonth === filterMonth
+        } else {
+          matchFvc = rowMonth === currentMonthName
+        }
 
-        const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-        if (estatus === 'ALTA') stats.altas++
+        if (matchVentas) {
+          if (row[dnCol || 'DN']) stats.ventas++
+        }
+
+        if (matchFvc) {
+          if (row[fvcCol || 'FVC']) stats.fvc++
+          const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+          if (estatus === 'ALTA') stats.altas++
+        }
       })
     }
   }))
