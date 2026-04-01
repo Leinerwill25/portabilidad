@@ -6,10 +6,12 @@ import {
   Globe, 
   BarChart3, 
   Trophy,
-  AlertCircle
+  AlertCircle,
+  TrendingUp
 } from 'lucide-react'
 
 const TABS = [
+  { id: 'ventas', label: 'Ventas', icon: TrendingUp, color: '#0ea5e9' },
   { id: 'daily', label: 'Resumen Diario', icon: Globe, color: '#3b82f6' },
   { id: 'monthly', label: 'Resumen Mes/Semana', icon: BarChart3, color: '#6366f1' },
   { id: 'ranking', label: 'Ranking', icon: Trophy, color: '#f59e0b' },
