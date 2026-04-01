@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek, getLocalTimeDate } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,8 +94,9 @@ export async function GET(request: NextRequest) {
   }
 
   // 4. Procesar Ventas de HOY
-  const currentWeekNum = getGoogleSheetsWeek()
-  const todayIndex = new Date().getDay()
+  const localDate = getLocalTimeDate()
+  const currentWeekNum = getGoogleSheetsWeek(localDate)
+  const todayIndex = localDate.getDay()
   const todayNameNormalized = normalizeDay(DAYS_ES[todayIndex])
   
   let totalToday = 0

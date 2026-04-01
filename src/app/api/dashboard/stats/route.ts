@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getGoogleSheetsWeek, getLocalTimeDate } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Valores predeterminados si no hay filtros
-  const currentMonthIndex = new Date().getMonth()
+  const localDate = getLocalTimeDate()
+  const currentMonthIndex = localDate.getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
   // 1. Determinar el owner de los sellers (Supervisor)
@@ -123,14 +124,14 @@ export async function GET(request: NextRequest) {
 
         if (rowMonth) availableMonths.add(rowMonth)
         
-        const currentWeekNum = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 86400000)) + 1
+        const appCurrentWeekNum = getGoogleSheetsWeek(localDate)
 
-        if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= currentWeekNum) {
+        if (rowWeekNum && Number(rowWeekNum) > 0 && Number(rowWeekNum) <= appCurrentWeekNum) {
           if (row[dnCol || 'DN']) {
              availableWeeks.add(rowWeekNum)
           }
         }
-        if (rowWeekFvcNum && Number(rowWeekFvcNum) > 0 && Number(rowWeekFvcNum) <= currentWeekNum) {
+        if (rowWeekFvcNum && Number(rowWeekFvcNum) > 0 && Number(rowWeekFvcNum) <= appCurrentWeekNum) {
           if (row[fvcCol || 'FVC']) {
              availableWeeks.add(rowWeekFvcNum)
           }

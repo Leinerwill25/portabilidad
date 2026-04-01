@@ -19,10 +19,22 @@ interface CacheEntry {
 const sheetCache = new Map<string, CacheEntry>()
 
 /**
+ * Devuelve un Date que representa la hora local en Caracas, 
+ * ignorando la zona horaria del servidor (UTC en Vercel)
+ */
+export function getLocalTimeDate(): Date {
+  // Ej: "3/31/2026, 9:20:00 PM"
+  const localStr = new Date().toLocaleString('en-US', { timeZone: 'America/Caracas' })
+  // Node asume que este string sin offset corresponde al timezone local (UTC en Vercel),
+  // por lo que los métodos .getDate() y .getDay() devolverán exactamente el 31 de marzo a las 9pm.
+  return new Date(localStr)
+}
+
+/**
  * Calculates current week number matching Google Sheets WEEKNUM(date, 1) logic.
  * Week starts on Sunday.
  */
-export function getGoogleSheetsWeek(date: Date = new Date()): number {
+export function getGoogleSheetsWeek(date: Date = getLocalTimeDate()): number {
   const d = new Date(date.getTime())
   d.setHours(0, 0, 0, 0)
   
