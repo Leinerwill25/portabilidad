@@ -10,12 +10,14 @@ import {
   ShieldAlert,
   ShieldCheck,
   Settings,
-  Trophy
+  Trophy,
+  TrendingUp
 } from 'lucide-react'
 
 const TABS = [
   { id: 'global', label: 'Resumen Diario', icon: Globe, color: '#3b82f6' },
   { id: 'stats', label: 'Resumen Mes/Semana', icon: BarChart3, color: '#6366f1' },
+  { id: 'ventas', label: 'Ventas', icon: TrendingUp, color: '#0ea5e9' },
   { id: 'ranking', label: 'Ranking', icon: Trophy, color: '#f59e0b' },
   { id: 'rejections', label: 'Rechazos', icon: AlertCircle, color: '#d97706' },
   { id: 'team', label: 'Gestión Site', icon: ShieldCheck, color: '#059669' },

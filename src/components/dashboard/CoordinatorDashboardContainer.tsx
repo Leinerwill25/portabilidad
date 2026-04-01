@@ -10,6 +10,7 @@ import CoordinatorStatsTable from './CoordinatorStatsTable'
 import RejectionStatsTable from './RejectionStatsTable'
 import SupervisorManager from './SupervisorManager'
 import CoordinatorRankingTable from './CoordinatorRankingTable'
+import CoordinatorSalesTable from './CoordinatorSalesTable'
 import DashboardSearchAudit, { type SearchAudit } from './DashboardSearchAudit'
 
 interface CoordinatorDashboardContainerProps {
@@ -42,6 +43,7 @@ export default function CoordinatorDashboardContainer({
       <div className="mt-4 transition-all duration-300 min-h-[400px]">
         {activeTab === 'global' && <CoordinatorDailyGlobalTable />}
         {activeTab === 'stats' && <CoordinatorStatsTable />}
+        {activeTab === 'ventas' && <CoordinatorSalesTable />}
         {activeTab === 'ranking' && <CoordinatorRankingTable />}
         {activeTab === 'rejections' && <RejectionStatsTable />}
         {activeTab === 'team' && <SupervisorManager />}
