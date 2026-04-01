@@ -31,6 +31,7 @@ interface SellerStats {
   id: string
   name: string
   stats: {
+    ventas: number
     activacion_no_alta: number
     alta: number
     alta_no_enrolada: number
@@ -47,6 +48,7 @@ interface HierarchySupervisor {
   name: string
   sellers: Record<string, SellerStats>
   totals: {
+    ventas: number
     activacion_no_alta: number
     alta: number
     alta_no_enrolada: number
@@ -157,6 +159,7 @@ export async function GET(request: NextRequest) {
       name: p?.full_name || p?.email || 'Supervisor Desconocido',
       sellers: {},
       totals: {
+        ventas: 0,
         activacion_no_alta: 0,
         alta: 0,
         alta_no_enrolada: 0,
@@ -177,6 +180,7 @@ export async function GET(request: NextRequest) {
           id: s.id,
           name: `${s.first_name} ${s.last_name}`,
           stats: {
+            ventas: 0,
             activacion_no_alta: 0,
             alta: 0,
             alta_no_enrolada: 0,
@@ -240,6 +244,10 @@ export async function GET(request: NextRequest) {
         const targetStats = sellerEntry.stats
         const targetTotals = hierarchyData[sid].totals
 
+        // 1. Contar Toda Venta Valida
+        targetStats.ventas++
+        targetTotals.ventas++
+
         // 3. Contar Status específicos e incrementar Total solo para estos casos
         if (estatus === 'AA') {
           targetStats.activacion_no_alta++
@@ -288,6 +296,7 @@ export async function GET(request: NextRequest) {
   })
 
   const grandTotal = finalSupervisors.reduce((acc, curr) => ({
+    ventas: acc.ventas + curr.totals.ventas,
     activacion_no_alta: acc.activacion_no_alta + curr.totals.activacion_no_alta,
     alta: acc.alta + curr.totals.alta,
     alta_no_enrolada: acc.alta_no_enrolada + curr.totals.alta_no_enrolada,
@@ -295,7 +304,7 @@ export async function GET(request: NextRequest) {
     chargeback: acc.chargeback + curr.totals.chargeback,
     promesa: acc.promesa + curr.totals.promesa,
     total: acc.total + curr.totals.total
-  }), { activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, total: 0 })
+  }), { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, total: 0 })
 
   const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.alta / grandTotal.total) * 100) : 0
 
