@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
   // Estructura de datos: Mapa de vendedores -> Mapa de días
   const sellerDailyMap: Record<string, {
     name: string,
-    days: Record<string, { ventas: number, fvc: number, van: number }>
+    days: Record<string, { ventas: number, fvc: number, van: number, no_enrolado?: number, aa?: number, promesa?: number }>
   }> = {}
 
   const availableWeeks = new Set<string>()
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     }
     DAYS_ES.forEach(day => {
       const normalizedDay = normalizeDay(day)
-      sellerDailyMap[s.id].days[normalizedDay] = { ventas: 0, fvc: 0, van: 0 }
+      sellerDailyMap[s.id].days[normalizedDay] = { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0 }
     })
   })
 
@@ -169,11 +169,17 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          // 3. Contar Altas (Hacia el día de entrega/FVC) usando SEMANA FVC
+          // 3. Contar Altas y otros Estatus (Hacia el día de entrega/FVC) usando SEMANA FVC
           if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
             const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
             if (estatusVal === 'ALTA') {
               sellerStats.days[rowDiaFvc].van++
+            } else if (estatusVal === 'NO ENROLADO') {
+              sellerStats.days[rowDiaFvc].no_enrolado = (sellerStats.days[rowDiaFvc].no_enrolado || 0) + 1
+            } else if (estatusVal === 'AA') {
+              sellerStats.days[rowDiaFvc].aa = (sellerStats.days[rowDiaFvc].aa || 0) + 1
+            } else if (estatusVal === 'PROMESA DE VISITA') {
+              sellerStats.days[rowDiaFvc].promesa = (sellerStats.days[rowDiaFvc].promesa || 0) + 1
             }
           }
         }
@@ -183,13 +189,16 @@ export async function GET(request: NextRequest) {
 
   const sellerList = Object.values(sellerDailyMap)
     .map(s => {
-      const processedDays: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number }> = {}
+      const processedDays: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number, no_enrolado: number, aa: number, promesa: number }> = {}
       DAYS_ES.forEach(day => {
         const normalizedDay = normalizeDay(day)
         const d = s.days[normalizedDay]
         const pct = d.fvc > 0 ? Math.round((d.van / d.fvc) * 100) : 0
         processedDays[normalizedDay] = {
           ...d,
+          no_enrolado: d.no_enrolado || 0,
+          aa: d.aa || 0,
+          promesa: d.promesa || 0,
           pct: `${pct}%`,
           pctRaw: pct
         }
@@ -198,17 +207,23 @@ export async function GET(request: NextRequest) {
     })
 
   // Calcular totales globales por día
-  const dailyTotals: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number }> = {}
+  const dailyTotals: Record<string, { ventas: number, fvc: number, van: number, pct: string, pctRaw: number, no_enrolado: number, aa: number, promesa: number }> = {}
   DAYS_ES.forEach(day => {
     const normalizedDay = normalizeDay(day)
     const ventas = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.ventas || 0), 0)
     const fvc = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.fvc || 0), 0)
     const van = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.van || 0), 0)
+    const no_enrolado = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.no_enrolado || 0), 0)
+    const aa = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.aa || 0), 0)
+    const promesa = sellerList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.promesa || 0), 0)
     const pct = fvc > 0 ? Math.round((van / fvc) * 100) : 0
     dailyTotals[normalizedDay] = {
       ventas,
       fvc,
       van,
+      no_enrolado,
+      aa,
+      promesa,
       pct: `${pct}%`,
       pctRaw: pct
     }

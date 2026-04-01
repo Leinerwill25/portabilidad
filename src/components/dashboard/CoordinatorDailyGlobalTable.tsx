@@ -19,6 +19,9 @@ interface DayStat {
   ventas: number
   fvc: number
   van: number
+  no_enrolado?: number
+  aa?: number
+  promesa?: number
   pct: string
   pctRaw: number
 }
@@ -326,12 +329,15 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                                         <th className="px-8 py-3">Vendedor</th>
                                         <th className="px-6 py-3 text-center">FVC</th>
                                         <th className="px-6 py-3 text-center">Altas</th>
+                                        <th className="px-6 py-3 text-center">No Enrolado</th>
+                                        <th className="px-6 py-3 text-center">AA</th>
+                                        <th className="px-6 py-3 text-center">Promesa</th>
                                         <th className="px-8 py-3 text-center">% Conv.</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
                                       {expandedSellers.map((seller, sidx) => {
-                                        const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
+                                        const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, pct: '0%', pctRaw: 0 }
                                         return (
                                           <tr key={sidx} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-8 py-3 text-[12px] font-bold text-slate-700 flex items-center gap-3">
@@ -342,6 +348,9 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                                             </td>
                                             <td className="px-6 py-3 text-[12px] font-black text-slate-500 text-center tabular-nums">{sStat.fvc}</td>
                                             <td className="px-6 py-3 text-[12px] font-black text-slate-900 text-center tabular-nums">{sStat.van}</td>
+                                            <td className="px-6 py-3 text-[12px] font-bold text-slate-700 text-center tabular-nums">{sStat.no_enrolado ?? 0}</td>
+                                            <td className="px-6 py-3 text-[12px] font-bold text-rose-700 text-center tabular-nums">{sStat.aa ?? 0}</td>
+                                            <td className="px-6 py-3 text-[12px] font-bold text-amber-700 text-center tabular-nums">{sStat.promesa ?? 0}</td>
                                             <td className="px-8 py-3 text-center">
                                               <span className={`text-[11px] font-black ${
                                                 sStat.pctRaw >= 80 ? 'text-emerald-600' :
