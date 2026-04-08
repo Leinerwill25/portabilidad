@@ -72,36 +72,32 @@ export async function GET(request: NextRequest) {
 
   if (userRole === 'admin') {
     supervisorIds = [user.id]
-  } else {
-    if (supervisorId) {
-      if (supervisorId === user.id) {
-        supervisorIds = [user.id]
-      } else {
-        const { data: assignment } = await supabase
-          .from('coordinator_supervisors')
-          .select('*')
-          .eq('coordinator_id', user.id)
-          .eq('supervisor_id', supervisorId)
-          .single()
-        
-        if (!assignment) {
-          return NextResponse.json({ error: 'No autorizado para este supervisor' }, { status: 403 })
-        }
-        supervisorIds = [supervisorId]
-      }
+  } else if (userRole === 'coordinator') {
+    // If coordinator specifies a supervisor, just use that (after validation)
+    if (supervisorId && supervisorId !== 'undefined' && supervisorId !== user.id) {
+       supervisorIds = [supervisorId]
     } else {
       const { data: assignments } = await supabase
         .from('coordinator_supervisors')
         .select('supervisor_id')
         .eq('coordinator_id', user.id)
-
-      if (assignments && assignments.length > 0) {
-        supervisorIds = (assignments as { supervisor_id: string }[]).map(a => a.supervisor_id)
-      } else {
-        supervisorIds = []
+      
+      if (assignments) {
+        supervisorIds = assignments.map(a => a.supervisor_id)
       }
       
-      supervisorIds.push(user.id) // Coordinadores ven sus propios vendedores
+      if (!supervisorIds.includes(user.id)) {
+        supervisorIds.push(user.id) // Incluir propios
+      }
+    }
+  } else if (userRole === 'superadmin') {
+    if (supervisorId && supervisorId !== 'undefined') {
+      supervisorIds = [supervisorId]
+    } else {
+      const { data: allSupervisors } = await supabase.from('sellers').select('created_by')
+      if (allSupervisors) {
+        supervisorIds = Array.from(new Set(allSupervisors.map(s => s.created_by)))
+      }
     }
   }
 
@@ -142,8 +138,8 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  if (sellers) {
-    sellers.forEach((s: Seller) => {
+  if (sellersData) {
+    sellersData.forEach((s: Seller) => {
       const sid = s.created_by
       if (hierarchyData[sid]) {
         hierarchyData[sid].sellers[s.id] = {
@@ -177,19 +173,31 @@ export async function GET(request: NextRequest) {
       const sellerEntry = hierarchyData[sid]?.sellers[sheet.seller_id]
       if (!sellerEntry) return
 
-      fetched.rows.forEach((row: RowData) => {
-        const dn = row[dnCol || 'DN']?.trim()
-        if (!dn) return // Únicamente cuenta si existe un DN (que significa una venta/registro)
+      // Month/Week propagation state
+      let lastRowMonth = ''
+      let lastRowWeek = ''
 
-        const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
-        const rawWeek = row[semanaCol || 'SEMANA']?.trim()
+      fetched.rows.forEach((row: RowData) => {
+        const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase() || lastRowMonth
+        const rawWeek = row[semanaCol || 'SEMANA']?.trim() || lastRowWeek
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
         const rowDay = normalizeDay(row[diaCol || 'DIA DE LA VENTA'] || '')
+
+        // Update propagation state
+        if (row[mesCol || 'MES']?.trim()) lastRowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
+        if (row[semanaCol || 'SEMANA']?.trim()) lastRowWeek = row[semanaCol || 'SEMANA']?.trim()
+
+        const dn = row[dnCol || 'DN']?.trim()
+         
+        // If DN column exists but value is missing, skip row
+        if (dnCol && !dn) return
+        
+        // If no DN column AND no metadata columns, skip
+        if (!dnCol && !rowMonth && !rowWeekNum) return
 
         if (rowMonth) allMonths.add(rowMonth)
         if (rowWeekNum) allWeeks.add(rowWeekNum)
         
-        // Only add days to the filter list if it matches the current week (or filterWeek) to avoid clutter
         if (rowDay) {
           if ((filterWeek && rowWeekNum === filterWeek) || (!filterWeek && rowMonth === currentMonthName)) {
             allDays.add(rowDay)

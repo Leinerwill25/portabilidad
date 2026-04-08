@@ -255,23 +255,27 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-black uppercase tracking-widest font-black text-[11px] border-b border-slate-100">
-                  <th className="px-10 py-6 w-[40%] border-r border-slate-100">Site / Supervisor</th>
-                  <th className="px-6 py-6 text-center w-[20%] border-r border-slate-100">Total FVC</th>
-                  <th className="px-6 py-6 text-center w-[20%] border-r border-slate-100 text-blue-600">Altas</th>
-                  <th className="px-10 py-6 text-center w-[20%]">Conversión %</th>
-                </tr>
-              </thead>
+                  <th className="px-10 py-6 text-[11px] font-black uppercase tracking-widest text-slate-500">Site / Supervisor</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">FVC</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Altas (VAN)</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">No Enrolado</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">AA</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500 text-blue-600">Sin Status</th>
+                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Promesa</th>
+                <th className="px-10 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Conv.</th>
+              </tr>
+            </thead>
               <tbody className="divide-y-2 divide-slate-50">
                 {!data || data.supervisors.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-10 py-24 text-center">
+                    <td colSpan={8} className="px-10 py-24 text-center">
                        <BarChart3 className="mx-auto text-slate-200 mb-4" size={48} />
                        <p className="text-[14px] font-black text-slate-400 uppercase tracking-widest italic">Iniciando consulta global...</p>
                     </td>
                   </tr>
                 ) : (
                   data.supervisors.map((supervisor, idx) => {
-                    const dayStat = supervisor.days[activeDay] || { ventas: 0, fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
+                    const dayStat = supervisor.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
                     const isExpanded = expandedSupId === supervisor.id
 
                     return (
@@ -288,13 +292,25 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                              {isExpanded ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-slate-300 group-hover:text-blue-600" />}
                           </td>
                           <td className="px-6 py-5 text-[16px] text-center font-black text-slate-600 border-r-2 border-slate-50 tabular-nums">
-                            {dayStat.fvc}
+                            <div className="text-[16px] font-black text-slate-900 tabular-nums">{dayStat.fvc}</div>
                           </td>
-                          <td className="px-6 py-5 text-[16px] text-center font-black text-slate-900 border-r-2 border-slate-50 tabular-nums">
-                            {dayStat.van}
+                          <td className="px-6 py-8 text-center">
+                            <div className="text-[16px] font-black text-slate-400 tabular-nums">{dayStat.van}</div>
                           </td>
-                          <td className="px-0 py-0 text-center">
-                            <div className={`h-full w-full px-10 py-5 text-[15px] font-black tabular-nums transition-all ${
+                          <td className="px-6 py-8 text-center">
+                            <div className="text-[16px] font-black text-slate-700 tabular-nums">{dayStat.no_enrolado ?? 0}</div>
+                          </td>
+                          <td className="px-6 py-8 text-center">
+                            <div className="text-[16px] font-black text-rose-700 tabular-nums font-mono">{dayStat.aa ?? 0}</div>
+                          </td>
+                          <td className="px-6 py-8 text-center bg-blue-50/50">
+                            <div className="text-[16px] font-black text-slate-900 tabular-nums">{dayStat.sin_status ?? 0}</div>
+                          </td>
+                          <td className="px-6 py-8 text-center">
+                            <div className="text-[16px] font-black text-amber-700 tabular-nums">{dayStat.promesa ?? 0}</div>
+                          </td>
+                          <td className="px-10 py-8 text-center">
+                            <div className={`inline-block px-4 py-1.5 rounded-xl text-[14px] font-black shadow-sm group-hover:scale-110 transition-all ${
                               dayStat.pctRaw >= 80 ? 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100' :
                               dayStat.pctRaw >= 50 ? 'bg-amber-50 text-amber-700 group-hover:bg-amber-100' :
                               'bg-rose-50 text-rose-700 group-hover:bg-rose-100'

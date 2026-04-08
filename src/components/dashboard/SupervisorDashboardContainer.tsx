@@ -8,7 +8,9 @@ import CoordinatorStatsTable from './CoordinatorStatsTable'
 import CoordinatorRankingTable from './CoordinatorRankingTable'
 import CoordinatorSalesTable from './CoordinatorSalesTable'
 import RejectionStatsTable from './RejectionStatsTable'
+import WeeklyComparisonChart from './WeeklyComparisonChart'
 import { Users, FileSpreadsheet, Search as SearchIcon } from 'lucide-react'
+
 
 interface SupervisorDashboardContainerProps {
   initialTab?: string
@@ -69,11 +71,13 @@ export default function SupervisorDashboardContainer({
 
       <div className="mt-4 transition-all duration-300 min-h-[400px]">
         {activeTab === 'ventas' && <CoordinatorSalesTable supervisorId={supervisorId} />}
+        {activeTab === 'comparativo' && <WeeklyComparisonChart supervisorId={supervisorId} />}
         {activeTab === 'daily' && <CoordinatorDailyGlobalTable supervisorId={supervisorId} />}
         {activeTab === 'monthly' && <CoordinatorStatsTable supervisorId={supervisorId} />}
         {activeTab === 'ranking' && <CoordinatorRankingTable supervisorId={supervisorId} />}
         {activeTab === 'rejections' && <RejectionStatsTable supervisorId={supervisorId} />}
       </div>
+
     </div>
   )
 }

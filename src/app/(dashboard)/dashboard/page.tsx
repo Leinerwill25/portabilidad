@@ -5,6 +5,7 @@ import {
   Clock,
   ArrowUpRight
 } from 'lucide-react'
+import { Suspense } from 'react'
 import SupervisorSelector from '@/components/dashboard/SupervisorSelector'
 import CoordinatorDashboardContainer from '@/components/dashboard/CoordinatorDashboardContainer'
 
@@ -84,7 +85,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
         
         {isCoordinator && assignedSupervisors.length > 0 && (
-          <SupervisorSelector supervisors={assignedSupervisors} />
+          <Suspense fallback={<div className="h-10 w-40 bg-slate-100 animate-pulse rounded-lg" />}>
+            <SupervisorSelector supervisors={assignedSupervisors} />
+          </Suspense>
         )}
 
         <div className="flex items-center gap-3 px-4 py-2 bg-white border border-[#e5e7eb] rounded-lg shadow-sm self-start sm:self-center">
@@ -94,22 +97,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       {isCoordinator ? (
-        <CoordinatorDashboardContainer 
-          initialTab={initialTab || 'global'}
-          recentSearches={(recentSearches || []) as unknown as SearchAudit[]}
-          totalSearchesOverall={totalSearchesOverall || 0}
-        />
+        <Suspense fallback={<div className="h-[400px] w-full bg-white rounded-3xl animate-pulse" />}>
+          <CoordinatorDashboardContainer 
+            initialTab={initialTab || 'global'}
+            recentSearches={(recentSearches || []) as unknown as SearchAudit[]}
+            totalSearchesOverall={totalSearchesOverall || 0}
+          />
+        </Suspense>
       ) : (
-        <SupervisorDashboardContainer 
-          initialTab={initialTab || 'daily'}
-          supervisorId={userId}
-          stats={{
-            sellersCount: sellersCount || 0,
-            sheetsCount: sheetsCount || 0,
-            todaySearchesCount: todaySearchesCount || 0
-          }}
-        />
+        <Suspense fallback={<div className="h-[400px] w-full bg-white rounded-3xl animate-pulse" />}>
+          <SupervisorDashboardContainer 
+            initialTab={initialTab || 'daily'}
+            supervisorId={userId}
+            stats={{
+              sellersCount: sellersCount || 0,
+              sheetsCount: sheetsCount || 0,
+              todaySearchesCount: todaySearchesCount || 0
+            }}
+          />
+        </Suspense>
       )}
+
 
 
       {!isCoordinator && (

@@ -1,0 +1,572 @@
+[
+  {
+    "id": "72764347-5d7f-4cf3-bc7b-d35500c723df",
+    "seller_id": "adcf2a75-63fa-454f-af84-200c00d03b3f",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Pjo-fOwaecjepYpc0mcouT4m7OxOwIUCfzcrtvfDdtk/edit?gid=0#gid=0",
+    "sheet_id": "1Pjo-fOwaecjepYpc0mcouT4m7OxOwIUCfzcrtvfDdtk",
+    "sheet_name": "BDD",
+    "display_name": "Portabilidad",
+    "created_at": "2026-03-25T20:45:32.484677+00:00",
+    "updated_at": "2026-03-25T20:45:32.484677+00:00"
+  },
+  {
+    "id": "eb0450b0-1971-48c4-bfcb-e0c8bc0dcfb5",
+    "seller_id": "b24ba3a8-196c-4f49-af3a-8ea65828ff43",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1AQI00vMjJLMM00BDYxFW6AHT9q-sBhcJbGRsWtBs7_w/edit?gid=0#gid=0",
+    "sheet_id": "1AQI00vMjJLMM00BDYxFW6AHT9q-sBhcJbGRsWtBs7_w",
+    "sheet_name": "BDD",
+    "display_name": "Brian",
+    "created_at": "2026-03-26T20:47:42.579565+00:00",
+    "updated_at": "2026-03-26T20:47:42.579565+00:00"
+  },
+  {
+    "id": "a4545d90-3a27-4538-b8cc-1b42a3c626fe",
+    "seller_id": "d08baa2f-9b3e-431f-9150-be42b34e0642",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Scmg8LhCX4xcTDK2sh-VVq2hD_lttwz8-Tzbo2P0A94/edit?gid=0#gid=0",
+    "sheet_id": "1Scmg8LhCX4xcTDK2sh-VVq2hD_lttwz8-Tzbo2P0A94",
+    "sheet_name": "BDD",
+    "display_name": "KEVIN",
+    "created_at": "2026-03-26T21:03:50.232779+00:00",
+    "updated_at": "2026-03-26T21:03:50.232779+00:00"
+  },
+  {
+    "id": "1a794c93-c355-46b8-bcd8-51a974b1dd78",
+    "seller_id": "18e18e91-311a-4dbc-a487-1a733b14c794",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/163_IP4Bgkms6iOtYXK0SGApqM5nmS1BJmE1-94bny1s/edit?gid=0#gid=0",
+    "sheet_id": "163_IP4Bgkms6iOtYXK0SGApqM5nmS1BJmE1-94bny1s",
+    "sheet_name": "BDD",
+    "display_name": "ANDRES",
+    "created_at": "2026-03-26T21:25:09.587988+00:00",
+    "updated_at": "2026-03-26T21:25:09.587988+00:00"
+  },
+  {
+    "id": "1ea5447d-6ebe-400b-9cda-51ac0355b9fd",
+    "seller_id": "dfe92316-3000-4c87-8156-aa6a80da7247",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/13gtda-AAoMtUs8LPfju7EMSaiZ00zLhyqTnHX-Iz6J8/edit?gid=0#gid=0",
+    "sheet_id": "13gtda-AAoMtUs8LPfju7EMSaiZ00zLhyqTnHX-Iz6J8",
+    "sheet_name": "BDD",
+    "display_name": "Stefani Orellano",
+    "created_at": "2026-03-27T14:14:18.491718+00:00",
+    "updated_at": "2026-03-27T14:14:18.491718+00:00"
+  },
+  {
+    "id": "6ebb4a12-7082-4709-a036-8d72aefb2a69",
+    "seller_id": "bbcb965b-0ea3-42ac-bd2e-9021906685f7",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Pjo-fOwaecjepYpc0mcouT4m7OxOwIUCfzcrtvfDdtk/edit?gid=0#gid=0",
+    "sheet_id": "1Pjo-fOwaecjepYpc0mcouT4m7OxOwIUCfzcrtvfDdtk",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos",
+    "created_at": "2026-03-27T23:08:15.855184+00:00",
+    "updated_at": "2026-03-27T23:08:15.855184+00:00"
+  },
+  {
+    "id": "b1449d2a-dd21-44a4-baa6-d469f4db1610",
+    "seller_id": "6faa588b-1547-455e-a8bc-46715bc84a3a",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1SqLSxTf-Xb_ejRHijqTPkJT-1FNGmlwqakTKvOkzbiQ/edit?gid=0#gid=0",
+    "sheet_id": "1SqLSxTf-Xb_ejRHijqTPkJT-1FNGmlwqakTKvOkzbiQ",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Beatriz",
+    "created_at": "2026-03-28T02:59:53.057497+00:00",
+    "updated_at": "2026-03-28T02:59:53.057497+00:00"
+  },
+  {
+    "id": "71d64ef9-9ed2-4a4f-92ac-ed211c4ca2ec",
+    "seller_id": "70239096-3618-4d7a-bdef-ebd0c4665047",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1hcuew3DwZhtnxJN1xpJ9p_aYvdIlWbb3QQqa_6mTvUU/edit?gid=0#gid=0",
+    "sheet_id": "1hcuew3DwZhtnxJN1xpJ9p_aYvdIlWbb3QQqa_6mTvUU",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Daniel Suarez",
+    "created_at": "2026-03-28T03:00:43.921256+00:00",
+    "updated_at": "2026-03-28T03:00:43.921256+00:00"
+  },
+  {
+    "id": "8b2a4d30-726c-4443-9ab7-f53146bb3e8a",
+    "seller_id": "80b46469-26ac-4b33-8bda-a24079bccb26",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1rr9gTmWlLmeo9zBh9mrliBqANNUV1c3wUJhR-zdFQAE/edit?gid=0#gid=0",
+    "sheet_id": "1rr9gTmWlLmeo9zBh9mrliBqANNUV1c3wUJhR-zdFQAE",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Daniela Buelvas",
+    "created_at": "2026-03-28T03:02:05.026462+00:00",
+    "updated_at": "2026-03-28T03:02:05.026462+00:00"
+  },
+  {
+    "id": "4c70c26f-bf40-4d41-b3d7-e7af53ef14e9",
+    "seller_id": "72111050-be71-48b3-b91b-5f14d26e0707",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1rbl_7LEGUPf9ehQUl9fi-OGT1HFYvchSctZqQ_gpoSo/edit",
+    "sheet_id": "1rbl_7LEGUPf9ehQUl9fi-OGT1HFYvchSctZqQ_gpoSo",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Barbara Gomez",
+    "created_at": "2026-03-28T03:03:25.138769+00:00",
+    "updated_at": "2026-03-28T03:03:25.138769+00:00"
+  },
+  {
+    "id": "40e8d2e3-3000-451d-8c0b-4a19dfe4c27c",
+    "seller_id": "eaedc45c-7a85-4c50-8bf7-ec851c1e8b91",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1K9eG9tqsXd5UHe8BgTZhgANAYN_NvWP_uRVCHlyMVcI/edit",
+    "sheet_id": "1K9eG9tqsXd5UHe8BgTZhgANAYN_NvWP_uRVCHlyMVcI",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Emmanuel Mejia",
+    "created_at": "2026-03-28T03:06:55.052707+00:00",
+    "updated_at": "2026-03-28T03:06:55.052707+00:00"
+  },
+  {
+    "id": "8de843ad-90f7-465a-9167-a58ceb917c1d",
+    "seller_id": "fa07d48c-8ae1-4cc4-8f61-a4ce4e60dc2d",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1WYE65Skmhq2AxFCmtm2pkfK2RcShJjztI7O26yrQf1Q/edit",
+    "sheet_id": "1WYE65Skmhq2AxFCmtm2pkfK2RcShJjztI7O26yrQf1Q",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Jerry Andia",
+    "created_at": "2026-03-28T03:09:18.445629+00:00",
+    "updated_at": "2026-03-28T03:09:18.445629+00:00"
+  },
+  {
+    "id": "4e04377d-2005-419a-97fd-1f85ca522153",
+    "seller_id": "2340c929-5824-4ca5-95d3-ad85b69038e4",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Q2ShKgyEBSlRqPnx80OFnIMIhp94qsYIB2myr6zA9xg/edit",
+    "sheet_id": "1Q2ShKgyEBSlRqPnx80OFnIMIhp94qsYIB2myr6zA9xg",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Oscar Figuera",
+    "created_at": "2026-03-28T03:10:18.11967+00:00",
+    "updated_at": "2026-03-28T03:10:18.11967+00:00"
+  },
+  {
+    "id": "0b503bc3-6ad5-4477-a616-11fa968796b7",
+    "seller_id": "efc77a9d-6c87-4380-83c6-665c17b08e39",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/15TDthxFw7wCxvzD90nX2K5YhlY-2hvDKKgkqrqbmZEk/edit?gid=0#gid=0",
+    "sheet_id": "15TDthxFw7wCxvzD90nX2K5YhlY-2hvDKKgkqrqbmZEk",
+    "sheet_name": "BDD",
+    "display_name": "Vercel Kerly Ramirez",
+    "created_at": "2026-03-28T03:12:21.826135+00:00",
+    "updated_at": "2026-03-28T03:12:21.826135+00:00"
+  },
+  {
+    "id": "ae49f42e-c7a1-4636-a297-710c72eedcb1",
+    "seller_id": "68c3b54a-3178-4f7c-959c-f8504e80428f",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1TLlmUjfGGmQHAMQ-V7SHlatMACn46tg9WLZ4uYnEtLs/edit?gid=0#gid=0",
+    "sheet_id": "1TLlmUjfGGmQHAMQ-V7SHlatMACn46tg9WLZ4uYnEtLs",
+    "sheet_name": "BDD",
+    "display_name": "Marianny Semprun",
+    "created_at": "2026-03-28T21:30:58.33609+00:00",
+    "updated_at": "2026-03-28T21:30:58.33609+00:00"
+  },
+  {
+    "id": "c61ddf8e-baf8-42dc-b2b7-d5f39dd9017b",
+    "seller_id": "e4558beb-6bd7-4a33-b811-d71c70b15bbc",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1p5DjE_2i6gKlWIYuqzfSKxiUNdMbEASunDbWctEZd80/edit?gid=0#gid=0",
+    "sheet_id": "1p5DjE_2i6gKlWIYuqzfSKxiUNdMbEASunDbWctEZd80",
+    "sheet_name": "BDD",
+    "display_name": "ARIANNY",
+    "created_at": "2026-03-30T15:54:35.932521+00:00",
+    "updated_at": "2026-03-30T15:54:35.932521+00:00"
+  },
+  {
+    "id": "3965a23d-9d00-4dda-9a49-c9c7b3b536ef",
+    "seller_id": "189efb13-7ac6-4454-9537-cfa65bb51cf3",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1HaeBuwZpbP3H03YuMeWVK2y8vyXO2aht7I5UDGU4R2U/edit?gid=0#gid=0",
+    "sheet_id": "1HaeBuwZpbP3H03YuMeWVK2y8vyXO2aht7I5UDGU4R2U",
+    "sheet_name": "BDD",
+    "display_name": "MARIA C",
+    "created_at": "2026-03-30T15:56:13.212357+00:00",
+    "updated_at": "2026-03-30T15:56:13.212357+00:00"
+  },
+  {
+    "id": "36051df5-5639-4018-a291-6032591c399f",
+    "seller_id": "5ee028ff-dc4c-4357-abdb-af1f4113a882",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1bmC-dLDxztumUn_7LcsSM5gGfeQSe0FHq1FcC17qbys/edit?gid=0#gid=0",
+    "sheet_id": "1bmC-dLDxztumUn_7LcsSM5gGfeQSe0FHq1FcC17qbys",
+    "sheet_name": "BDD",
+    "display_name": "Barbara",
+    "created_at": "2026-03-30T16:20:36.271284+00:00",
+    "updated_at": "2026-03-30T16:20:36.271284+00:00"
+  },
+  {
+    "id": "5a1f71b5-0eef-43ad-940c-a09a641249a8",
+    "seller_id": "296265d8-ffb0-4bb8-ba5b-b3e481a6e80b",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1fOsY62S-d1K4SwJmqnNwlcYKlyGTZfNbzNZw9yuyd54/edit?gid=0#gid=0",
+    "sheet_id": "1fOsY62S-d1K4SwJmqnNwlcYKlyGTZfNbzNZw9yuyd54",
+    "sheet_name": "BDD",
+    "display_name": "base de datos",
+    "created_at": "2026-03-30T16:25:18.915497+00:00",
+    "updated_at": "2026-03-30T16:25:18.915497+00:00"
+  },
+  {
+    "id": "51bb6bdd-abce-47c8-954e-5134ccc5c0e4",
+    "seller_id": "dfb73e50-8324-4ff7-98ce-3c80ec314253",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1YfNSRRN7cxP8YPTvHr77VzVSJBvYOSs3IWus9wf5b74/edit?gid=0#gid=0",
+    "sheet_id": "1YfNSRRN7cxP8YPTvHr77VzVSJBvYOSs3IWus9wf5b74",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:39:09.319572+00:00",
+    "updated_at": "2026-03-30T16:39:09.319572+00:00"
+  },
+  {
+    "id": "ec9c8c6a-b84a-454a-9947-a0990a54f7a6",
+    "seller_id": "fe157bb7-2320-4665-a62a-13d63d7fc1bc",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1snmG7QsmsWzKN4kpH4i3UT3Hyw6j5vL5kyw7qyozGZg/edit?gid=0#gid=0",
+    "sheet_id": "1snmG7QsmsWzKN4kpH4i3UT3Hyw6j5vL5kyw7qyozGZg",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:40:27.126222+00:00",
+    "updated_at": "2026-03-30T16:40:27.126222+00:00"
+  },
+  {
+    "id": "56b473e5-25c1-4285-a89c-f55fd4bf98da",
+    "seller_id": "35cf7812-e7e7-4a51-b765-99fd6859bb7d",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1XKQ0UyH3oC4dXcuuAbf5l9T6V9Ty9kq9CLPnzY1awWI/edit?gid=0#gid=0",
+    "sheet_id": "1XKQ0UyH3oC4dXcuuAbf5l9T6V9Ty9kq9CLPnzY1awWI",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:40:55.522597+00:00",
+    "updated_at": "2026-03-30T16:40:55.522597+00:00"
+  },
+  {
+    "id": "41f14747-1cbd-4bfc-a9f3-e502a406fec4",
+    "seller_id": "7f0a71e1-008d-49bb-88fc-e40327a7eb93",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1AU8mTJUez51Vq-QHwH0dJiJnoSe67vkp8HsjZWe0bT0/edit?gid=0#gid=0",
+    "sheet_id": "1AU8mTJUez51Vq-QHwH0dJiJnoSe67vkp8HsjZWe0bT0",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:47:46.741592+00:00",
+    "updated_at": "2026-03-30T16:47:46.741592+00:00"
+  },
+  {
+    "id": "c46bca99-2093-4426-98c8-9459d9577a68",
+    "seller_id": "1c23e08b-5297-45ab-a3a0-85537de839b2",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/153w6gNyQq3PBfRmj17PoK5_87x650jjf2OcV_3Ozwj4/edit?gid=0#gid=0",
+    "sheet_id": "153w6gNyQq3PBfRmj17PoK5_87x650jjf2OcV_3Ozwj4",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:48:59.034809+00:00",
+    "updated_at": "2026-03-30T16:48:59.034809+00:00"
+  },
+  {
+    "id": "cc67c027-e01c-4112-9711-c99b730adc2b",
+    "seller_id": "05643da0-23a8-425d-a35b-f86c2504d9f4",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1a-2ZthPFEwIV64Sfv-cb809FVKhuhNONNDwD3ZfxDMQ/edit?gid=0#gid=0",
+    "sheet_id": "1a-2ZthPFEwIV64Sfv-cb809FVKhuhNONNDwD3ZfxDMQ",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:50:10.559088+00:00",
+    "updated_at": "2026-03-30T16:50:10.559088+00:00"
+  },
+  {
+    "id": "44933c04-f62d-4fb3-8d6d-32b7e6a8e6cb",
+    "seller_id": "d98713c0-ecfd-48ce-b971-c433f812fe83",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/17Y6jsVEO7xQI5d0ESTG2FId2kmOdcWgj3WKJtmt2_YQ/edit?gid=0#gid=0",
+    "sheet_id": "17Y6jsVEO7xQI5d0ESTG2FId2kmOdcWgj3WKJtmt2_YQ",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-30T16:51:28.250477+00:00",
+    "updated_at": "2026-03-30T16:51:28.250477+00:00"
+  },
+  {
+    "id": "83527076-a705-4f88-a110-12daf54c39c6",
+    "seller_id": "6e0398e6-1e29-4cfc-ad10-fdf2ca43fc1b",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1sf3SemawifuXF4MsJpIMjKUDbWzSRHEOnwrbHFcaLK8/edit?gid=0#gid=0",
+    "sheet_id": "1sf3SemawifuXF4MsJpIMjKUDbWzSRHEOnwrbHFcaLK8",
+    "sheet_name": "BDD",
+    "display_name": "Fabiana Rodriguez",
+    "created_at": "2026-03-30T22:12:35.442005+00:00",
+    "updated_at": "2026-03-30T22:12:35.442005+00:00"
+  },
+  {
+    "id": "dc8d6fc5-1c9a-4e16-a3d8-dd4c445b96ba",
+    "seller_id": "8ac5b850-f558-4a31-9a3f-a484e1766f90",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1rZ6bath_ksE1U-iU3VcqOB6jCOmenuxMtGzTbOfFeKg/edit?gid=0#gid=0",
+    "sheet_id": "1rZ6bath_ksE1U-iU3VcqOB6jCOmenuxMtGzTbOfFeKg",
+    "sheet_name": "BDD",
+    "display_name": "Anyerlin Saavedra",
+    "created_at": "2026-03-30T22:25:17.393962+00:00",
+    "updated_at": "2026-03-30T22:25:17.393962+00:00"
+  },
+  {
+    "id": "9800fcd3-1a36-4940-9fbc-1105921032a1",
+    "seller_id": "2fb586cd-e641-48e7-8745-2d800e19e563",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1aVgadbbKknkRqsyUM2CK9tHloZ91xfeRWTVLxhetldc/edit?gid=0#gid=0",
+    "sheet_id": "1aVgadbbKknkRqsyUM2CK9tHloZ91xfeRWTVLxhetldc",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-31T16:27:35.894545+00:00",
+    "updated_at": "2026-03-31T16:27:35.894545+00:00"
+  },
+  {
+    "id": "30a57f6a-f642-45ba-86f8-3263e22798b9",
+    "seller_id": "ee7f5d2a-6687-4e34-ad14-fb6d0324c0d4",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1eEzWh0eg0q1V3C_MK1jOk66ZpM5tZYsfiLs5RSzI9-g/edit?gid=0#gid=0",
+    "sheet_id": "1eEzWh0eg0q1V3C_MK1jOk66ZpM5tZYsfiLs5RSzI9-g",
+    "sheet_name": "BDD",
+    "display_name": "BASE DE DATOS",
+    "created_at": "2026-03-31T16:33:00.610117+00:00",
+    "updated_at": "2026-03-31T16:33:00.610117+00:00"
+  },
+  {
+    "id": "b0f4399c-7f8d-4c34-a72b-0c54f2b1ea75",
+    "seller_id": "75e71cde-31b9-4322-a45c-47f228c5ea8f",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1VJO_jUEMXml1Fjrse4e0H9ZY5M1hKCQDGLIeZ3oeejM/edit?usp=drivesdk",
+    "sheet_id": "1VJO_jUEMXml1Fjrse4e0H9ZY5M1hKCQDGLIeZ3oeejM",
+    "sheet_name": "BDD",
+    "display_name": "Base De Datos 2026",
+    "created_at": "2026-03-31T20:15:17.636021+00:00",
+    "updated_at": "2026-03-31T20:15:17.636021+00:00"
+  },
+  {
+    "id": "144e5046-5199-4585-89e6-af73869b294f",
+    "seller_id": "38656da7-3dad-49b0-af98-07413a4b2945",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1ezxi9wrwmUkr7vwunGoRQq5kzO7d_9KJfFaUxOzmTPI/edit?usp=drivesdk",
+    "sheet_id": "1ezxi9wrwmUkr7vwunGoRQq5kzO7d_9KJfFaUxOzmTPI",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:15:44.764025+00:00",
+    "updated_at": "2026-03-31T20:15:44.764025+00:00"
+  },
+  {
+    "id": "600b293d-0b0b-4073-bbeb-821ffeef31e1",
+    "seller_id": "495192b0-3dda-4d75-88d6-916a27c2738e",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1mQzhDSJC6dEdxgRB4k8bvzWmU8H3pP5zGAXrfTXJHOY/edit?usp=drivesdk",
+    "sheet_id": "1mQzhDSJC6dEdxgRB4k8bvzWmU8H3pP5zGAXrfTXJHOY",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:16:01.807587+00:00",
+    "updated_at": "2026-03-31T20:16:01.807587+00:00"
+  },
+  {
+    "id": "c25240ac-203b-40fc-acd2-b4db35d88021",
+    "seller_id": "1c414b33-200d-4806-b0be-92899c2b4d89",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1rtYN-8CkZvH1gLZZ0jMhmPSPgPjTE0FnbnREZv3GFOk/edit?usp=drivesdk",
+    "sheet_id": "1rtYN-8CkZvH1gLZZ0jMhmPSPgPjTE0FnbnREZv3GFOk",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:16:21.673448+00:00",
+    "updated_at": "2026-03-31T20:16:21.673448+00:00"
+  },
+  {
+    "id": "a703603c-0b8e-46fa-a030-549e756e4acc",
+    "seller_id": "30292fd5-9494-4d4f-a1f4-deb329e531a6",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1pethehwRnvKer2Bcb3HJE8xlpunoRtZfZJs3gYcxMVQ/edit?usp=drivesdk",
+    "sheet_id": "1pethehwRnvKer2Bcb3HJE8xlpunoRtZfZJs3gYcxMVQ",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:18:28.387458+00:00",
+    "updated_at": "2026-03-31T20:18:28.387458+00:00"
+  },
+  {
+    "id": "f84f03d8-2dc6-4930-98f5-93588c43dbf5",
+    "seller_id": "dbb0706c-eae8-4246-a69e-8ffed8b2322d",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1ZbCsmY_HzRceC0nXxr6Exlkv7JCzQMV6ywaU1l7nBNc/edit?usp=drivesdk",
+    "sheet_id": "1ZbCsmY_HzRceC0nXxr6Exlkv7JCzQMV6ywaU1l7nBNc",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:18:58.274243+00:00",
+    "updated_at": "2026-03-31T20:18:58.274243+00:00"
+  },
+  {
+    "id": "3ee30a03-745a-4a77-b69d-5cb3f3e645e4",
+    "seller_id": "b96d7568-eb56-4688-8c49-1107906d6bf1",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Pkk5YoEVooDxOGmvy1dubXiWxD8lPqkwOjKss3gc8J4/edit?usp=drivesdk",
+    "sheet_id": "1Pkk5YoEVooDxOGmvy1dubXiWxD8lPqkwOjKss3gc8J4",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:21:21.316061+00:00",
+    "updated_at": "2026-03-31T20:21:21.316061+00:00"
+  },
+  {
+    "id": "9791d4a2-aac3-4930-b52e-cf395de2ea68",
+    "seller_id": "5aebc814-f760-4177-a302-71a0084ecda8",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1igtzfm2jIJTwyoOmo9AmzdSMu-5U2Yoq5l0A-tA-pIw/edit?usp=drivesdk",
+    "sheet_id": "1igtzfm2jIJTwyoOmo9AmzdSMu-5U2Yoq5l0A-tA-pIw",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:21:37.519549+00:00",
+    "updated_at": "2026-03-31T20:21:37.519549+00:00"
+  },
+  {
+    "id": "584a083b-51ba-4934-a133-eb084e9e310b",
+    "seller_id": "e84d65f5-5112-4f98-bb45-4dc34627c623",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Fo8BMTTkI5yWJDS8BN3N2eK_D4GJB05EqjXXw8rF48s/edit?usp=drivesdk",
+    "sheet_id": "1Fo8BMTTkI5yWJDS8BN3N2eK_D4GJB05EqjXXw8rF48s",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:21:53.238414+00:00",
+    "updated_at": "2026-03-31T20:21:53.238414+00:00"
+  },
+  {
+    "id": "917789b3-490f-437e-9418-ad3e263384d0",
+    "seller_id": "94381116-50df-42d2-866c-a33f950a6df4",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1MLMvDefjI8doUCDxa0sR6Ylnvb5bXN2TqzxXJMJaUk0/edit?usp=drivesdk",
+    "sheet_id": "1MLMvDefjI8doUCDxa0sR6Ylnvb5bXN2TqzxXJMJaUk0",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:22:14.340291+00:00",
+    "updated_at": "2026-03-31T20:22:14.340291+00:00"
+  },
+  {
+    "id": "3b618446-9a7d-4cf2-9eb3-6f4b728f2099",
+    "seller_id": "7253eaaf-b236-4439-b4cd-11667d58e50d",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1_5rC2UPZGVFleqggLLDLXh7F6ZkNySwC3EIlgahkjb8/edit?usp=drivesdk",
+    "sheet_id": "1_5rC2UPZGVFleqggLLDLXh7F6ZkNySwC3EIlgahkjb8",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:25:55.550143+00:00",
+    "updated_at": "2026-03-31T20:25:55.550143+00:00"
+  },
+  {
+    "id": "a4fc58f5-6d07-42dc-a3ef-69b908697219",
+    "seller_id": "1ae657eb-ab08-4f89-acd4-3abf8d09ad32",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1wXzGVQ28Jx4vUp-q9PvmzGRDefjXrpUlRFRDU9BoPck/edit?usp=drivesdk",
+    "sheet_id": "1wXzGVQ28Jx4vUp-q9PvmzGRDefjXrpUlRFRDU9BoPck",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:26:11.047923+00:00",
+    "updated_at": "2026-03-31T20:26:11.047923+00:00"
+  },
+  {
+    "id": "c3e4b3b2-d2a1-42f9-b868-81de0544e155",
+    "seller_id": "d3e64fa5-ba35-4856-86a3-85ea2f9ecbec",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1kXXfN13WA0cj7G7A_QzjW8BjU2S3fa4ScpZd06FgcpY/edit?usp=drivesdk",
+    "sheet_id": "1kXXfN13WA0cj7G7A_QzjW8BjU2S3fa4ScpZd06FgcpY",
+    "sheet_name": "BDD",
+    "display_name": "Base de dato 2026",
+    "created_at": "2026-03-31T20:26:26.771418+00:00",
+    "updated_at": "2026-03-31T20:26:26.771418+00:00"
+  },
+  {
+    "id": "6f0a0281-03bb-4668-a9c9-b402c6b0a055",
+    "seller_id": "1a46b1ad-aca0-457e-8830-80e447687dd0",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1_Xz3KvU6qZHnhfMwHxizZb4s_LUUArAXUZaz_CalELU/edit?usp=drivesdk",
+    "sheet_id": "1_Xz3KvU6qZHnhfMwHxizZb4s_LUUArAXUZaz_CalELU",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:26:44.854579+00:00",
+    "updated_at": "2026-03-31T20:26:44.854579+00:00"
+  },
+  {
+    "id": "43b098ee-f3c3-4917-a98e-5fbcd4a881c4",
+    "seller_id": "a379eeba-ecd3-4c3b-8cbc-f93ef76fccfb",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/19ocFtsLdG-dV_kyqo327vG_mhHOMcn0M8YRI_coCx9g/edit?usp=drivesdk",
+    "sheet_id": "19ocFtsLdG-dV_kyqo327vG_mhHOMcn0M8YRI_coCx9g",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:27:03.050193+00:00",
+    "updated_at": "2026-03-31T20:27:03.050193+00:00"
+  },
+  {
+    "id": "72769545-88a8-445f-8cab-15ef99f1e4a9",
+    "seller_id": "4ebdfdcb-d1a1-4862-be7e-8f2813d9227a",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1fA76dF4hEicdjlWji37RMle0lfwVDPzwvhfXJw0taBk/edit?usp=drivesdk",
+    "sheet_id": "1fA76dF4hEicdjlWji37RMle0lfwVDPzwvhfXJw0taBk",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:29:48.828213+00:00",
+    "updated_at": "2026-03-31T20:29:48.828213+00:00"
+  },
+  {
+    "id": "ea1d5047-f821-4f4e-afaa-c46fa606c674",
+    "seller_id": "4f104bc7-097d-4130-bc73-09ab1d161854",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1CCYZFzOfbFPHcxxXgn-XyHAwezmQoYw3Q_Hxym_Ma2k/edit?usp=drivesdk",
+    "sheet_id": "1CCYZFzOfbFPHcxxXgn-XyHAwezmQoYw3Q_Hxym_Ma2k",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:30:04.016937+00:00",
+    "updated_at": "2026-03-31T20:30:04.016937+00:00"
+  },
+  {
+    "id": "dec013d8-e963-49c0-a34e-562bf34ba708",
+    "seller_id": "749aaca6-37a7-4841-a289-37dcf07a5ce9",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1tGcBEpKqrrcaSyajejMO4iJf32-kROp64fjiDzUtDHo/edit?usp=drivesdk",
+    "sheet_id": "1tGcBEpKqrrcaSyajejMO4iJf32-kROp64fjiDzUtDHo",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:30:26.514958+00:00",
+    "updated_at": "2026-03-31T20:30:26.514958+00:00"
+  },
+  {
+    "id": "10193c2c-f9c6-4948-95ce-e2450820dafd",
+    "seller_id": "e9f68f83-0145-4744-b4cc-cc5090e17e7f",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1gmksa8MPeJFsjOgjF3dTWKqqAhEzsoxApV9DdPZaX2Q/edit?usp=drivesdk",
+    "sheet_id": "1gmksa8MPeJFsjOgjF3dTWKqqAhEzsoxApV9DdPZaX2Q",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T20:30:55.688982+00:00",
+    "updated_at": "2026-03-31T20:30:55.688982+00:00"
+  },
+  {
+    "id": "9fd80566-471c-4ed0-98da-9e97d92b6bca",
+    "seller_id": "6612f2cf-49e8-40ca-929c-9401d6d80943",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1LsvGCNzsT9k-uZMGpyXlz3mOi8urq1Q78oe17LXYBfw/edit?usp=drivesdk",
+    "sheet_id": "1LsvGCNzsT9k-uZMGpyXlz3mOi8urq1Q78oe17LXYBfw",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T21:33:49.705971+00:00",
+    "updated_at": "2026-03-31T21:33:49.705971+00:00"
+  },
+  {
+    "id": "f8a9f214-1287-4593-bc7c-45819fbc6f23",
+    "seller_id": "77274673-d256-4fef-8bfc-0c174887881e",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1mseSOQTrUksSRghw6mnwv8cvwa-XQQ7V-W56fcjVz0w/edit?usp=drivesdk",
+    "sheet_id": "1mseSOQTrUksSRghw6mnwv8cvwa-XQQ7V-W56fcjVz0w",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T21:34:19.536883+00:00",
+    "updated_at": "2026-03-31T21:34:19.536883+00:00"
+  },
+  {
+    "id": "460024dc-1b7d-4fd1-9c4a-7213b5108ed4",
+    "seller_id": "5be183d0-34c6-4abd-aca8-b6afb5c56ddf",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1BFczDuZjP-XMtzJ4OgCzBvJC4TSDVCYb3jp9ry67Pwk/edit?usp=drivesdk",
+    "sheet_id": "1BFczDuZjP-XMtzJ4OgCzBvJC4TSDVCYb3jp9ry67Pwk",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T21:34:44.784552+00:00",
+    "updated_at": "2026-03-31T21:34:44.784552+00:00"
+  },
+  {
+    "id": "b4a550bc-2f0d-4a30-a7b6-e5f282ddaf32",
+    "seller_id": "f8fe40fc-28c8-4bc3-b54c-aac8fe6e822e",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/166jbiYvTpXI5QyjsmK047-yQ6BXjGk0_2Ee0NLwQM34/edit?usp=drivesdk",
+    "sheet_id": "166jbiYvTpXI5QyjsmK047-yQ6BXjGk0_2Ee0NLwQM34",
+    "sheet_name": "BDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T21:35:11.071901+00:00",
+    "updated_at": "2026-03-31T21:35:11.071901+00:00"
+  },
+  {
+    "id": "e07b0794-ada2-46bd-a76f-e81c7d57efa0",
+    "seller_id": "cc84a682-a94e-4dfc-b867-c4261d769b1f",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1YU4LeyxmfiZPb5nkjWqyUAn8SVlBM__Oa2_wmlREAZk/edit?usp=drivesdk",
+    "sheet_id": "1YU4LeyxmfiZPb5nkjWqyUAn8SVlBM__Oa2_wmlREAZk",
+    "sheet_name": "BDDD",
+    "display_name": "Base de datos 2026",
+    "created_at": "2026-03-31T21:35:31.998986+00:00",
+    "updated_at": "2026-03-31T21:35:31.998986+00:00"
+  },
+  {
+    "id": "ee846833-c02a-431a-a8ea-bd21bc3857d5",
+    "seller_id": "99daccfb-3211-42cd-9aed-5ac0cb0227ea",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1QzGaPK9U1BdIlbnDAAEHqR4Q05uFYkhatecb7SMSk7k/edit?gid=0#gid=0",
+    "sheet_id": "1QzGaPK9U1BdIlbnDAAEHqR4Q05uFYkhatecb7SMSk7k",
+    "sheet_name": "BDD",
+    "display_name": "GRECIA",
+    "created_at": "2026-04-01T02:15:11.81841+00:00",
+    "updated_at": "2026-04-01T02:15:11.81841+00:00"
+  },
+  {
+    "id": "c6e9e0a1-9528-4903-89f7-a63740c56b22",
+    "seller_id": "7f060d30-d634-4e71-83d0-daefbc081f50",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1Ot5aV3w-WHck7R6zI-UU3Bs7hT3f4AyZKELmbJY7Nno/edit?gid=0#gid=0",
+    "sheet_id": "1Ot5aV3w-WHck7R6zI-UU3Bs7hT3f4AyZKELmbJY7Nno",
+    "sheet_name": "BDD",
+    "display_name": "MARYELIS",
+    "created_at": "2026-04-01T02:20:43.406536+00:00",
+    "updated_at": "2026-04-01T02:20:43.406536+00:00"
+  },
+  {
+    "id": "0bb430a2-2316-4e9d-94ae-3079bfd317a7",
+    "seller_id": "2a5c2f46-b180-4bd8-9bb1-a26718b874ac",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1xzHEshQKFsUSLuEbQOeBG55p7Eh6kddpsY3zAnbLIOI/edit?gid=0#gid=0",
+    "sheet_id": "1xzHEshQKFsUSLuEbQOeBG55p7Eh6kddpsY3zAnbLIOI",
+    "sheet_name": "BDD",
+    "display_name": "GENESISI FREELANCE",
+    "created_at": "2026-04-01T17:26:50.40169+00:00",
+    "updated_at": "2026-04-01T17:26:50.40169+00:00"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "e9f68f83-0145-4744-b4cc-cc5090e17e7f",
+    "first_name": "Oriana",
+    "last_name": "Briceño",
+    "email": "",
+    "phone": "",
+    "created_by": "6b6847dc-a385-40d5-b3e1-11049258788f",
+    "created_at": "2026-03-30T17:27:18.765161+00:00",
+    "updated_at": "2026-03-30T17:27:18.765161+00:00"
+  },
+  {
+    "id": "6612f2cf-49e8-40ca-929c-9401d6d80943",
+    "first_name": "Genesis",
+    "last_name": "Briceño",
+    "email": "",
+    "phone": "",
+    "created_by": "0044adbd-6ce6-483a-ae33-ac0547154664",
+    "created_at": "2026-03-31T21:12:16.007183+00:00",
+    "updated_at": "2026-03-31T21:12:16.007183+00:00"
+  },
+  {
+    "id": "77274673-d256-4fef-8bfc-0c174887881e",
+    "first_name": "Edgar ",
+    "last_name": "Briceño",
+    "email": "",
+    "phone": "",
+    "created_by": "0044adbd-6ce6-483a-ae33-ac0547154664",
+    "created_at": "2026-03-31T21:13:29.387065+00:00",
+    "updated_at": "2026-03-31T21:13:29.387065+00:00"
+  }
+]

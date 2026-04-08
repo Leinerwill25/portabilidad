@@ -1,0 +1,24 @@
+Results for ABRIL:
+Seller: KEVIN  SALAZAR | Sales: 1 | GID: 0
+Seller: Stefani Orellano | Sales: 1 | GID: 0
+Seller: Beatriz Reyes | Sales: 5 | GID: 0
+Seller: Daniel Suarez | Sales: 4 | GID: 0
+Seller: Daniela Buelvas | Sales: 6 | GID: 0
+Seller: Barbara Gomez | Sales: 5 | GID: 0
+Seller: Jerry Andia | Sales: 1 | GID: 0
+Seller: Maria Cubero | Sales: 5 | GID: 0
+Seller: Fabiana Rodriguez | Sales: 3 | GID: 0
+Seller: Sahomy Mendez | Sales: 5 | GID: 0
+Seller: Nellys Vallejo | Sales: 7 | GID: 0
+Seller: Emerson  Del Toro | Sales: 6 | GID: 0
+Seller: JOHANMELIS ARAY | Sales: 3 | GID: 0
+Seller: Fabián González | Sales: 4 | GID: 0
+Seller: Leidis Albornoz | Sales: 4 | GID: 0
+Seller: Yolman Charama | Sales: 4 | GID: 0
+Seller: Victor  Salas | Sales: 10 | GID: 0
+Seller: Yoiner Fernandez | Sales: 12 | GID: 0
+Seller: Gemberlis Rivas | Sales: 4 | GID: 0
+Seller: Oriana Briceño | Sales: 14 | GID: 0
+Seller: Daniel Mejias | Sales: 1 | GID: 0
+Seller: GRECIA EJECUTIVA | Sales: 1 | GID: 0
+Seller: HOWARD AVENDAÑO | Sales: 1 | GID: 0
