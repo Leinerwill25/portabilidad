@@ -18,6 +18,10 @@ interface DayStat {
   ventas: number
   fvc: number
   van: number
+  no_enrolado: number
+  aa: number
+  promesa: number
+  sin_status: number
   pct?: string
   pctRaw?: number
 }
@@ -176,7 +180,9 @@ export async function GET(request: NextRequest) {
     }
     DAYS_ES.forEach(day => {
       const normalizedDay = normalizeDay(day)
-      supervisorDailyMap[a.supervisor_id].days[normalizedDay] = { ventas: 0, fvc: 0, van: 0 }
+      supervisorDailyMap[a.supervisor_id].days[normalizedDay] = { 
+        ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0 
+      }
     })
   })
 
@@ -211,6 +217,7 @@ export async function GET(request: NextRequest) {
       const fvcCol = headers.find(h => h.trim().toUpperCase() === 'FVC')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
+      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
 
       const supId = sellerToSupervisor[sheet.seller_id]
       const supervisorStats = supervisorDailyMap[supId]
@@ -218,7 +225,11 @@ export async function GET(request: NextRequest) {
 
       rows.forEach(row => {
         const dn = row[dnCol || 'DN']?.trim()
-        if (!dn) return
+        
+        // Robustness: If DN column exists, we require a value. 
+        // If DN column is missing, count if MES or SEMANA is present (indicating a data row).
+        if (dnCol && !dn) return
+        if (!dnCol && !row[mesCol || 'MES'] && !row[semanaCol || 'SEMANA']) return
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '')
@@ -247,16 +258,30 @@ export async function GET(request: NextRequest) {
         // 2 & 3. Contar FVC y Altas usando SEMANA FVC
         if (rowWeekFvcNum === activeWeekStr) {
           if (rowDiaFvc && supervisorStats.days[rowDiaFvc]) {
-            if (row[fvcCol || 'FVC']) {
+            const fvcRaw = row[fvcCol || 'FVC']?.trim().toUpperCase()
+            const estatusRaw = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+            const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatusRaw === 'RECHAZO')
+
+            if (isValidFvc) {
               supervisorStats.days[rowDiaFvc].fvc++
-            }
-            
-            const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-            if (estatusVal === 'ALTA') {
-              supervisorStats.days[rowDiaFvc].van++
+              
+              const estatusVal = estatusRaw
+              if (estatusVal === 'ALTA') {
+                supervisorStats.days[rowDiaFvc].van++
+              } else if (estatusVal === 'NO ENROLADO') {
+                supervisorStats.days[rowDiaFvc].no_enrolado++
+              } else if (estatusVal === 'AA') {
+                supervisorStats.days[rowDiaFvc].aa++
+              } else if (estatusVal === 'PROMESA DE VISITA' || estatusVal === 'PROMESA') {
+                supervisorStats.days[rowDiaFvc].promesa++
+              } else if (estatusVal === 'SIN STATUS') {
+                supervisorStats.days[rowDiaFvc].sin_status++
+              }
             }
           }
         }
+
+
       })
     }
   }))
@@ -279,8 +304,16 @@ export async function GET(request: NextRequest) {
     const ventas = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.ventas || 0), 0)
     const fvc = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.fvc || 0), 0)
     const van = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.van || 0), 0)
+    const no_enrolado = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.no_enrolado || 0), 0)
+    const aa = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.aa || 0), 0)
+    const promesa = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.promesa || 0), 0)
+    const sin_status = supervisorList.reduce((acc, curr) => acc + (curr.days[normalizedDay]?.sin_status || 0), 0)
+
     const pct = fvc > 0 ? Math.round((van / fvc) * 100) : 0
-    dailyTotals[normalizedDay] = { ventas, fvc, van, pct: `${pct}%`, pctRaw: pct }
+    dailyTotals[normalizedDay] = { 
+      ventas, fvc, van, no_enrolado, aa, promesa, sin_status,
+      pct: `${pct}%`, pctRaw: pct 
+    }
   })
 
   return NextResponse.json({

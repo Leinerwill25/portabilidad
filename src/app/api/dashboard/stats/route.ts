@@ -160,10 +160,17 @@ export async function GET(request: NextRequest) {
         }
 
         if (matchFvc) {
-          if (row[fvcCol || 'FVC']) stats.fvc++
-          const estatus = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-          if (estatus === 'ALTA') stats.altas++
+          const fvcRaw = row[fvcCol || 'FVC']?.trim().toUpperCase()
+          const estatusRaw = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+          const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatusRaw === 'RECHAZO')
+
+          if (isValidFvc) {
+            stats.fvc++
+            if (estatusRaw === 'ALTA') stats.altas++
+          }
         }
+
+
       })
     }
   }))

@@ -123,13 +123,18 @@ export async function GET(request: NextRequest) {
       const vanCol = headers.find(h => h.trim().toUpperCase() === 'VAN')
       const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
+      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
 
       const sellerStats = sellerDailyMap[sheet.seller_id]
       if (!sellerStats) return
 
       rows.forEach(row => {
         const dn = row[dnCol || 'DN']?.trim()
-        if (!dn) return
+        
+        // Robustness: If DN column exists, we require a value. 
+        // If DN column is missing, count if MES or SEMANA is present (indicating a data row).
+        if (dnCol && !dn) return
+        if (!dnCol && !row[mesCol || 'MES'] && !row[semanaCol || 'SEMANA']) return
 
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
         const rowWeekNum = rawWeek?.replace(/\D/g, '') // "13"
@@ -162,29 +167,30 @@ export async function GET(request: NextRequest) {
         }
 
         if (rowWeekFvcNum === activeWeekStr) {
-          // 2. Contar FVC (Hacia el día de entrega/FVC) usando SEMANA FVC
+          // 2. Contar FVC y Altas (Hacia el día de entrega/FVC) usando SEMANA FVC
           if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
-            if (row[fvcCol || 'FVC']) {
-              sellerStats.days[rowDiaFvc].fvc++
-            }
-          }
+            const fvcRaw = row[fvcCol || 'FVC']?.trim().toUpperCase()
+            const estatusRaw = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
+            const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatusRaw === 'RECHAZO')
 
-          // 3. Contar Altas y otros Estatus (Hacia el día de entrega/FVC) usando SEMANA FVC
-          if (rowDiaFvc && sellerStats.days[rowDiaFvc]) {
-            const estatusVal = row[estatusCol || 'ESTATUS']?.trim().toUpperCase()
-            if (estatusVal === 'ALTA') {
-              sellerStats.days[rowDiaFvc].van++
-            } else if (estatusVal === 'NO ENROLADO') {
-              sellerStats.days[rowDiaFvc].no_enrolado = (sellerStats.days[rowDiaFvc].no_enrolado || 0) + 1
-            } else if (estatusVal === 'AA') {
-              sellerStats.days[rowDiaFvc].aa = (sellerStats.days[rowDiaFvc].aa || 0) + 1
-            } else if (estatusVal === 'PROMESA DE VISITA') {
-              sellerStats.days[rowDiaFvc].promesa = (sellerStats.days[rowDiaFvc].promesa || 0) + 1
-            } else if (estatusVal === 'SIN STATUS') {
-              sellerStats.days[rowDiaFvc].sin_status = (sellerStats.days[rowDiaFvc].sin_status || 0) + 1
+            if (isValidFvc) {
+              sellerStats.days[rowDiaFvc].fvc++
+
+              if (estatusRaw === 'ALTA') {
+                sellerStats.days[rowDiaFvc].van++
+              } else if (estatusRaw === 'NO ENROLADO') {
+                sellerStats.days[rowDiaFvc].no_enrolado = (sellerStats.days[rowDiaFvc].no_enrolado || 0) + 1
+              } else if (estatusRaw === 'AA') {
+                sellerStats.days[rowDiaFvc].aa = (sellerStats.days[rowDiaFvc].aa || 0) + 1
+              } else if (estatusRaw === 'PROMESA DE VISITA') {
+                sellerStats.days[rowDiaFvc].promesa = (sellerStats.days[rowDiaFvc].promesa || 0) + 1
+              } else if (estatusRaw === 'SIN STATUS') {
+                sellerStats.days[rowDiaFvc].sin_status = (sellerStats.days[rowDiaFvc].sin_status || 0) + 1
+              }
             }
           }
         }
+
       })
     }
   }))

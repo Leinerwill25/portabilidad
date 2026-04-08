@@ -267,13 +267,18 @@ export async function GET(request: NextRequest) {
         }
 
         if (fMatch) {
-          if (fvcVal && fvcVal !== '') {
+          const fvcRaw = fvcVal?.trim().toUpperCase()
+          const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatusVal === 'RECHAZO')
+
+          if (isValidFvc) {
             rankEntry.fvc++
-          }
-          if (estatusVal === 'ALTA') {
-            rankEntry.altas++
+            if (estatusVal === 'ALTA') {
+              rankEntry.altas++
+            }
           }
         }
+
+
       })
     }
   }))

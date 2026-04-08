@@ -205,10 +205,11 @@ export async function GET(request: NextRequest) {
 
     if (fetched.success && fetched.rows.length > 0) {
       const headers = fetched.headers
-      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
-      const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
+      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
       const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
+      const diaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
       const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
@@ -220,7 +221,11 @@ export async function GET(request: NextRequest) {
 
       fetched.rows.forEach((row: RowData) => {
         const dn = row[dnCol || 'DN']?.trim()
-        if (!dn) return
+
+        // Robustness: If DN column exists, we require a value. 
+        // If DN column is missing, count if MES or SEMANA is present (indicating a data row).
+        if (dnCol && !dn) return
+        if (!dnCol && !row[mesCol || 'MES'] && !row[semanaCol || 'SEMANA']) return
 
         const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
         const rawWeek = row[semanaCol || 'SEMANA']?.trim()
@@ -240,46 +245,52 @@ export async function GET(request: NextRequest) {
 
         if (!match) return
 
+        const fvcRaw = row[headers.find(h => h.trim().toUpperCase() === 'FVC') || 'FVC']?.trim().toUpperCase()
         const estatus = (row[estatusCol || 'ESTATUS'] || '').trim().toUpperCase()
-        const targetStats = sellerEntry.stats
-        const targetTotals = hierarchyData[sid].totals
+        const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatus === 'RECHAZO')
 
-        // 1. Contar Toda Venta Valida
-        targetStats.ventas++
-        targetTotals.ventas++
+        if (isValidFvc) {
+          const targetStats = sellerEntry.stats
+          const targetTotals = hierarchyData[sid].totals
 
-        // 3. Contar Status específicos e incrementar Total solo para estos casos
-        if (estatus === 'AA') {
-          targetStats.activacion_no_alta++
-          targetTotals.activacion_no_alta++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'ALTA') {
-          targetStats.alta++
-          targetTotals.alta++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'NO ENROLADO') {
-          targetStats.alta_no_enrolada++
-          targetTotals.alta_no_enrolada++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'CHARGE BACK') {
-          targetStats.chargeback++
-          targetTotals.chargeback++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'SIN STATUS') {
-          targetStats.sin_status++
-          targetTotals.sin_status++
-          targetStats.total++
-          targetTotals.total++
-        } else if (estatus === 'PROMESA DE VISITA') {
-          targetStats.promesa++
-          targetTotals.promesa++
-          targetStats.total++
-          targetTotals.total++
+          // 1. Contar Toda Venta Valida (Entendido como FVC en este contexto)
+          targetStats.ventas++
+          targetTotals.ventas++
+
+          // 3. Contar Status específicos e incrementar Total solo para estos casos
+          if (estatus === 'AA') {
+            targetStats.activacion_no_alta++
+            targetTotals.activacion_no_alta++
+            targetStats.total++
+            targetTotals.total++
+          } else if (estatus === 'ALTA') {
+            targetStats.alta++
+            targetTotals.alta++
+            targetStats.total++
+            targetTotals.total++
+          } else if (estatus === 'NO ENROLADO') {
+            targetStats.alta_no_enrolada++
+            targetTotals.alta_no_enrolada++
+            targetStats.total++
+            targetTotals.total++
+          } else if (estatus === 'CHARGE BACK') {
+            targetStats.chargeback++
+            targetTotals.chargeback++
+            targetStats.total++
+            targetTotals.total++
+          } else if (estatus === 'SIN STATUS') {
+            targetStats.sin_status++
+            targetTotals.sin_status++
+            targetStats.total++
+            targetTotals.total++
+          } else if (estatus === 'PROMESA DE VISITA') {
+            targetStats.promesa++
+            targetTotals.promesa++
+            targetStats.total++
+            targetTotals.total++
+          }
         }
+
       })
     }
   }))
