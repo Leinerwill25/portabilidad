@@ -6,9 +6,10 @@ import {
   ChevronDown, 
   Users,
   LayoutGrid,
-  Info
+  Info,
+  Camera
 } from 'lucide-react'
-
+import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
 interface WeeklyData {
   week: string
@@ -28,9 +29,9 @@ interface WeeklyComparisonChartProps {
 }
 
 const METRICS = [
-  { id: 'ventas', label: 'Ventas', color: '#3b82f6', bg: 'bg-blue-500' },
-  { id: 'altas', label: 'Altas', color: '#10b981', bg: 'bg-emerald-500' },
-  { id: 'conversion', label: 'Conversión', color: '#f59e0b', bg: 'bg-amber-500' }
+  { id: 'ventas', label: 'Ventas', color: '#2563eb', bg: 'bg-blue-600', gradient: 'url(#grad-ventas)' },
+  { id: 'altas', label: 'Altas', color: '#059669', bg: 'bg-emerald-600', gradient: 'url(#grad-altas)' },
+  { id: 'conversion', label: 'Conversión', color: '#d97706', bg: 'bg-amber-600', gradient: 'url(#grad-conversion)' }
 ]
 
 export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparisonChartProps) {
@@ -41,30 +42,40 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
   const [loading, setLoading] = useState(true)
   const [showSellerList, setShowSellerList] = useState(false)
 
-  const fetchData = async () => {
+  const fetchData = async (signal?: AbortSignal) => {
     setLoading(true)
     try {
       const sellerIdParam = selectedSellers.includes('all') ? 'all' : selectedSellers.join(',')
       const url = `/api/admin/stats/weekly-comparison?supervisorId=${supervisorId || ''}&sellerId=${sellerIdParam}`
-      const response = await fetch(url)
+      const response = await fetch(url, { signal })
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`)
+      }
+
       const json = await response.json()
       if (json.weeks) {
         setData(json.weeks)
-        // Keep the list stable once loaded or when "all" is back
         if (vendedores.length === 0 || selectedSellers.includes('all')) {
           setVendedores(json.vendedores || [])
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') return
       console.error('Error fetching weekly comparison:', error)
     } finally {
-      setLoading(false)
+      if (!signal?.aborted) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    fetchData()
+    const controller = new AbortController()
+    fetchData(controller.signal)
+    return () => controller.abort()
   }, [selectedSellers, supervisorId])
+
 
   const toggleSeller = (id: string) => {
     if (id === 'all') {
@@ -81,10 +92,21 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
     }
   }
 
-  const maxVal = Math.max(...data.map(d => Math.max(d.ventas, d.altas, d.conversion, 1)))
+  // Safe maxVal calculation
+  const maxVal = data.length > 0 
+    ? Math.max(...data.map(d => Math.max(d.ventas, d.altas, d.conversion, 1)))
+    : 1
+
+  // Smooth Silk Path
+  const getSilkPath = (pts: {x: number, y: number}[]) => {
+    if (pts.length < 2) return ''
+    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`
+    const [p0, p1, p2] = pts
+    return `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`
+  }
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div id="weekly-chart" className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header & Filters */}
       <div className="flex flex-col lg:flex-row justify-between gap-6 pb-2">
         <div className="space-y-1">
@@ -92,7 +114,7 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
             <LayoutGrid size={16} className="text-blue-500" />
             <span className="text-[10px] font-black uppercase tracking-widest">Rendimiento Temporal</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Comparativo Por Semana</h2>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Comparativo Semanal</h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
@@ -118,9 +140,7 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
             <AnimatePresence>
               {showSellerList && (
                 <>
-                  {/* Backdrop to close */}
                   <div className="fixed inset-0 z-[60]" onClick={() => setShowSellerList(false)} />
-                  
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 4, scale: 1 }}
@@ -128,7 +148,6 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
                     className="absolute top-full left-0 right-0 z-[70] bg-white border border-slate-200 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] rounded-2xl overflow-hidden p-2 min-w-[240px]"
                   >
                     <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-0.5">
-                      {/* All Team Option */}
                       <button
                         onClick={() => toggleSeller('all')}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${selectedSellers.includes('all') ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
@@ -141,7 +160,6 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
 
                       <div className="h-px bg-slate-100 my-1 mx-2" />
 
-                      {/* Individual Sellers */}
                       {vendedores.map(v => {
                         const isSelected = selectedSellers.includes(v.id) && !selectedSellers.includes('all')
                         return (
@@ -164,7 +182,6 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
             </AnimatePresence>
           </div>
 
-
           {/* Metric Selector */}
           <div className="flex flex-wrap items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-200 w-full lg:w-auto overflow-hidden">
             {METRICS.map(m => {
@@ -180,7 +197,7 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
                   {isActive && (
                     <motion.div
                       layoutId="active-metric"
-                      className={`absolute inset-0 ${m.bg} shadow-lg shadow-${m.id === 'ventas' ? 'blue' : m.id === 'altas' ? 'emerald' : 'amber'}-500/20 rounded-xl z-0`}
+                      className={`absolute inset-0 ${m.bg} shadow-lg shadow-black/5 rounded-xl z-0`}
                     />
                   )}
                   <span className="relative z-10">{m.label}</span>
@@ -188,6 +205,16 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
               )
             })}
           </div>
+
+          {/* Capture Button */}
+          <button
+            onClick={() => copyElementToClipboard('weekly-chart')}
+            className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-all border border-slate-200 group/btn"
+            title="Copiar captura de pantalla"
+          >
+            <Camera size={16} className="group-hover/btn:scale-110 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Captura</span>
+          </button>
         </div>
       </div>
 
@@ -196,10 +223,41 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
           <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
           <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Cargando datos...</span>
         </div>
+      ) : data.length === 0 ? (
+        <div className="h-[400px] flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 gap-4">
+          <div className="p-4 bg-white rounded-full shadow-sm">
+            <LayoutGrid size={32} className="text-slate-300" />
+          </div>
+          <div className="text-center">
+            <p className="text-slate-800 font-bold text-[14px]">Sin datos disponibles</p>
+            <p className="text-slate-500 text-[12px]">No se encontró actividad para el periodo o vendedores seleccionados</p>
+          </div>
+        </div>
       ) : (
-        <div className="relative h-[450px] w-full mt-4 group">
-          {/* Y-Axis Labels (Dynamic based on max value) */}
-          <div className="absolute -left-2 top-0 bottom-12 flex flex-col justify-between text-[10px] font-black text-slate-400 text-right pr-4 pointer-events-none">
+        <div className="relative h-[520px] w-full mt-4 group pt-16">
+          {/* Modern Satin Gradients */}
+          <svg className="absolute w-0 h-0 invisible">
+            <defs>
+              <linearGradient id="grad-ventas" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="45%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#1e40af" />
+              </linearGradient>
+              <linearGradient id="grad-altas" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#34d399" />
+                <stop offset="45%" stopColor="#10b981" />
+                <stop offset="100%" stopColor="#065f46" />
+              </linearGradient>
+              <linearGradient id="grad-conversion" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="45%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#92400e" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          {/* Y-Axis Labels */}
+          <div className="absolute -left-2 top-16 bottom-16 flex flex-col justify-between text-[10px] font-black text-slate-400 text-right pr-4 pointer-events-none">
             <span>{Math.round(maxVal)}</span>
             <span>{Math.round(maxVal * 0.75)}</span>
             <span>{Math.round(maxVal * 0.5)}</span>
@@ -208,118 +266,111 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
           </div>
 
           {/* Grid Lines */}
-          <div className="absolute left-10 right-0 top-0 bottom-12 flex flex-col justify-between pointer-events-none">
+          <div className="absolute left-10 right-0 top-16 bottom-16 flex flex-col justify-between pointer-events-none">
             {[0, 1, 2, 3, 4].map(i => (
-              <div key={i} className="w-full border-t border-slate-100 border-dashed" />
+              <div key={i} className="w-full border-t border-slate-100" />
             ))}
           </div>
+
           {/* The Chart Container */}
-          <div className="absolute left-10 right-4 top-0 bottom-12 flex justify-around items-end z-10">
+          <div className="absolute left-10 right-4 top-16 bottom-16 flex justify-around items-end z-10">
             {data.map((weekData, weekIdx) => {
-              const isSelectedMetricVentas = highlightMetric === 'ventas'
-              const isSelectedMetricAltas = highlightMetric === 'altas'
-              const isSelectedMetricConv = highlightMetric === 'conversion'
-
-              const hVentas = (weekData.ventas / maxVal) * 100
-              const hConv = (weekData.conversion / maxVal) * 100
-              const hAltas = (weekData.altas / maxVal) * 100
-
-              // Determine value to show fixed at the bottom
-              const activeValue = highlightMetric === 'ventas' ? weekData.ventas : highlightMetric === 'altas' ? weekData.altas : weekData.conversion
-              const activeLabel = highlightMetric === 'ventas' ? 'Ventas' : highlightMetric === 'altas' ? 'Altas' : 'Conv.'
-              const activeSuffix = highlightMetric === 'conversion' ? '%' : ''
-              const activeColor = highlightMetric === 'ventas' ? 'text-blue-500' : highlightMetric === 'altas' ? 'text-emerald-500' : 'text-amber-500'
+              const activeVal = weekData[highlightMetric as keyof WeeklyData] as number
+              const hPercentActive = (activeVal / maxVal) * 100
+              
+              const activeColorClass = highlightMetric === 'ventas' ? 'text-blue-600' : highlightMetric === 'altas' ? 'text-emerald-600' : 'text-amber-600'
               const activeBg = highlightMetric === 'ventas' ? 'bg-blue-50' : highlightMetric === 'altas' ? 'bg-emerald-50' : 'bg-amber-50'
               const activeBorder = highlightMetric === 'ventas' ? 'border-blue-100' : highlightMetric === 'altas' ? 'border-emerald-100' : 'border-amber-100'
+              const suffix = highlightMetric === 'conversion' ? '%' : ''
 
               return (
-                <div key={weekData.week} className="flex-1 flex flex-col items-center h-full relative z-20">
-                  {/* Fixed Tooltip at the Bottom (Requested) */}
-                  <div className="absolute -bottom-16 flex flex-col items-center z-50">
-                    <motion.div 
-                      key={highlightMetric}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`px-3 py-1.5 rounded-xl border ${activeBorder} ${activeBg} shadow-sm flex flex-col items-center min-w-[70px]`}
-                    >
-                      <span className={`text-[8px] font-black uppercase tracking-tighter ${activeColor} opacity-70`}>{activeLabel}</span>
-                      <span className={`text-[13px] font-black tracking-tight ${activeColor}`}>{activeValue}{activeSuffix}</span>
-                    </motion.div>
-                    
-                    <div className="mt-2 flex flex-col items-center">
-                      <span className="text-[11px] font-black text-slate-500 tracking-wider">SEMANA {weekData.week}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1" />
-                    </div>
+                <div key={weekData.week} className="flex-1 flex flex-col items-center h-full relative">
+                  
+                  {/* Floating Tooltip ABOVE active bar */}
+                  <motion.div 
+                    key={`${highlightMetric}-${weekIdx}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`absolute z-50 px-2 py-1.5 rounded-xl border ${activeBorder} ${activeBg} shadow-sm flex flex-col items-center min-w-[50px] shadow-lg shadow-black/5`}
+                    style={{ 
+                      bottom: `calc(${hPercentActive}% + 10px)`,
+                      left: '50%',
+                      transform: 'translateX(-50%)'
+                    }}
+                  >
+                    <span className={`text-[11px] font-black tracking-tighter ${activeColorClass}`}>{activeVal}{suffix}</span>
+                  </motion.div>
+
+                  {/* Architectural Pillars (Corporate Refined) */}
+                  <div className="flex items-end gap-1.5 sm:gap-2 h-full pb-1 relative z-20">
+                    {METRICS.map((m, mIdx) => {
+                      const val = weekData[m.id as keyof WeeklyData] as number
+                      const hPercent = (val / maxVal) * 100
+                      const isHighlighted = highlightMetric === m.id
+                      
+                      return (
+                        <motion.div
+                          key={m.id}
+                          initial={{ height: 0 }}
+                          animate={{ 
+                            height: `${hPercent}%`,
+                            opacity: isHighlighted ? 1 : 0.1,
+                            filter: isHighlighted ? 'none' : 'grayscale(100%)'
+                          }}
+                          transition={{ duration: 1, delay: weekIdx * 0.1 + mIdx * 0.1 }}
+                          className={`w-3 sm:w-6 lg:w-9 relative border-t-2 border-white/20`}
+                          style={{ 
+                            background: isHighlighted ? m.gradient : '#e2e8f0',
+                            borderRadius: '6px 6px 2px 2px',
+                            minHeight: val > 0 ? '4px' : '0'
+                          }}
+                        >
+                          {/* Inner Highlight for high-end look */}
+                          {isHighlighted && (
+                            <div className="absolute inset-x-0 top-0 h-[1.5px] bg-white/40 rounded-t-[6px]" />
+                          )}
+                        </motion.div>
+                      )
+                    })}
                   </div>
 
-                  {/* Bars Group - Ensured clear height and display */}
-                  <div className="flex items-end gap-1.5 sm:gap-2 h-full pb-1 relative z-20">
-                     {/* Ventas Bar */}
-                     <div className="flex flex-col items-center justify-end h-full relative">
-                       <motion.div 
-                         initial={{ height: 0 }}
-                         animate={{ height: `${hVentas}%` }}
-                         transition={{ duration: 1, delay: weekIdx * 0.1 }}
-                         style={{ minHeight: weekData.ventas > 0 ? '4px' : '0' }}
-                         className={`w-4 sm:w-10 rounded-t-sm bg-blue-600 transition-all duration-500 relative z-30 ${highlightMetric && !isSelectedMetricVentas ? 'opacity-20 grayscale' : 'opacity-100 shadow-md'}`}
-                       />
-                     </div>
-
-                     {/* Conversion Bar */}
-                     <div className="flex flex-col items-center justify-end h-full relative">
-                       <motion.div 
-                         initial={{ height: 0 }}
-                         animate={{ height: `${hConv}%` }}
-                         transition={{ duration: 1, delay: weekIdx * 0.15 }}
-                         style={{ minHeight: weekData.conversion > 0 ? '4px' : '0' }}
-                         className={`w-4 sm:w-10 rounded-t-sm bg-amber-500 transition-all duration-500 relative z-30 ${highlightMetric && !isSelectedMetricConv ? 'opacity-20 grayscale' : 'opacity-100 shadow-md'}`}
-                       />
-                     </div>
-
-                     {/* Altas Bar */}
-                     <div className="flex flex-col items-center justify-end h-full relative">
-                       <motion.div 
-                         initial={{ height: 0 }}
-                         animate={{ height: `${hAltas}%` }}
-                         transition={{ duration: 1, delay: weekIdx * 0.2 }}
-                         style={{ minHeight: weekData.altas > 0 ? '4px' : '0' }}
-                         className={`w-4 sm:w-10 rounded-t-sm bg-emerald-500 transition-all duration-500 relative z-30 ${highlightMetric && !isSelectedMetricAltas ? 'opacity-20 grayscale' : 'opacity-100 shadow-md'}`}
-                       />
-                     </div>
+                  {/* Week Label */}
+                  <div className="absolute -bottom-12 flex flex-col items-center">
+                    <span className="text-[10px] font-black text-slate-400 tracking-widest">SEM {weekData.week}</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200 mt-1" />
                   </div>
                 </div>
               )
             })}
 
-
-
-
-            {/* Trend Line Overlay - Moved back in z-axis slightly relative to tooltips but over bars */}
+            {/* Dark Blue Silk Trend Line */}
             <svg 
-              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-30" 
-
-              viewBox={`0 0 100 100`}
+              className="absolute inset-x-0 top-0 bottom-0 w-full h-full pointer-events-none overflow-visible z-30" 
+              viewBox="0 0 100 100"
               preserveAspectRatio="none"
-              style={{ paddingBottom: '3rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}
+              style={{ paddingBottom: '4rem', paddingTop: '4rem', paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
             >
               {data.length > 1 && (
                 <motion.path
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 1 }}
-                  key={highlightMetric + selectedSellers.join(',')}
-
+                  key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}`}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
-                  d={data.map((d, i) => {
-                    const metricVal = highlightMetric === 'ventas' ? d.ventas : highlightMetric === 'altas' ? d.altas : d.conversion
-                    const x = (i / (data.length - 1)) * 100
-                    const y = 100 - (metricVal / maxVal) * 100
-                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
-                  }).join(' ')}
+                  d={(() => {
+                    const pts = data.map((d, i) => {
+                      const metricVal = d[highlightMetric as keyof WeeklyData] as number
+                      return {
+                        x: (i / (data.length - 1)) * 100,
+                        y: 100 - (metricVal / maxVal) * 100
+                      }
+                    })
+                    return getSilkPath(pts)
+                  })()}
                   fill="none"
-                  stroke={METRICS.find(m => m.id === highlightMetric)?.color || '#3b82f6'}
-                  strokeWidth="3"
+                  stroke="#1e3a8a" // Deep Blue
+                  strokeWidth="1.2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
+                  className="opacity-50"
                 />
               )}
             </svg>
@@ -327,20 +378,22 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
         </div>
       )}
 
-      {/* Legend & Footer Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-slate-50 border border-slate-200 rounded-3xl p-6 gap-6">
-        <div className="flex flex-wrap items-center gap-6">
+      {/* Legend & Footer */}
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-slate-50/50 border border-slate-200/60 rounded-3xl p-6 gap-6 mt-4">
+        <div className="flex flex-wrap items-center gap-8">
           {METRICS.map(m => (
             <div key={m.id} className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 rounded-full ${m.bg} shadow-sm shadow-black/10`} />
-              <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">{m.label}</span>
+              <div className={`w-3.5 h-3.5 rounded-md ${m.bg} ${highlightMetric === m.id ? 'opacity-100 shadow-sm' : 'opacity-20 grayscale'}`} />
+              <span className={`text-[11px] font-black uppercase tracking-widest ${highlightMetric === m.id ? 'text-slate-800' : 'text-slate-400'}`}>
+                {m.label}
+              </span>
             </div>
           ))}
         </div>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
-          <Info size={14} />
-          <span className="text-[10px] font-black uppercase tracking-wider">Mostrando últimas 3 semanas con datos</span>
+        <div className="flex items-center gap-2 px-4 py-2 bg-white text-slate-400 rounded-xl border border-slate-100 shadow-sm">
+          <Info size={12} />
+          <span className="text-[9px] font-black uppercase tracking-wider">Reporte de métricas semanales agregadas</span>
         </div>
       </div>
     </div>
