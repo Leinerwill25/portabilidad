@@ -1,0 +1,22 @@
+Nombre del proyecto:
+Sistema Para Call Center - Portabilidad
+
+Descripción:
+Desarrollo de una plataforma integral de gestión de portabilidad numérica (DN) diseñada para optimizar la operación de call centers de alto volumen. El sistema centraliza y automatiza la recolección de datos de ventas distribuidos en múltiples fuentes, transformándolos en inteligencia de negocio accionable.
+
+Características Clave:
+- Arquitectura de Vanguardia: Desarrollado con Next.js 15 (App Router), React 19 y Supabase, logrando una interfaz ultra-rápida y reactiva.
+- Sincronización en Tiempo Real: Implementación de scrapers personalizados que extraen y procesan datos de Google Sheets en paralelo, eliminando la necesidad de entrada de datos manual y redundante.
+- Dashboard de Business Intelligence: Panel administrativo con visualizaciones dinámicas (Framer Motion) para el seguimiento de Ventas, FVC (Filtro de Venta Calificada), Altas y porcentajes de conversión.
+- Gestión Jerárquica y de Roles: Sistema robusto de permisos para Coordinadores, Supervisores y Vendedores, permitiendo una supervisión granular del rendimiento por equipo y "Site".
+- Auditoría y Seguridad: Módulo de auditoría de búsquedas de números (DN) con registro de actividad en tiempo real, asegurando la trazabilidad y el uso ético de la información.
+- Optimización Operativa: Filtros avanzados por mes, semana y vendedor que permiten identificar cuellos de botella en el proceso de enrolamiento y mejorar la eficacia comercial.
+
+Este proyecto transformó una operación basada en hojas de cálculo aisladas en un ecosistema digital unificado, mejorando la visibilidad gerencial y la velocidad de respuesta ante desviaciones en los objetivos de ventas.
+
+Aptitudes Sugeridas:
+1. Next.js
+2. React.js
+3. Supabase
+4. Business Intelligence (BI)
+5. Desarrollo Full-Stack
