@@ -122,9 +122,11 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
   // Smooth Silk Path
   const getSilkPath = (pts: {x: number, y: number}[]) => {
     if (pts.length < 2) return ''
-    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`
-    const [p0, p1, p2] = pts
-    return `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`
+    let d = `M ${pts[0].x} ${pts[0].y}`
+    for (let i = 1; i < pts.length; i++) {
+      d += ` L ${pts[i].x} ${pts[i].y}`
+    }
+    return d
   }
 
   return (
