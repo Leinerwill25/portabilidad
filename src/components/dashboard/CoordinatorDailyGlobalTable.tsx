@@ -10,7 +10,10 @@ import {
   ChevronDown,
   Users,
   UserCheck,
-  ChevronUp
+  ChevronUp,
+  Activity,
+  ArrowRightCircle,
+  Clock
 } from 'lucide-react'
 
 const DAYS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']
@@ -87,7 +90,6 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
   }, [weekFilter, activeDay, supervisorId])
 
   const fetchSellerDetails = useCallback(async (supId: string) => {
-    // If already expanded, collapse it
     if (expandedSupId === supId) {
       setExpandedSupId(null)
       return
@@ -116,10 +118,13 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
 
   if (loading && !data) {
     return (
-      <div className="bg-white border-2 border-slate-900 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 mb-12 shadow-xl animate-pulse">
-        <RotateCw className="text-slate-900 animate-spin" size={40} strokeWidth={3} />
-        <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.3em]">
-          {isRefreshing ? 'Sincronizando...' : 'Consolidando Reporte Global...'}
+      <div className="bg-white border border-slate-200 rounded-[2rem] p-24 flex flex-col items-center justify-center gap-6 mb-12 shadow-xl animate-pulse">
+        <div className="relative">
+          <RotateCw className="text-blue-600 animate-spin" size={48} strokeWidth={2.5} />
+          <div className="absolute inset-0 bg-blue-600/20 blur-xl animate-pulse rounded-full" />
+        </div>
+        <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] animate-bounce">
+           Consolidando Reporte Global...
         </p>
       </div>
     )
@@ -128,25 +133,28 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
   const selectedDayStats = data?.dailyTotals[activeDay] || { fvc: 0, van: 0, pct: '0%', pctRaw: 0 }
 
   return (
-    <div className="flex flex-col gap-8 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="flex flex-col gap-8 mb-20 animate-in fade-in slide-in-from-top-4 duration-700">
       
-      {/* 1. Global Legend / Guidance */}
-      <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm">
-        <div className="p-4 bg-white rounded-2xl shadow-sm border border-blue-200">
-           <LayoutDashboard className="text-blue-600" size={24} />
+      {/* 1. Header Legend */}
+      <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm">
+        <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
+           <LayoutDashboard className="text-slate-600" size={24} />
         </div>
         <div className="flex-1">
-           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Guía de Resumen Diario</h4>
-           <p className="text-[12px] text-slate-600 leading-relaxed max-w-3xl">
-              Vista unificada que compara las ventas ingresadas (**FVC**) contra las **Altas** efectivas procesadas en el día. 
-              Esta visualización permite un control de mermas en tiempo real por cada Site vinculado.
-              <strong> Beneficio:</strong> Te permite intervenir de inmediato en equipos con baja **Conversión** antes del cierre operativo.
+           <h4 className="text-[14px] font-black text-slate-900 uppercase tracking-tight mb-1">Centro de Control Operativo Diario</h4>
+           <p className="text-[12px] text-slate-500 leading-relaxed max-w-4xl">
+              Monitoreo unificado de **Ventas (FVC)** vs **Altas Efectivas**. Selecciona un día para visualizar el desempeño Site por Site.
+              <strong> Objetivo:</strong> Detectar y corregir mermas operativas en tiempo real.
            </p>
+        </div>
+        <div className="hidden xl:flex items-center gap-3 px-6 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <Clock size={16} className="text-blue-500" />
+            <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest leading-none">Actualizado: {new Date().toLocaleTimeString()}</span>
         </div>
       </div>
 
-      {/* 2. Global Daily Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* 2. Global Cards Container */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
         {DAYS.map((day) => {
           const dayTotal = data?.dailyTotals[day]
           const isSelected = activeDay === day
@@ -155,36 +163,35 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
             <button
               key={day}
               onClick={() => setActiveDay(day)}
-              className={`flex flex-col p-6 rounded-2xl border-2 transition-all text-left relative overflow-hidden group/card ${
+              className={`flex flex-col p-6 rounded-3xl border transition-all text-left relative overflow-hidden group/card ${
                 isSelected 
-                  ? 'bg-blue-600 border-blue-600 shadow-2xl scale-[1.05] z-10' 
-                  : 'bg-white border-slate-100 hover:border-blue-600 shadow-lg hover:shadow-2xl'
+                  ? 'bg-slate-900 border-slate-900 shadow-2xl scale-[1.02] z-10' 
+                  : 'bg-white border-slate-100 hover:border-blue-500 shadow-lg group-hover:shadow-xl'
               }`}
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                  <span className={`text-[10px] font-black uppercase tracking-widest ${
-                   isSelected ? 'text-white/70' : 'text-slate-400'
+                   isSelected ? 'text-blue-400' : 'text-slate-400'
                  }`}>
                    {day}
                  </span>
-                 {isSelected && <Globe size={12} className="text-white/40 animate-pulse" />}
               </div>
               
-              <div className="flex items-baseline gap-1.5">
-                <span className={`text-[26px] font-black tabular-nums tracking-tighter ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className={`text-[28px] font-black tabular-nums tracking-tighter ${isSelected ? 'text-white' : 'text-slate-900'}`}>
                    {dayTotal?.fvc || 0}
                 </span>
-                <span className={`text-[12px] font-bold ${isSelected ? 'text-white/40' : 'text-slate-400'}`}>
+                <span className={`text-[12px] font-bold ${isSelected ? 'text-slate-500' : 'text-slate-300'}`}>
                    / {dayTotal?.van || 0}
                 </span>
               </div>
 
-              <div className={`mt-4 inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black shadow-inner transition-colors ${
+              <div className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${
                 isSelected 
-                  ? 'bg-white/20 text-white' 
-                  : (dayTotal?.pctRaw || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                    (dayTotal?.pctRaw || 0) >= 50 ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                    'bg-rose-50 text-rose-600 border border-rose-100'
+                  ? 'bg-white/10 text-white' 
+                  : (dayTotal?.pctRaw || 0) >= 80 ? 'bg-emerald-50 text-emerald-600' :
+                    (dayTotal?.pctRaw || 0) >= 50 ? 'bg-amber-50 text-amber-600' :
+                    'bg-rose-50 text-rose-600'
               }`}>
                 {dayTotal?.pct || '0%'}
               </div>
@@ -193,260 +200,248 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
         })}
       </div>
 
-      {/* 3. Global Comparison Table + Drill-down */}
-      <div className="bg-white border-2 border-slate-900 rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] relative">
+      {/* 3. Main Data Table */}
+      <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-[0_25px_70px_-15px_rgba(0,0,0,0.1)] relative">
         
-        {/* Loading Overlay */}
-        {(loading || isRefreshing) && data && (
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-50 flex items-center justify-center">
-             <div className="bg-slate-900 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 scale-90">
-                <RotateCw className="text-white animate-spin" size={24} strokeWidth={3} />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">Sincronizando...</span>
-             </div>
-          </div>
-        )}
-
-        {/* Dynamic Header */}
-        <div className="bg-slate-900 py-8 px-10 flex flex-col xl:flex-row items-center justify-between gap-10">
+        {/* Dynamic Toolbar */}
+        <div className="bg-white py-10 px-12 flex flex-col xl:flex-row items-center justify-between gap-10 border-b border-slate-100">
           <div className="flex items-center gap-6 w-full xl:w-auto">
-             <div className="p-4 bg-blue-600 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                <LayoutDashboard size={28} className="text-white" strokeWidth={2.5} />
+             <div className="p-4 bg-slate-900 rounded-2xl shadow-xl">
+                <Globe size={28} className="text-white" strokeWidth={2.5} />
              </div>
              <div>
-                <h3 className="text-[18px] font-black text-white uppercase tracking-tight">Reporte Global Unificado</h3>
-                <div className="flex items-center gap-3 mt-1 underline decoration-blue-500/50 underline-offset-4">
-                   <Globe size={12} className="text-blue-400" />
-                   <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">Visualización 360 - {activeDay}</p>
+                <h3 className="text-[20px] font-black text-slate-900 uppercase tracking-tight">Reporte Global de Gestión</h3>
+                <div className="flex items-center gap-3 mt-1.5">
+                   <Activity size={12} className="text-blue-500 animate-pulse" />
+                   <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">
+                     Operativa Consolidada &bull; <span className="text-blue-600">{activeDay}</span>
+                   </p>
                 </div>
              </div>
           </div>
 
           <div className="flex items-center gap-8 w-full xl:w-auto">
-             <div className="flex flex-col gap-2 min-w-[180px]">
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1">Semana de Filtro</span>
+             <div className="flex flex-col gap-2 min-w-[200px]">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Semana de Filtro</span>
                 <div className="relative group">
                    <select 
                      value={weekFilter}
                      onChange={(e) => setWeekFilter(e.target.value)}
-                     className="w-full bg-slate-800 border-2 border-slate-700 text-white text-[13px] font-black rounded-xl px-4 py-3 pr-10 outline-none hover:border-blue-500 focus:border-blue-500 transition-all cursor-pointer shadow-xl appearance-none"
+                     className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-[13px] font-black rounded-2xl px-5 py-3.5 pr-10 appearance-none outline-none focus:border-blue-500 hover:bg-white transition-all cursor-pointer shadow-sm"
                    >
                      <option value="">Semana Actual</option>
                      {data?.availableWeeks.map(w => (
                        <option key={w} value={w}>Semana {w}</option>
                      ))}
                    </select>
-                   <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors pointer-events-none" />
+                   <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                 </div>
              </div>
 
              <button 
                 onClick={() => fetchGlobalStats(true)}
                 disabled={isRefreshing}
-                className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-xl active:scale-95 group disabled:opacity-50 mt-5 border border-blue-400/20"
+                className="mt-5 p-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 group disabled:opacity-50"
               >
-                <RotateCw size={18} strokeWidth={3} className={isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
+                <RotateCw size={20} className={isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
               </button>
           </div>
         </div>
 
-        {/* Data Grid */}
-        <div className="overflow-x-auto p-1 bg-slate-900 no-scrollbar">
-           <div className="bg-white rounded-t-[1.5rem] overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-black uppercase tracking-widest font-black text-[11px] border-b border-slate-100">
-                  <th className="px-10 py-6 text-[11px] font-black uppercase tracking-widest text-slate-500">Site / Supervisor</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">FVC</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Altas (VAN)</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">No Enrolado</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">AA</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500 text-blue-600">Sin Status</th>
-                <th className="px-6 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Promesa</th>
-                <th className="px-10 py-6 text-center text-[11px] font-black uppercase tracking-widest text-slate-500">Conv.</th>
+        {/* The Grid */}
+        <div className="overflow-x-auto p-4 md:p-8 no-scrollbar">
+          <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px] table-fixed">
+            <thead>
+              <tr className="bg-slate-50 text-slate-500 uppercase tracking-widest font-black text-[11px]">
+                <th className="px-10 py-6 rounded-l-2xl w-[300px]">Site / Supervisor</th>
+                <th className="px-6 py-6 text-center w-[120px]">FVC</th>
+                <th className="px-6 py-6 text-center w-[140px]">Altas (VAN)</th>
+                <th className="px-6 py-6 text-center w-[140px]">No Enrolado</th>
+                <th className="px-6 py-6 text-center w-[80px]">AA</th>
+                <th className="px-6 py-6 text-center w-[120px] text-blue-600">Sin Status</th>
+                <th className="px-6 py-6 text-center w-[120px]">Promesa</th>
+                <th className="px-10 py-6 text-center rounded-r-2xl w-[140px]">Conversión</th>
               </tr>
             </thead>
-              <tbody className="divide-y-2 divide-slate-50">
-                {!data || data.supervisors.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-10 py-24 text-center">
-                       <BarChart3 className="mx-auto text-slate-200 mb-4" size={48} />
-                       <p className="text-[14px] font-black text-slate-400 uppercase tracking-widest italic">Iniciando consulta global...</p>
-                    </td>
-                  </tr>
-                ) : (
-                  data.supervisors.map((supervisor, idx) => {
-                    const dayStat = supervisor.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
-                    const isExpanded = expandedSupId === supervisor.id
+            <tbody className="before:block before:h-4">
+              {data && data.supervisors.map((supervisor, idx) => {
+                const dayStat = supervisor.days[activeDay] || { fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
+                const isExpanded = expandedSupId === supervisor.id
 
-                    return (
-                      <React.Fragment key={supervisor.id || idx}>
-                        <tr 
-                          onClick={() => fetchSellerDetails(supervisor.id)}
-                          className={`cursor-pointer transition-all group ${isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/80'}`}
-                        >
-                          <td className="px-10 py-5 text-[14px] font-black text-slate-900 border-r-2 border-slate-50 uppercase tracking-tight flex items-center justify-between">
-                             <div className="flex items-center gap-4">
-                               <div className={`w-2.5 h-2.5 rounded-sm transition-colors ${isExpanded ? 'bg-blue-600' : 'bg-slate-900 group-hover:bg-blue-600'}`} />
-                               {supervisor.name}
-                             </div>
-                             {isExpanded ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-slate-300 group-hover:text-blue-600" />}
-                          </td>
-                          <td className="px-6 py-5 text-[16px] text-center font-black text-slate-600 border-r-2 border-slate-50 tabular-nums">
-                            <div className="text-[16px] font-black text-slate-900 tabular-nums">{dayStat.fvc}</div>
-                          </td>
-                          <td className="px-6 py-8 text-center">
-                            <div className="text-[16px] font-black text-slate-400 tabular-nums">{dayStat.van}</div>
-                          </td>
-                          <td className="px-6 py-8 text-center">
-                            <div className="text-[16px] font-black text-slate-700 tabular-nums">{dayStat.no_enrolado ?? 0}</div>
-                          </td>
-                          <td className="px-6 py-8 text-center">
-                            <div className="text-[16px] font-black text-rose-700 tabular-nums font-mono">{dayStat.aa ?? 0}</div>
-                          </td>
-                          <td className="px-6 py-8 text-center bg-blue-50/50">
-                            <div className="text-[16px] font-black text-slate-900 tabular-nums">{dayStat.sin_status ?? 0}</div>
-                          </td>
-                          <td className="px-6 py-8 text-center">
-                            <div className="text-[16px] font-black text-amber-700 tabular-nums">{dayStat.promesa ?? 0}</div>
-                          </td>
-                          <td className="px-10 py-8 text-center">
-                            <div className={`inline-block px-4 py-1.5 rounded-xl text-[14px] font-black shadow-sm group-hover:scale-110 transition-all ${
-                              dayStat.pctRaw >= 80 ? 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100' :
-                              dayStat.pctRaw >= 50 ? 'bg-amber-50 text-amber-700 group-hover:bg-amber-100' :
-                              'bg-rose-50 text-rose-700 group-hover:bg-rose-100'
-                            }`}>
-                              {dayStat.pct}
+                return (
+                  <React.Fragment key={supervisor.id || idx}>
+                    <tr 
+                      onClick={() => fetchSellerDetails(supervisor.id)}
+                      className={`cursor-pointer transition-all border-b border-slate-50 group ${isExpanded ? 'bg-blue-50/20' : 'hover:bg-slate-50/50'}`}
+                    >
+                      <td className="px-10 py-7 border-b border-slate-50 flex items-center justify-between">
+                         <div className="flex items-center gap-5">
+                            <div className={`w-3 h-3 rounded-full shadow-sm transition-all ${isExpanded ? 'bg-blue-600 scale-125' : 'bg-slate-200 group-hover:bg-slate-400'}`} />
+                            <span className="text-[15px] font-black text-slate-900 tracking-tight">{supervisor.name}</span>
+                         </div>
+                         {isExpanded ? <ChevronUp size={18} className="text-blue-600" /> : <ChevronDown size={18} className="text-slate-300 group-hover:text-blue-600" />}
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums">
+                        <span className="text-[16px] font-black text-slate-900">{dayStat.fvc}</span>
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums">
+                        <span className="text-[16px] font-black text-slate-400">{dayStat.van}</span>
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums">
+                        <span className="text-[16px] font-black text-slate-700">{dayStat.no_enrolado ?? 0}</span>
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums">
+                        <span className="text-[16px] font-black text-rose-600">{dayStat.aa ?? 0}</span>
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums bg-blue-50/10">
+                        <span className="text-[16px] font-bold text-slate-900">{dayStat.sin_status ?? 0}</span>
+                      </td>
+                      <td className="px-6 py-7 text-center border-b border-slate-50 tabular-nums">
+                        <span className="text-[16px] font-black text-amber-600">{dayStat.promesa ?? 0}</span>
+                      </td>
+                      <td className="px-10 py-7 text-center border-b border-slate-50">
+                        <div className={`inline-block px-5 py-2 rounded-2xl text-[14px] font-black shadow-sm transition-all ${
+                          dayStat.pctRaw >= 80 ? 'bg-emerald-50 text-emerald-700' :
+                          dayStat.pctRaw >= 50 ? 'bg-amber-50 text-amber-700' :
+                          'bg-rose-50 text-rose-700'
+                        }`}>
+                          {dayStat.pct}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Drill-down with improved layout */}
+                    {isExpanded && (
+                      <tr className="bg-slate-50/10">
+                        <td colSpan={8} className="px-12 py-10">
+                          <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-slate-50/50 px-10 py-5 border-b border-slate-50 flex items-center justify-between">
+                               <div className="flex items-center gap-4">
+                                  <Users size={16} className="text-blue-500" strokeWidth={3} />
+                                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest italic">Análisis de Desempeño por Vendedor</span>
+                               </div>
+                               <div className="px-3 py-1 bg-white rounded-lg border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                  {expandedSellers.length} Colaboradores
+                               </div>
                             </div>
-                          </td>
-                        </tr>
-
-                        {/* Drill-down Seller Details */}
-                        {isExpanded && (
-                          <tr className="bg-slate-50/30">
-                            <td colSpan={5} className="px-10 py-6 border-b-2 border-slate-900/10">
-                              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="bg-slate-100/50 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
-                                   <Users size={14} className="text-slate-500" />
-                                   <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Detalle por Vendedores (Altas)</span>
-                                </div>
-                                
-                                {loadingSellers ? (
-                                  <div className="p-10 flex flex-col items-center justify-center gap-3">
-                                    <RotateCw className="text-blue-600 animate-spin" size={20} strokeWidth={3} />
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultando Vendedores...</span>
-                                  </div>
-                                ) : expandedSellers.length === 0 ? (
-                                  <div className="p-10 text-center text-slate-400 text-[12px] font-bold uppercase tracking-widest">
-                                    No hay registros de vendedores para este Site
-                                  </div>
-                                ) : (
-                                  <table className="w-full text-left">
-                                    <thead>
-                                      <tr className="bg-white text-black text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-                                        <th className="px-8 py-3">Vendedor</th>
-                                        <th className="px-6 py-3 text-center">FVC</th>
-                                        <th className="px-6 py-3 text-center">Altas</th>
-                                        <th className="px-6 py-3 text-center">No Enrolado</th>
-                                        <th className="px-6 py-3 text-center">AA</th>
-                                        <th className="px-6 py-3 text-center">Sin Status</th>
-                                        <th className="px-6 py-3 text-center">Promesa</th>
-                                        <th className="px-8 py-3 text-center">% Conv.</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                      {expandedSellers.map((seller, sidx) => {
-                                        const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
-                                        return (
-                                          <tr key={sidx} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-8 py-3 text-[12px] font-bold text-slate-700 flex items-center gap-3">
-                                               <div className="p-1 rounded bg-slate-100">
-                                                  <UserCheck size={12} className="text-slate-400" />
-                                               </div>
-                                               {seller.name}
-                                            </td>
-                                            <td className="px-6 py-3 text-[12px] font-black text-slate-500 text-center tabular-nums">{sStat.fvc}</td>
-                                            <td className="px-6 py-3 text-[12px] font-black text-slate-900 text-center tabular-nums">{sStat.van}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-slate-700 text-center tabular-nums">{sStat.no_enrolado ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-rose-700 text-center tabular-nums">{sStat.aa ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-slate-800 text-center tabular-nums bg-slate-100">{sStat.sin_status ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-amber-700 text-center tabular-nums">{sStat.promesa ?? 0}</td>
-                                            <td className="px-8 py-3 text-center">
-                                              <span className={`text-[11px] font-black ${
-                                                sStat.pctRaw >= 80 ? 'text-emerald-600' :
-                                                sStat.pctRaw >= 50 ? 'text-amber-600' :
-                                                'text-rose-600'
-                                              }`}>
-                                                {sStat.pct}
-                                              </span>
-                                            </td>
-                                          </tr>
-                                        )
-                                      })}
-                                    </tbody>
-                                  </table>
-                                )}
+                            
+                            {loadingSellers ? (
+                              <div className="p-20 flex flex-col items-center justify-center gap-4">
+                                <RotateCw className="text-blue-600 animate-spin" size={28} strokeWidth={3} />
+                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Sincronizando Detalles...</span>
                               </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    )
-                  })
-                )}
-                
-                {/* Visual Consolidated Totals */}
-                <tr className="bg-slate-900 text-white font-black shadow-[0_-10px_30px_rgba(0,0,0,0.2)] relative z-20">
-                  <td className="px-10 py-4 text-[12px] border-r border-white/5 uppercase tracking-[0.2em] relative">
-                    <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.8)]" />
-                    CONSOLIDADO {activeDay}
-                  </td>
-                  <td className="px-6 py-4 text-[18px] text-center border-r border-white/5 tabular-nums">
-                    {selectedDayStats.fvc}
-                  </td>
-                  <td className="px-6 py-4 text-[18px] text-center border-r border-white/5 tabular-nums">
-                    {selectedDayStats.van}
-                  </td>
-                  <td className="px-10 py-4 text-[22px] text-center bg-blue-600 shadow-inner tabular-nums font-[900]">
-                    {selectedDayStats.pct}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-           </div>
+                            ) : (
+                              <table className="w-full text-left table-fixed">
+                                <thead>
+                                  <tr className="bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-50">
+                                    <th className="px-12 py-5 w-[300px]">Colaborador</th>
+                                    <th className="px-6 py-5 text-center w-[120px]">FVC</th>
+                                    <th className="px-6 py-5 text-center w-[140px]">Altas</th>
+                                    <th className="px-6 py-5 text-center w-[140px]">No Enrolado</th>
+                                    <th className="px-6 py-5 text-center w-[80px]">AA</th>
+                                    <th className="px-6 py-5 text-center w-[120px]">Status</th>
+                                    <th className="px-6 py-5 text-center w-[120px]">Promesa</th>
+                                    <th className="px-12 py-5 text-center w-[140px]">Conv.</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                  {expandedSellers.map((seller, sidx) => {
+                                    const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
+                                    return (
+                                      <tr key={sidx} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-12 py-4 text-[13px] font-bold text-slate-700 flex items-center gap-4">
+                                           <div className="p-1.5 rounded-xl bg-slate-100/50">
+                                              <UserCheck size={14} className="text-slate-400" />
+                                           </div>
+                                           {seller.name}
+                                        </td>
+                                        <td className="px-6 py-4 text-[14px] font-black text-slate-400 text-center tabular-nums">{sStat.fvc}</td>
+                                        <td className="px-6 py-4 text-[14px] font-black text-slate-900 text-center tabular-nums">{sStat.van}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-600 text-center tabular-nums">{sStat.no_enrolado ?? 0}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-rose-500 text-center tabular-nums">{sStat.aa ?? 0}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-700 text-center tabular-nums">{sStat.sin_status ?? 0}</td>
+                                        <td className="px-6 py-4 text-[13px] font-bold text-amber-600 text-center tabular-nums">{sStat.promesa ?? 0}</td>
+                                        <td className="px-12 py-4 text-center">
+                                          <div className={`text-[12px] font-black inline-flex items-center gap-2 ${
+                                            sStat.pctRaw >= 80 ? 'text-emerald-600' :
+                                            sStat.pctRaw >= 50 ? 'text-amber-600' :
+                                            'text-rose-600'
+                                          }`}>
+                                            {sStat.pct}
+                                            <ArrowRightCircle size={10} className="opacity-40" />
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                )
+              })}
+              
+              {/* Final Footer Row */}
+              <tr className="bg-slate-900 text-white font-black shadow-[0_-20px_50px_rgba(0,0,0,0.3)] relative z-10 overflow-hidden rounded-b-3xl">
+                <td className="px-10 py-8 text-[14px] uppercase tracking-[0.3em] relative rounded-bl-3xl">
+                   <div className="absolute left-0 top-0 bottom-0 w-3 bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.8)]" />
+                   CONSOLIDADO {activeDay}
+                </td>
+                <td className="px-6 py-8 text-[22px] text-center tabular-nums">
+                  {selectedDayStats.fvc}
+                </td>
+                <td className="px-6 py-8 text-[22px] text-center tabular-nums text-slate-400">
+                  {selectedDayStats.van}
+                </td>
+                <td colSpan={4} className="px-6 py-8 text-right pr-20 text-[10px] text-slate-500 uppercase tracking-[0.3em]">
+                   Rendimiento Promedio de Red
+                </td>
+                <td className="px-10 py-8 text-[32px] text-center bg-blue-600 shadow-inner tabular-nums font-[950] rounded-br-3xl">
+                  {selectedDayStats.pct}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* 3. Analysis Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <div className="bg-white border-2 border-slate-900 p-8 rounded-3xl shadow-xl flex flex-col justify-between">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">KPI Crítico</p>
-            <h4 className="text-[15px] font-black text-slate-900 uppercase tracking-tight">Conversión Global {activeDay}</h4>
-            <div className="mt-6 flex items-baseline gap-3">
-               <span className="text-[42px] font-[950] text-slate-900 tracking-tighter leading-none">{selectedDayStats.pct}</span>
-               <TrendingUp size={24} className={selectedDayStats.pctRaw >= 70 ? 'text-emerald-500' : 'text-rose-500'} />
-            </div>
-         </div>
+      {/* 4. Bottom Insights Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl text-white group overflow-hidden relative">
+             <TrendingUp className="text-blue-500 mb-6 group-hover:scale-125 transition-transform duration-500" size={40} />
+             <div className="relative z-10">
+                <h4 className="text-[18px] font-black uppercase tracking-tight mb-3">Eficiencia Operativa</h4>
+                <p className="text-[13px] font-medium text-slate-400 leading-relaxed italic">
+                  La métrica de **Conversión** ({selectedDayStats.pct}) refleja la capacidad de cierre efectiva de toda tu red en el día {activeDay}.
+                </p>
+             </div>
+             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/10 blur-[60px] rounded-full" />
+          </div>
 
-         <div className="bg-blue-600 p-8 rounded-3xl shadow-2xl text-white transform hover:-translate-y-1 transition-transform">
-            <Globe className="text-white/20 mb-4" size={32} />
-            <h4 className="text-[16px] font-black uppercase tracking-widest mb-2">Visión Unificada</h4>
-            <p className="text-[12px] font-bold opacity-80 leading-relaxed">
-               Este panel ahora integra el detalle de Altas por Site y por Vendedor. Haz clic en cualquier site para ver su desglose.
-            </p>
-         </div>
+          <div className="bg-white border-2 border-slate-100 p-10 rounded-[2.5rem] shadow-xl flex flex-col justify-between hover:border-blue-500 transition-all">
+             <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Ratio de Mermas</span>
+                <h4 className="text-[16px] font-black text-slate-900 uppercase tracking-tight leading-tight">Registros Sin Estatus</h4>
+             </div>
+             <div className="mt-8 flex items-baseline gap-4">
+                <span className="text-[54px] font-[1000] text-slate-900 tracking-tighter leading-none">
+                {data && Object.values(data.supervisors).reduce((acc, s) => acc + (s.days[activeDay]?.sin_status || 0), 0)}
+                </span>
+                <div className="px-3 py-1 bg-blue-50 rounded-lg text-blue-600 text-[10px] font-black uppercase tracking-widest">DNs Pendientes</div>
+             </div>
+          </div>
 
-         <div className="bg-slate-900 p-8 rounded-3xl shadow-xl text-white">
-            <RotateCw className="text-blue-500 mb-4" size={24} />
-            <h4 className="text-[16px] font-black uppercase tracking-widest mb-2">Sincronización</h4>
-            <p className="text-[12px] font-bold opacity-70 leading-relaxed">
-               Consulta directa a Google Sheets. Los datos reflejan la actividad procesada y validada hasta el momento.
-            </p>
-         </div>
-
-         <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-3xl flex flex-col justify-center items-center text-center">
-            <LayoutDashboard size={24} className="text-slate-300 mb-2" />
-            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">v1.3.0 Unified Global Engine</span>
-         </div>
+          <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-10 rounded-[2.5rem] flex flex-col justify-center items-center text-center">
+             <Activity size={32} className="text-slate-200 mb-4" />
+             <p className="text-[11px] font-black text-slate-400 h-10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                SISTEMA OPERATIVO &bull; v2.5.0
+             </p>
+          </div>
       </div>
     </div>
   )

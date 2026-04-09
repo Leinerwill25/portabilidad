@@ -20,7 +20,7 @@ interface CoordinatorDashboardContainerProps {
 }
 
 export default function CoordinatorDashboardContainer({ 
-  initialTab = 'global',
+  initialTab = 'daily',
   recentSearches,
   totalSearchesOverall
 }: CoordinatorDashboardContainerProps) {
@@ -41,7 +41,7 @@ export default function CoordinatorDashboardContainer({
       <CoordinatorTabs activeTab={activeTab} onTabChange={handleTabChange} />
       
       <div className="mt-4 transition-all duration-300 min-h-[400px]">
-        {activeTab === 'global' && <CoordinatorDailyGlobalTable />}
+        {activeTab === 'daily' && <CoordinatorDailyGlobalTable />}
         {activeTab === 'stats' && <CoordinatorStatsTable />}
         {activeTab === 'ventas' && <CoordinatorSalesTable />}
         {activeTab === 'ranking' && <CoordinatorRankingTable />}
