@@ -1,22 +1,27 @@
-Nombre del proyecto:
-Sistema Para Call Center - Portabilidad
+Nombre del proyecto*
+Sistema de Marketing y Ventas (ASHIRA Sales Intelligence)
 
-Descripción:
-Desarrollo de una plataforma integral de gestión de portabilidad numérica (DN) diseñada para optimizar la operación de call centers de alto volumen. El sistema centraliza y automatiza la recolección de datos de ventas distribuidos en múltiples fuentes, transformándolos en inteligencia de negocio accionable.
+Descripción
+Plataforma inteligente de "Sales Intelligence" y CRM de ventas especializado, desarrollado para el ecosistema ASHIRA (digitalización de la salud en Venezuela). Este sistema fusiona metodologías de venta consultiva con Inteligencia Artificial para transformar el proceso comercial de servicios médicos y tecnológicos.
 
-Características Clave:
-- Arquitectura de Vanguardia: Desarrollado con Next.js 15 (App Router), React 19 y Supabase, logrando una interfaz ultra-rápida y reactiva.
-- Sincronización en Tiempo Real: Implementación de scrapers personalizados que extraen y procesan datos de Google Sheets en paralelo, eliminando la necesidad de entrada de datos manual y redundante.
-- Dashboard de Business Intelligence: Panel administrativo con visualizaciones dinámicas (Framer Motion) para el seguimiento de Ventas, FVC (Filtro de Venta Calificada), Altas y porcentajes de conversión.
-- Gestión Jerárquica y de Roles: Sistema robusto de permisos para Coordinadores, Supervisores y Vendedores, permitiendo una supervisión granular del rendimiento por equipo y "Site".
-- Auditoría y Seguridad: Módulo de auditoría de búsquedas de números (DN) con registro de actividad en tiempo real, asegurando la trazabilidad y el uso ético de la información.
-- Optimización Operativa: Filtros avanzados por mes, semana y vendedor que permiten identificar cuellos de botella en el proceso de enrolamiento y mejorar la eficacia comercial.
+Como desarrollador e implementador de esta solución, estructuré una herramienta que no solo actúa como un manual de ventas, sino como un asistente inteligente que guía al equipo comercial en tiempo real.
 
-Este proyecto transformó una operación basada en hojas de cálculo aisladas en un ecosistema digital unificado, mejorando la visibilidad gerencial y la velocidad de respuesta ante desviaciones en los objetivos de ventas.
+🚀 FUNCIONALIDADES Y LOGROS CLAVE:
 
-Aptitudes Sugeridas:
-1. Next.js
-2. React.js
-3. Supabase
-4. Business Intelligence (BI)
-5. Desarrollo Full-Stack
+1. Analizador Inteligente con IA: Integración de modelos avanzados (Google Gemini / Anthropic) para el análisis semántico de leads. El sistema detecta automáticamente la etapa del prospecto (Bienvenida, Calificación, Dolor, Cierre), su nivel de urgencia y sentimiento, sugiriendo la técnica de respuesta más efectiva.
+2. Playbook de Ventas Digital: Implementación interactiva de técnicas de persuasión y ventas (SPIN, FAB, Sándwich, Feel-Felt-Found) adaptadas específicamente para la toma de decisiones de médicos y directores de clínicas.
+3. Optimización de Flujos Comerciales: Diseño de secuencias de seguimiento dinámicas (Flujo Corto para lanzamientos, Flujo Mixto para resolución de dudas) que han permitido estandarizar la comunicación y aumentar la tasa de respuesta.
+4. Manejo de Objeciones Basado en Datos: Módulo centralizado para resolver fricciones críticas del mercado (seguridad de datos, presupuesto, curva de aprendizaje), proporcionando argumentos validados y prueba social (ej. Caso SafeCare).
+5. Dashboard de Métricas y Rendimiento: Sistema de tracking de costos de IA y monitoreo de KPIs de conversión (NPS, Referidos, Tiempo de Respuesta), asegurando la eficiencia operativa del sistema.
+
+🛠️ STACK TECNOLÓGICO:
+• Frontend & Backend: Next.js 15, React, Tailwind CSS.
+• IA: Google Generative AI (Gemini 1.5 Flash) / Claude API.
+• Gestión de Datos: Supabase (PostgreSQL), Next.js API Routes.
+
+Aptitudes
+1. Inteligencia Artificial (LLM Implementation)
+2. Estrategia de Ventas Consultivas
+3. Desarrollo Full-Stack (Next.js & React)
+4. Marketing Digital para Salud
+5. Optimización de Procesos Comerciales

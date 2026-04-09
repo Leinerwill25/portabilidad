@@ -41,10 +41,11 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
   const [data, setData] = useState<WeeklyData[]>([])
   const [vendedores, setVendedores] = useState<Seller[]>([])
   const [selectedSellers, setSelectedSellers] = useState<string[]>(['all'])
-  const [selectedWeek, setSelectedWeek] = useState<string>('')
+  const [selectedWeeks, setSelectedWeeks] = useState<string[]>([])
   const [highlightMetric, setHighlightMetric] = useState('altas')
   const [loading, setLoading] = useState(true)
   const [showSellerList, setShowSellerList] = useState(false)
+  const [showWeekList, setShowWeekList] = useState(false)
 
   const fetchData = async (signal?: AbortSignal) => {
     setLoading(true)
@@ -60,9 +61,10 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
       const json = await response.json()
       if (json.weeks) {
         setData(json.weeks)
-        // Initialize selected week to the most recent one
-        if (!selectedWeek && json.weeks.length > 0) {
-          setSelectedWeek(json.weeks[json.weeks.length - 1].week)
+        // Initialize selected weeks to the last 3 available
+        if (selectedWeeks.length === 0 && json.weeks.length > 0) {
+          const lastThree = json.weeks.slice(-3).map((w: WeeklyData) => w.week)
+          setSelectedWeeks(lastThree)
         }
         if (vendedores.length === 0 || selectedSellers.includes('all')) {
           setVendedores(json.vendedores || [])
@@ -100,15 +102,17 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
     }
   }
   
-  const filteredData = (() => {
-    if (!selectedWeek || data.length === 0) return []
-    const idx = data.findIndex(d => d.week === selectedWeek)
-    if (idx === -1) return []
-    
-    // Get up to 3 weeks ending at the selected week
-    const start = Math.max(0, idx - 2)
-    return data.slice(start, idx + 1)
-  })()
+  const toggleWeek = (week: string) => {
+    if (selectedWeeks.includes(week)) {
+      if (selectedWeeks.length > 1) {
+        setSelectedWeeks(selectedWeeks.filter(w => w !== week))
+      }
+    } else {
+      setSelectedWeeks([...selectedWeeks, week].sort((a, b) => parseInt(a) - parseInt(b)))
+    }
+  }
+
+  const filteredData = data.filter(d => selectedWeeks.includes(d.week))
 
   // Safe maxVal calculation
   const maxVal = filteredData.length > 0 
@@ -200,24 +204,54 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
             </AnimatePresence>
           </div>
 
-          {/* Week Selector */}
-          <div className="relative w-full lg:w-48">
-             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+          {/* Week Multi-Filter with Checkboxes */}
+          <div className="relative w-full lg:w-56">
+            <button
+              onClick={() => setShowWeekList(!showWeekList)}
+              className={`w-full flex items-center justify-between pl-11 pr-4 py-3 bg-slate-50 border rounded-2xl text-[12px] font-bold text-slate-700 transition-all shadow-sm hover:shadow-md ${showWeekList ? 'ring-2 ring-blue-500/20 border-blue-500' : 'border-slate-200 hover:border-slate-300'}`}
+            >
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                 <Calendar size={16} />
               </div>
-              <select
-                value={selectedWeek}
-                onChange={(e) => setSelectedWeek(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[12px] font-bold text-slate-700 transition-all shadow-sm hover:shadow-md hover:border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer"
-              >
-                <option value="" disabled>Seleccionar Semana</option>
-                {[...data].reverse().map(w => (
-                  <option key={w.week} value={w.week}>Semana {w.week}</option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                <ChevronDown size={14} />
-              </div>
+              <span className="truncate">
+                {selectedWeeks.length === data.length 
+                  ? 'Todas las Semanas' 
+                  : `${selectedWeeks.length} Seleccionadas`}
+              </span>
+              <ChevronDown size={14} className={`transition-transform duration-300 ${showWeekList ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showWeekList && (
+                <>
+                  <div className="fixed inset-0 z-[60]" onClick={() => setShowWeekList(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 4, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full left-0 right-0 z-[70] bg-white border border-slate-200 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] rounded-2xl overflow-hidden p-2 min-w-[220px]"
+                  >
+                    <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-0.5">
+                      {[...data].reverse().map(w => {
+                        const isSelected = selectedWeeks.includes(w.week)
+                        return (
+                          <button
+                            key={w.week}
+                            onClick={() => toggleWeek(w.week)}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                          >
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'}`}>
+                              {isSelected && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-1.5 h-1.5 bg-white rounded-full" />}
+                            </div>
+                            <span className="text-[11px] font-black uppercase tracking-wider">Semana {w.week}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Metric Selector */}
@@ -375,7 +409,7 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
                 <motion.path
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 1 }}
-                  key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}-${selectedWeek}`}
+                  key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}-${selectedWeeks.join(',')}`}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
                   d={(() => {
                     const pts = filteredData.map((d, i) => {

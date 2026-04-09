@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
   const sellersTyped = allSellers as { id: string, first_name: string, last_name: string }[]
 
 
-  // 4. Determine weeks (Last 8 weeks)
+  // 4. Determine weeks (Last 15 weeks)
   const currentWeek = getGoogleSheetsWeek()
-  const weeklyTargetRange = Array.from({ length: 8 }, (_, i) => String(currentWeek - i))
+  const weeklyTargetRange = Array.from({ length: 15 }, (_, i) => String(currentWeek - i))
     .filter(w => parseInt(w) > 0)
 
   const statsMap: Record<string, WeeklyData> = {}
