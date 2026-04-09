@@ -400,10 +400,9 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
 
             {/* Dark Blue Silk Trend Line */}
             <svg 
-              className="absolute inset-x-0 top-0 bottom-0 w-full h-full pointer-events-none overflow-visible z-30" 
+              className="absolute left-10 right-4 top-16 bottom-16 w-full h-full pointer-events-none overflow-visible z-30" 
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
-              style={{ paddingBottom: '4rem', paddingTop: '4rem', paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
             >
               {filteredData.length > 1 && (
                 <motion.path
@@ -412,10 +411,11 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
                   key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}-${selectedWeeks.join(',')}`}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
                   d={(() => {
+                    const n = filteredData.length
                     const pts = filteredData.map((d, i) => {
                       const metricVal = d[highlightMetric as keyof WeeklyData] as number
                       return {
-                        x: (i / (filteredData.length - 1)) * 100,
+                        x: ((i + 0.5) / n) * 100,
                         y: 100 - (metricVal / maxVal) * 100
                       }
                     })
