@@ -7,7 +7,9 @@ import {
   Users,
   LayoutGrid,
   Info,
-  Camera
+  Camera,
+  Calendar,
+  Table as TableIcon
 } from 'lucide-react'
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
@@ -39,9 +41,11 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
   const [data, setData] = useState<WeeklyData[]>([])
   const [vendedores, setVendedores] = useState<Seller[]>([])
   const [selectedSellers, setSelectedSellers] = useState<string[]>(['all'])
+  const [selectedWeeks, setSelectedWeeks] = useState<string[]>([])
   const [highlightMetric, setHighlightMetric] = useState('altas')
   const [loading, setLoading] = useState(true)
   const [showSellerList, setShowSellerList] = useState(false)
+  const [showWeekList, setShowWeekList] = useState(false)
 
   const fetchData = async (signal?: AbortSignal) => {
     setLoading(true)
@@ -57,6 +61,11 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
       const json = await response.json()
       if (json.weeks) {
         setData(json.weeks)
+        // Initialize selected weeks if not set
+        if (selectedWeeks.length === 0) {
+          const lastFour = json.weeks.slice(-4).map((w: WeeklyData) => w.week)
+          setSelectedWeeks(lastFour)
+        }
         if (vendedores.length === 0 || selectedSellers.includes('all')) {
           setVendedores(json.vendedores || [])
         }
@@ -92,10 +101,22 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
       setSelectedSellers([...withoutAll, id])
     }
   }
+  
+  const toggleWeek = (week: string) => {
+    if (selectedWeeks.includes(week)) {
+      if (selectedWeeks.length > 1) {
+        setSelectedWeeks(selectedWeeks.filter(w => w !== week))
+      }
+    } else {
+      setSelectedWeeks([...selectedWeeks, week].sort((a, b) => parseInt(a) - parseInt(b)))
+    }
+  }
+
+  const filteredData = data.filter(d => selectedWeeks.includes(d.week))
 
   // Safe maxVal calculation
-  const maxVal = data.length > 0 
-    ? Math.max(...data.map(d => Math.max(d.ventas, d.altas, d.conversion, 1)))
+  const maxVal = filteredData.length > 0 
+    ? Math.max(...filteredData.map(d => Math.max(d.ventas, d.altas, d.conversion, 1)))
     : 1
 
   // Smooth Silk Path
@@ -183,6 +204,56 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
             </AnimatePresence>
           </div>
 
+          {/* Week Multi-Filter */}
+          <div className="relative w-full lg:w-48">
+            <button
+              onClick={() => setShowWeekList(!showWeekList)}
+              className={`w-full flex items-center justify-between pl-11 pr-4 py-3 bg-slate-50 border rounded-2xl text-[12px] font-bold text-slate-700 transition-all shadow-sm hover:shadow-md ${showWeekList ? 'ring-2 ring-blue-500/20 border-blue-500' : 'border-slate-200 hover:border-slate-300'}`}
+            >
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <Calendar size={16} />
+              </div>
+              <span className="truncate">
+                {selectedWeeks.length === data.length 
+                  ? 'Todas las Semanas' 
+                  : `${selectedWeeks.length} Semanas`}
+              </span>
+              <ChevronDown size={14} className={`transition-transform duration-300 ${showWeekList ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showWeekList && (
+                <>
+                  <div className="fixed inset-0 z-[60]" onClick={() => setShowWeekList(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 4, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full left-0 right-0 z-[70] bg-white border border-slate-200 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] rounded-2xl overflow-hidden p-2 min-w-[200px]"
+                  >
+                    <div className="max-h-[300px] overflow-y-auto no-scrollbar space-y-0.5">
+                      {data.map(w => {
+                        const isSelected = selectedWeeks.includes(w.week)
+                        return (
+                          <button
+                            key={w.week}
+                            onClick={() => toggleWeek(w.week)}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                          >
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'}`}>
+                              {isSelected && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-1.5 h-1.5 bg-white rounded-full" />}
+                            </div>
+                            <span className="text-[11px] font-black uppercase tracking-wider">Semana {w.week}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Metric Selector */}
           <div className="flex flex-wrap items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-200 w-full lg:w-auto overflow-hidden">
             {METRICS.map(m => {
@@ -257,7 +328,7 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
 
           {/* The Chart Container */}
           <div className="absolute left-10 right-4 top-16 bottom-16 flex justify-around items-end z-10">
-            {data.map((weekData, weekIdx) => {
+            {filteredData.map((weekData, weekIdx) => {
               const activeVal = weekData[highlightMetric as keyof WeeklyData] as number
               const hPercentActive = (activeVal / maxVal) * 100
               
@@ -334,17 +405,17 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
               preserveAspectRatio="none"
               style={{ paddingBottom: '4rem', paddingTop: '4rem', paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
             >
-              {data.length > 1 && (
+              {filteredData.length > 1 && (
                 <motion.path
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 1 }}
-                  key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}`}
+                  key={`silk-line-final-${highlightMetric}-${selectedSellers.join(',')}-${selectedWeeks.join(',')}`}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
                   d={(() => {
-                    const pts = data.map((d, i) => {
+                    const pts = filteredData.map((d, i) => {
                       const metricVal = d[highlightMetric as keyof WeeklyData] as number
                       return {
-                        x: (i / (data.length - 1)) * 100,
+                        x: (i / (filteredData.length - 1)) * 100,
                         y: 100 - (metricVal / maxVal) * 100
                       }
                     })
@@ -380,6 +451,65 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
           <span className="text-[9px] font-black uppercase tracking-wider">Reporte de métricas semanales agregadas</span>
         </div>
       </div>
+
+      {/* NEW DATA TABLE */}
+      {!loading && filteredData.length > 0 && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+             <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-200">
+                <TableIcon size={16} className="text-white" />
+             </div>
+             <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest">Resumen Detallado por Semana</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Semana</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Ventas</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">FVC</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Altas</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Eficacia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((row, idx) => (
+                  <tr key={row.week} className={`border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-black text-slate-600 border border-slate-200">
+                          {row.week}
+                        </div>
+                        <span className="text-[12px] font-bold text-slate-800 uppercase tracking-tight">Semana {row.week}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-[14px] font-black text-blue-600">{row.ventas}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-[14px] font-black text-slate-600">{row.fvc}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-[14px] font-black text-emerald-600">{row.altas}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center">
+                        <span className={`px-3 py-1 rounded-full text-[11px] font-black border ${
+                          row.conversion >= 70 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                          row.conversion >= 50 ? 'bg-amber-50 border-amber-100 text-amber-700' :
+                          'bg-red-50 border-red-100 text-red-700'
+                        }`}>
+                          {row.conversion}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
