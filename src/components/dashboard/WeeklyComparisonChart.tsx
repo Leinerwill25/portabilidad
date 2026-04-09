@@ -29,10 +29,11 @@ interface WeeklyComparisonChartProps {
 }
 
 const METRICS = [
-  { id: 'ventas', label: 'Ventas', color: '#2563eb', bg: 'bg-blue-600', gradient: 'url(#grad-ventas)' },
-  { id: 'altas', label: 'Altas', color: '#059669', bg: 'bg-emerald-600', gradient: 'url(#grad-altas)' },
-  { id: 'conversion', label: 'Conversión', color: '#d97706', bg: 'bg-amber-600', gradient: 'url(#grad-conversion)' }
+  { id: 'ventas', label: 'Ventas', color: '#2563eb', bg: 'bg-blue-600', gradient: 'linear-gradient(180deg, #60a5fa 0%, #3b82f6 45%, #1e40af 100%)' },
+  { id: 'altas', label: 'Altas', color: '#059669', bg: 'bg-emerald-600', gradient: 'linear-gradient(180deg, #34d399 0%, #10b981 45%, #065f46 100%)' },
+  { id: 'conversion', label: 'Conversión', color: '#d97706', bg: 'bg-amber-600', gradient: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 45%, #92400e 100%)' }
 ]
+
 
 export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparisonChartProps) {
   const [data, setData] = useState<WeeklyData[]>([])
@@ -235,26 +236,8 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
         </div>
       ) : (
         <div className="relative h-[520px] w-full mt-4 group pt-16">
-          {/* Modern Satin Gradients */}
-          <svg className="absolute w-0 h-0 invisible">
-            <defs>
-              <linearGradient id="grad-ventas" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="45%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#1e40af" />
-              </linearGradient>
-              <linearGradient id="grad-altas" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="45%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#065f46" />
-              </linearGradient>
-              <linearGradient id="grad-conversion" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#fbbf24" />
-                <stop offset="45%" stopColor="#f59e0b" />
-                <stop offset="100%" stopColor="#92400e" />
-              </linearGradient>
-            </defs>
-          </svg>
+          {/* Modern Satin Gradients defined in METRICS via CSS */}
+
 
           {/* Y-Axis Labels */}
           <div className="absolute -left-2 top-16 bottom-16 flex flex-col justify-between text-[10px] font-black text-slate-400 text-right pr-4 pointer-events-none">
@@ -314,14 +297,15 @@ export default function WeeklyComparisonChart({ supervisorId }: WeeklyComparison
                           initial={{ height: 0 }}
                           animate={{ 
                             height: `${hPercent}%`,
-                            opacity: isHighlighted ? 1 : 0.1,
+                            opacity: isHighlighted ? 1 : 0.25,
                             filter: isHighlighted ? 'none' : 'grayscale(100%)'
                           }}
                           transition={{ duration: 1, delay: weekIdx * 0.1 + mIdx * 0.1 }}
-                          className={`w-3 sm:w-6 lg:w-9 relative border-t-2 border-white/20`}
+                          className={`w-3 sm:w-6 lg:w-9 relative border-t-2 border-white/20 transition-opacity duration-300`}
                           style={{ 
                             background: isHighlighted ? m.gradient : '#e2e8f0',
                             borderRadius: '6px 6px 2px 2px',
+
                             minHeight: val > 0 ? '4px' : '0'
                           }}
                         >

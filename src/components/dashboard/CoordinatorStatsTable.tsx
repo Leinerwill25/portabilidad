@@ -1,14 +1,19 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence, Reorder } from 'framer-motion'
+
 import { 
   ChevronDown, 
   ChevronRight, 
   Users,
   RefreshCw,
   BarChart3,
-  Camera
+  Camera,
+  GripVertical,
+  Activity
 } from 'lucide-react'
+
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
 interface SellerStats {
@@ -77,6 +82,22 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
   const [expandedSupervisors, setExpandedSupervisors] = useState<Record<string, boolean>>({})
   const [monthFilter, setMonthFilter] = useState('')
   const [weekFilter, setWeekFilter] = useState('')
+
+  const initialColumns = [
+    { label: 'Site / Vendedor', key: 'name', weight: 'w-[200px]' },
+    { label: 'VENTAS', key: 'ventas', weight: 'w-[100px]' },
+    { label: 'ACT. NO ALTA', key: 'ana', weight: 'w-[120px]' },
+    { label: 'ALTA', key: 'alta', weight: 'w-[100px]' },
+    { label: 'NO ENROLADO', key: 'ne', weight: 'w-[120px]' },
+    { label: 'SIN ESTATUS', key: 'pend', weight: 'w-[120px]' },
+    { label: 'CHBACK', key: 'cb', weight: 'w-[100px]' },
+    { label: 'PROMESA', key: 'prom', weight: 'w-[100px]' },
+    { label: 'TOTAL FVC', key: 'total', weight: 'w-[120px]' },
+    { label: 'CONVERSION', key: 'conv', weight: 'w-[120px]' },
+  ]
+
+  const [columnOrder, setColumnOrder] = useState(initialColumns)
+
 
   const fetchData = async (isManual: boolean = false) => {
     if (isManual) setRefreshing(true)
@@ -163,6 +184,109 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
     return 'bg-[#d1fae5] text-emerald-700'
   }
 
+  const renderCell = (col: any, supervisor: SupervisorStats, seller?: SellerStats) => {
+    const isContrast = !seller
+    const stats = seller ? seller.stats : supervisor.totals
+    const conv = seller ? seller.conv : supervisor.conv
+
+    switch (col.key) {
+      case 'name':
+        if (seller) {
+          return (
+            <td className="border-r-2 border-slate-900 pl-16 pr-4 py-3 text-[12px] text-black uppercase tracking-tight bg-black/5">
+              {seller.name}
+            </td>
+          )
+        }
+        return (
+          <td className="border-r-2 border-slate-900 px-8 py-4 flex items-center gap-4 relative bg-sky-200/50" onClick={() => toggleExpand(supervisor.id)}>
+            <div className="absolute left-0 top-0 bottom-0 w-2 bg-blue-600" />
+            <div className="text-blue-900">
+              {expandedSupervisors[supervisor.id] ? <ChevronDown size={14} strokeWidth={4} /> : <ChevronRight size={14} strokeWidth={4} />}
+            </div>
+            <span className="text-[14px] font-black text-blue-900 uppercase tracking-tight">
+              SITE: {supervisor.name}
+            </span>
+          </td>
+        )
+      case 'ventas':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'text-blue-900 bg-sky-200/30' : 'text-slate-800 bg-slate-100/50'}`}>{formatNum(stats.ventas, isContrast)}</td>
+      case 'ana':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'text-blue-900' : 'text-slate-600'}`}>{formatNum(stats.activacion_no_alta, isContrast)}</td>
+      case 'alta':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'text-blue-900' : 'text-black font-bold'}`}>{formatNum(stats.alta, isContrast)}</td>
+      case 'ne':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'text-blue-900' : 'text-black font-bold'}`}>{formatNum(stats.alta_no_enrolada, isContrast)}</td>
+      case 'pend':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'text-blue-900' : 'text-black font-bold'}`}>{formatNum(stats.sin_status, isContrast)}</td>
+      case 'cb':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black text-red-700`}>{formatNum(stats.chargeback, isContrast)}</td>
+      case 'prom':
+        return <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black text-amber-600`}>{formatNum(stats.promesa, isContrast)}</td>
+      case 'total':
+        return (
+          <td className={`border-r-2 border-slate-900 px-2 py-4 text-center font-black ${isContrast ? 'bg-sky-300/50 tabular-nums' : 'bg-black/5'}`}>
+             {formatNum(stats.total, isContrast)}
+          </td>
+        )
+      case 'conv':
+        return (
+          <td className={`px-4 py-4 text-center ${isContrast ? 'bg-sky-100/30' : 'bg-slate-50/30'}`}>
+             <span className={`${isContrast ? 'text-[12px]' : 'text-[11px]'} font-black shadow-sm px-3 py-1.5 rounded-lg border border-black/5 ${getEfficacyStyle(conv)}`}>
+               {conv}
+             </span>
+          </td>
+        )
+      default:
+        return null
+    }
+  }
+
+  const renderGrandTotalCell = (col: any) => {
+    switch (col.key) {
+      case 'name':
+        return (
+          <td className="border-r-2 border-slate-800 px-8 py-3 text-[12px] font-black uppercase tracking-[0.2em] relative">
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500" />
+            CONSOLIDADO GLOBAL
+          </td>
+        )
+      case 'ventas':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums bg-sky-900/50">{data?.grandTotal.ventas ?? 0}</td>
+      case 'ana':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data?.grandTotal.activacion_no_alta ?? 0}</td>
+      case 'alta':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data?.grandTotal.alta ?? 0}</td>
+      case 'ne':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data?.grandTotal.alta_no_enrolada ?? 0}</td>
+      case 'pend':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data?.grandTotal.sin_status ?? 0}</td>
+      case 'cb':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-red-400">{data?.grandTotal.chargeback ?? 0}</td>
+      case 'prom':
+        return <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-amber-400">{data?.grandTotal.promesa ?? 0}</td>
+      case 'total':
+        return (
+          <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[22px] font-black tabular-nums bg-white/10 text-white">
+            {data?.grandTotal.total ?? 0}
+          </td>
+        )
+      case 'conv':
+        return (
+          <td className="px-6 py-3 text-center bg-white/5 border-l border-slate-800">
+             <div className="flex flex-col items-center">
+                <span className={`text-[18px] font-black px-3 py-0.5 rounded-lg shadow-inner ${getEfficacyStyle(data?.grandTotal.conv || '0%')}`}>
+                  {data?.grandTotal.conv}
+                </span>
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Conversion</span>
+             </div>
+          </td>
+        )
+      default:
+        return null
+    }
+  }
+
   const formatNum = (n: number, isContrast: boolean = false) => {
      if (n === 0) return <span className={isContrast ? "text-blue-900 font-black" : "text-black font-bold"}>0</span>
      return <span className={isContrast ? "text-blue-900 font-black" : "text-black font-bold"}>{n}</span>
@@ -191,7 +315,11 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
          <div className="flex items-center gap-4">
             <div className="w-1.5 h-6 bg-white rounded-full shadow-lg" />
             <h3 className="text-[15px] font-black text-white uppercase tracking-[0.1em]">Dashboard Gerencial Site Analytics</h3>
-         </div>
+            <div className="px-2 py-0.5 bg-blue-600 border border-blue-400 rounded text-[9px] font-black text-white uppercase tracking-tighter flex items-center gap-1.5 shadow-lg">
+               <Activity size={10} className="animate-pulse" />
+               Columnas Personalizables
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             {/* Month Filter */}
             <div className="flex flex-col gap-1">
@@ -251,53 +379,47 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
           </div>
       </div>
 
-      <div className="w-full">
-        <table className="w-full text-left border-collapse table-fixed">
-          <thead>
+      <div className="w-full overflow-x-auto no-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[1200px]">
+          <Reorder.Group as="thead" axis="x" values={columnOrder} onReorder={setColumnOrder}>
             <tr className="bg-slate-50 text-black">
-              {columns.map((col, i) => (
-                <th 
-                  key={i} 
-                  className={`border-r-2 border-slate-900 border-b-2 border-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-widest text-black ${col.weight} ${i > 0 ? 'text-center' : 'pl-8'}`}
+              {columnOrder.map((col, i) => (
+                <Reorder.Item
+                  as="th"
+                  key={col.key}
+                  value={col}
+                  whileDrag={{ 
+                    scale: 1.05, 
+                    boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+                    backgroundColor: "#f1f5f9",
+                    zIndex: 99
+                  }}
+                  className={`border-r-2 border-slate-900 border-b-2 border-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-widest text-black cursor-grab active:cursor-grabbing hover:bg-slate-100 transition-colors select-none group/col relative ${col.weight} ${i > 0 || col.key !== 'name' ? 'text-center' : 'pl-8'}`}
                 >
-                  {col.label}
-                </th>
+                  <div className="flex items-center justify-center gap-2 relative">
+                    {i > 0 && <GripVertical size={14} className="text-slate-600 opacity-0 group-hover/col:opacity-100 transition-all absolute -left-2" />}
+                    {col.label}
+                  </div>
+                </Reorder.Item>
+
               ))}
             </tr>
-          </thead>
+          </Reorder.Group>
           <tbody className="text-[13px]">
+
             {data.supervisors.map((supervisor) => (
               <React.Fragment key={supervisor.id}>
                 {/* SKY BLUE SITE HEADER */}
                 <tr 
-                  className="group cursor-pointer hover:bg-sky-300 transition-all border-b-2 border-slate-900 bg-[#e0f2fe]"
-                  onClick={() => toggleExpand(supervisor.id)}
+                  className="group hover:bg-sky-300 transition-all border-b-2 border-slate-900 bg-[#e0f2fe]"
                 >
-                  <td className="border-r-2 border-slate-900 px-8 py-4 flex items-center gap-4 relative bg-sky-200/50">
-                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-blue-600" />
-                    <div className="text-blue-900">
-                      {expandedSupervisors[supervisor.id] ? <ChevronDown size={14} strokeWidth={4} /> : <ChevronRight size={14} strokeWidth={4} />}
-                    </div>
-                    <span className="text-[14px] font-black text-blue-900 uppercase tracking-tight">
-                      SITE: {supervisor.name}
-                    </span>
-                  </td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900 bg-sky-200/30">{formatNum(supervisor.totals.ventas, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.activacion_no_alta, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.alta, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.alta_no_enrolada, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-blue-900">{formatNum(supervisor.totals.sin_status, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-red-700">{formatNum(supervisor.totals.chargeback, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black text-amber-600">{formatNum(supervisor.totals.promesa, true)}</td>
-                  <td className="border-r-2 border-slate-900 px-2 py-4 text-center font-black bg-sky-300/50 tabular-nums">
-                     {formatNum(supervisor.totals.total, true)}
-                  </td>
-                  <td className="px-4 py-4 text-center bg-sky-100/30">
-                     <span className={`text-[12px] font-black shadow-sm px-3 py-1.5 rounded-lg border border-black/5 ${getEfficacyStyle(supervisor.conv)}`}>
-                       {supervisor.conv}
-                     </span>
-                  </td>
+                  {columnOrder.map(col => (
+                    <React.Fragment key={col.key}>
+                      {renderCell(col, supervisor)}
+                    </React.Fragment>
+                  ))}
                 </tr>
+
 
                 {/* Seller Detail Rows (White with Black Text) */}
                 {expandedSupervisors[supervisor.id] && (
@@ -307,24 +429,14 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                         key={seller.id} 
                         className={`hover:bg-slate-100 transition-colors border-b-2 border-slate-900 bg-white`}
                       >
-                        <td className="border-r-2 border-slate-900 pl-16 pr-4 py-3 text-[12px] text-black uppercase tracking-tight bg-black/5">
-                          {seller.name}
-                        </td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center font-black text-slate-800 bg-slate-100/50">{formatNum(seller.stats.ventas)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center font-black text-slate-600">{formatNum(seller.stats.activacion_no_alta)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-bold">{formatNum(seller.stats.alta)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-bold">{formatNum(seller.stats.alta_no_enrolada)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-bold">{formatNum(seller.stats.sin_status)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-red-600 font-black">{formatNum(seller.stats.chargeback)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-amber-700 font-bold">{formatNum(seller.stats.promesa)}</td>
-                        <td className="border-r-2 border-slate-900 px-2 py-3 text-center text-black font-black bg-black/5">{formatNum(seller.stats.total)}</td>
-                        <td className="px-4 py-3 text-center bg-slate-50/30">
-                          <span className={`text-[11px] font-black px-2 py-0.5 rounded border border-black/5 ${getEfficacyStyle(seller.conv)}`}>
-                            {seller.conv}
-                          </span>
-                        </td>
+                        {columnOrder.map(col => (
+                          <React.Fragment key={col.key}>
+                            {renderCell(col, supervisor, seller)}
+                          </React.Fragment>
+                        ))}
                       </tr>
                     ))
+
                   ) : (
                     <tr className="border-b-2 border-slate-900">
                       <td colSpan={9} className="px-16 py-4 text-[11px] text-slate-400 font-bold italic">
@@ -338,29 +450,13 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
 
             {/* GRAND TOTAL - HIGH IMPACT NAVY */}
             <tr className="bg-[#0f172a] text-white border-t-4 border-slate-900">
-              <td className="border-r-2 border-slate-800 px-8 py-3 text-[12px] font-black uppercase tracking-[0.2em] relative">
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500" />
-                CONSOLIDADO GLOBAL
-              </td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums bg-sky-900/50">{data.grandTotal.ventas ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.activacion_no_alta ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.alta ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.alta_no_enrolada ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums">{data.grandTotal.sin_status ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-red-400">{data.grandTotal.chargeback ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[16px] font-black tabular-nums text-amber-400">{data.grandTotal.promesa ?? 0}</td>
-              <td className="border-r-2 border-slate-800 px-2 py-3 text-center text-[22px] font-black tabular-nums bg-white/10 text-white">
-                {data.grandTotal.total ?? 0}
-              </td>
-              <td className="px-6 py-3 text-center bg-white/5 border-l border-slate-800">
-                 <div className="flex flex-col items-center">
-                    <span className={`text-[18px] font-black px-3 py-0.5 rounded-lg shadow-inner ${getEfficacyStyle(data.grandTotal.conv)}`}>
-                      {data.grandTotal.conv}
-                    </span>
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Conversion</span>
-                 </div>
-              </td>
+               {columnOrder.map(col => (
+                  <React.Fragment key={col.key}>
+                    {renderGrandTotalCell(col)}
+                  </React.Fragment>
+               ))}
             </tr>
+
           </tbody>
         </table>
       </div>

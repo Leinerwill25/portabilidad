@@ -249,7 +249,13 @@ export async function GET(request: NextRequest) {
         const estatus = (row[estatusCol || 'ESTATUS'] || '').trim().toUpperCase()
         const isValidFvc = fvcRaw && fvcRaw !== 'NO' && !(fvcRaw === 'FVC' && estatus === 'RECHAZO')
 
+        if (fvcRaw === 'FVC') {
+          sellerEntry.stats.total++
+          hierarchyData[sid].totals.total++
+        }
+
         if (isValidFvc) {
+
           const targetStats = sellerEntry.stats
           const targetTotals = hierarchyData[sid].totals
 
@@ -261,34 +267,23 @@ export async function GET(request: NextRequest) {
           if (estatus === 'AA') {
             targetStats.activacion_no_alta++
             targetTotals.activacion_no_alta++
-            targetStats.total++
-            targetTotals.total++
           } else if (estatus === 'ALTA') {
             targetStats.alta++
             targetTotals.alta++
-            targetStats.total++
-            targetTotals.total++
           } else if (estatus === 'NO ENROLADO') {
             targetStats.alta_no_enrolada++
             targetTotals.alta_no_enrolada++
-            targetStats.total++
-            targetTotals.total++
           } else if (estatus === 'CHARGE BACK') {
             targetStats.chargeback++
             targetTotals.chargeback++
-            targetStats.total++
-            targetTotals.total++
           } else if (estatus === 'SIN STATUS') {
             targetStats.sin_status++
             targetTotals.sin_status++
-            targetStats.total++
-            targetTotals.total++
           } else if (estatus === 'PROMESA DE VISITA') {
             targetStats.promesa++
             targetTotals.promesa++
-            targetStats.total++
-            targetTotals.total++
           }
+
         }
 
       })
