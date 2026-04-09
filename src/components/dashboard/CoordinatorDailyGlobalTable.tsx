@@ -10,8 +10,10 @@ import {
   ChevronDown,
   Users,
   UserCheck,
-  ChevronUp
+  ChevronUp,
+  Camera
 } from 'lucide-react'
+import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
 const DAYS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']
 
@@ -194,7 +196,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       </div>
 
       {/* 3. Global Comparison Table + Drill-down */}
-      <div className="bg-white border-2 border-slate-900 rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] relative">
+      <div className="bg-white border-2 border-slate-900 rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] relative" id="daily-global-report">
         
         {/* Loading Overlay */}
         {(loading || isRefreshing) && data && (
@@ -240,6 +242,14 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
              </div>
 
              <button 
+                onClick={() => copyElementToClipboard('daily-global-report')}
+                className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all active:scale-95 border border-white/20 shadow-lg mt-5"
+                title="Capturar Reporte"
+              >
+                <Camera size={18} />
+              </button>
+
+              <button 
                 onClick={() => fetchGlobalStats(true)}
                 disabled={isRefreshing}
                 className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-xl active:scale-95 group disabled:opacity-50 mt-5 border border-blue-400/20"
