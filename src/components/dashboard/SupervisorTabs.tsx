@@ -30,8 +30,8 @@ interface SupervisorTabsProps {
 export default function SupervisorTabs({ activeTab, onTabChange }: SupervisorTabsProps) {
   return (
     <div className="relative mb-10">
-      {/* Premium Glass Container - Force single line with NO visible scrollbar */}
-      <div className="flex flex-nowrap items-center gap-0.5 p-1.5 bg-slate-900 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.3)] border-2 border-slate-800 rounded-[2.5rem] overflow-x-auto no-scrollbar relative z-10 w-full xl:w-fit max-w-full">
+      {/* Premium Glass Container - Robust background for all machines */}
+      <div className="flex flex-nowrap items-center gap-0.5 p-1.5 bg-navy shadow-[0_20px_50px_-12px_rgba(26,39,68,0.3)] border-2 border-slate-700/30 rounded-[2.5rem] overflow-x-auto no-scrollbar relative z-10 w-full xl:w-fit max-w-full">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id
           const Icon = tab.icon

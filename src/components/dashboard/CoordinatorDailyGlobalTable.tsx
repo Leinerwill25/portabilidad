@@ -118,9 +118,9 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
 
   if (loading && !data) {
     return (
-      <div className="bg-white border-2 border-slate-900 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 mb-12 shadow-xl animate-pulse">
-        <RotateCw className="text-slate-900 animate-spin" size={40} strokeWidth={3} />
-        <p className="text-[12px] font-black text-slate-900 uppercase tracking-[0.3em]">
+      <div className="bg-white border-2 border-navy rounded-2xl p-16 flex flex-col items-center justify-center gap-4 mb-12 shadow-xl animate-pulse">
+        <RotateCw className="text-navy animate-spin" size={40} strokeWidth={3} />
+        <p className="text-[12px] font-black text-navy uppercase tracking-[0.3em]">
           {isRefreshing ? 'Sincronizando...' : 'Consolidando Reporte Global...'}
         </p>
       </div>
@@ -165,7 +165,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
             >
               <div className="flex items-center justify-between mb-3">
                  <span className={`text-[10px] font-black uppercase tracking-widest ${
-                   isSelected ? 'text-white/70' : 'text-slate-400'
+                   isSelected ? 'text-white/70' : 'text-slate-600'
                  }`}>
                    {day}
                  </span>
@@ -173,7 +173,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
               </div>
               
               <div className="flex items-baseline gap-1.5">
-                <span className={`text-[26px] font-black tabular-nums tracking-tighter ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                <span className={`text-[26px] font-black tabular-nums tracking-tighter ${isSelected ? 'text-white' : 'text-navy'}`}>
                    {dayTotal?.fvc || 0}
                 </span>
                 <span className={`text-[12px] font-bold ${isSelected ? 'text-white/40' : 'text-slate-400'}`}>
@@ -196,12 +196,12 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       </div>
 
       {/* 3. Global Comparison Table + Drill-down */}
-      <div className="bg-white border-2 border-slate-900 rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] relative" id="daily-global-report">
+      <div className="bg-white border-2 border-navy rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] relative" id="daily-global-report">
         
         {/* Loading Overlay */}
         {(loading || isRefreshing) && data && (
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-50 flex items-center justify-center">
-             <div className="bg-slate-900 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 scale-90">
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex items-center justify-center">
+             <div className="bg-navy p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 scale-90 border border-white/10">
                 <RotateCw className="text-white animate-spin" size={24} strokeWidth={3} />
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Sincronizando...</span>
              </div>
@@ -209,7 +209,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
         )}
 
         {/* Dynamic Header */}
-        <div className="bg-slate-900 py-8 px-10 flex flex-col xl:flex-row items-center justify-between gap-10">
+        <div className="bg-navy py-8 px-10 flex flex-col xl:flex-row items-center justify-between gap-10">
           <div className="flex items-center gap-6 w-full xl:w-auto">
              <div className="p-4 bg-blue-600 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)]">
                 <LayoutDashboard size={28} className="text-white" strokeWidth={2.5} />
@@ -260,7 +260,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
         </div>
 
         {/* Data Grid */}
-        <div className="overflow-x-auto p-1 bg-slate-900 no-scrollbar">
+        <div className="overflow-x-auto p-1 bg-navy no-scrollbar">
            <div className="bg-white rounded-t-[1.5rem] overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -292,7 +292,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                         >
                           <td className="px-10 py-5 text-[14px] font-black text-slate-900 border-r-2 border-slate-50 uppercase tracking-tight flex items-center justify-between">
                              <div className="flex items-center gap-4">
-                               <div className={`w-2.5 h-2.5 rounded-sm transition-colors ${isExpanded ? 'bg-blue-600' : 'bg-slate-900 group-hover:bg-blue-600'}`} />
+                               <div className={`w-2.5 h-2.5 rounded-sm transition-colors ${isExpanded ? 'bg-blue-600' : 'bg-navy group-hover:bg-blue-600'}`} />
                                {supervisor.name}
                              </div>
                              {isExpanded ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-slate-300 group-hover:text-blue-600" />}
@@ -317,7 +317,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                         {/* Drill-down Seller Details */}
                         {isExpanded && (
                           <tr className="bg-slate-50/30">
-                            <td colSpan={5} className="px-10 py-6 border-b-2 border-slate-900/10">
+                            <td colSpan={5} className="px-10 py-6 border-b-2 border-navy/10">
                               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="bg-slate-100/50 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
                                    <Users size={14} className="text-slate-500" />
@@ -389,7 +389,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                 )}
                 
                 {/* Visual Consolidated Totals */}
-                <tr className="bg-slate-900 text-white font-black shadow-[0_-10px_30px_rgba(0,0,0,0.2)] relative z-20">
+                <tr className="bg-navy text-white font-black shadow-[0_-10px_30px_rgba(0,0,0,0.2)] relative z-20">
                   <td className="px-10 py-4 text-[12px] border-r border-white/5 uppercase tracking-[0.2em] relative">
                     <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.8)]" />
                     CONSOLIDADO {activeDay}
@@ -412,7 +412,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
 
       {/* 3. Analysis Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <div className="bg-white border-2 border-slate-900 p-8 rounded-3xl shadow-xl flex flex-col justify-between">
+         <div className="bg-white border-2 border-navy p-8 rounded-3xl shadow-xl flex flex-col justify-between">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">KPI Crítico</p>
             <h4 className="text-[15px] font-black text-slate-900 uppercase tracking-tight">Conversión Global {activeDay}</h4>
             <div className="mt-6 flex items-baseline gap-3">
@@ -429,7 +429,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
             </p>
          </div>
 
-         <div className="bg-slate-900 p-8 rounded-3xl shadow-xl text-white">
+         <div className="bg-navy p-8 rounded-3xl shadow-xl text-white">
             <RotateCw className="text-blue-500 mb-4" size={24} />
             <h4 className="text-[16px] font-black uppercase tracking-widest mb-2">Sincronización</h4>
             <p className="text-[12px] font-bold opacity-70 leading-relaxed">
