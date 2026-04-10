@@ -343,7 +343,7 @@ export function filterLastWeek(rows: SheetRow[], dateColumn: string): SheetRow[]
 }
 
 // Parser de fechas flexible (DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, etc.)
-function parseDateFlexible(dateStr: string): Date | null {
+export function parseDateFlexible(dateStr: string): Date | null {
   const s = dateStr.trim()
 
   // ISO: 2024-12-25

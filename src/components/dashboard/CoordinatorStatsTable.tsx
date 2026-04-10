@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react'
 import { 
   ChevronDown, 
   ChevronRight, 
+  ChevronLeft,
   Users,
   RefreshCw,
   BarChart3,
   Camera,
-  GripVertical
+  GripVertical,
+  Calendar as CalendarIcon,
+  X
 } from 'lucide-react'
 import { Reorder } from 'framer-motion'
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
@@ -72,6 +75,170 @@ interface HierarchyData {
   }
 }
 
+// --- Helper Sub-component for Date Range ---
+function CustomDateRangePicker({ 
+  startDate, 
+  endDate, 
+  onRangeSelect, 
+  onClear 
+}: { 
+  startDate: string, 
+  endDate: string, 
+  onRangeSelect: (start: string, end: string) => void,
+  onClear: () => void
+}) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [viewDate, setViewDate] = React.useState(new Date())
+  const [tempStart, setTempStart] = React.useState<string | null>(null)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
+  // Handle clicks outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
+  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay()
+
+  const handleDateClick = (day: number) => {
+    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day)
+    const dateStr = d.toISOString().split('T')[0]
+
+    if (!tempStart) {
+      setTempStart(dateStr)
+    } else {
+      const d1 = new Date(tempStart)
+      const d2 = new Date(dateStr)
+      if (d1 < d2) {
+        onRangeSelect(tempStart, dateStr)
+      } else {
+        onRangeSelect(dateStr, tempStart)
+      }
+      setTempStart(null)
+      setIsOpen(false)
+    }
+  }
+
+  const renderCalendar = () => {
+    const year = viewDate.getFullYear()
+    const month = viewDate.getMonth()
+    const days = daysInMonth(year, month)
+    const firstDay = firstDayOfMonth(year, month)
+    const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(viewDate)
+
+    const grid = []
+    // Empty cells for first week
+    for (let i = 0; i < firstDay; i++) {
+      grid.push(<div key={`empty-${i}`} className="w-8 h-8" />)
+    }
+
+    // Days
+    for (let d = 1; d <= days; d++) {
+      const dateObj = new Date(year, month, d)
+      const dateStr = dateObj.toISOString().split('T')[0]
+      const isSelected = dateStr === startDate || dateStr === endDate || dateStr === tempStart
+      const isInRange = startDate && endDate && dateStr > startDate && dateStr < endDate
+
+      grid.push(
+        <button
+          key={d}
+          onClick={() => handleDateClick(d)}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-300 relative ${
+            isSelected 
+              ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] z-10 scale-105' 
+              : isInRange 
+                ? 'bg-blue-500/10 text-blue-400' 
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+          }`}
+        >
+          {isSelected && <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />}
+          {d}
+        </button>
+      )
+    }
+
+    return (
+      <div className="p-6 bg-[#0f172a]/95 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[300px] animate-in slide-in-from-top-2 duration-300 z-[200]">
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => setViewDate(new Date(year, month - 1, 1))}
+            className="p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">Calendario</span>
+            <span className="text-[14px] font-black text-white uppercase tracking-tighter">{monthName} {year}</span>
+          </div>
+          <button 
+            onClick={() => setViewDate(new Date(year, month + 1, 1))}
+            className="p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-2 text-center mb-2 px-1">
+          {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(day => (
+            <span key={day} className="text-[8px] font-black text-slate-500 tracking-widest">{day}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1.5 p-1">
+          {grid}
+        </div>
+        <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between px-2">
+            <button 
+              onClick={onClear} 
+              className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-400 transition-colors px-4 py-2 hover:bg-rose-500/5 rounded-full"
+            >
+              Resetear
+            </button>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="text-[10px] font-black text-white uppercase tracking-widest bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-full transition-all shadow-lg active:scale-95"
+            >
+              Aplicar
+            </button>
+        </div>
+      </div>
+    )
+  }
+
+  const label = startDate && endDate 
+    ? `${startDate.split('-').slice(1).reverse().join('/')} - ${endDate.split('-').slice(1).reverse().join('/')}`
+    : 'Todo el Periodo'
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-4 px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full transition-all duration-500 group relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors" />
+        <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg group-hover:scale-110 transition-transform duration-500">
+           <CalendarIcon size={16} strokeWidth={2.5} />
+        </div>
+        <div className="flex flex-col items-start leading-none relative z-10">
+          <span className="text-[9px] font-black text-blue-200/60 uppercase tracking-[0.15em] mb-1">Filtrar por Rango</span>
+          <span className="text-[13px] font-black text-white leading-none font-mono tracking-tighter tabular-nums">{label}</span>
+        </div>
+        <ChevronDown size={14} className={`text-white/30 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full mt-4 right-0 z-[200]">
+          {renderCalendar()}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const INITIAL_COLUMNS = [
   { label: 'Site / Vendedor', key: 'name', weight: 'w-[20%]' },
   { label: 'VENTAS', key: 'ventas', weight: 'w-[10%]' },
@@ -92,6 +259,8 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
   const [expandedSupervisors, setExpandedSupervisors] = useState<Record<string, boolean>>({})
   const [monthFilter, setMonthFilter] = useState('')
   const [weekFilter, setWeekFilter] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [columnOrder, setColumnOrder] = useState(INITIAL_COLUMNS)
 
   const fetchData = async (isManual: boolean = false) => {
@@ -102,6 +271,8 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
       let url = '/api/admin/stats/hierarchy?'
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (startDate) url += `&startDate=${startDate}`
+      if (endDate) url += `&endDate=${endDate}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
       if (isManual) url += `&force=true`
 
@@ -127,7 +298,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
 
   useEffect(() => {
     fetchData()
-  }, [monthFilter, weekFilter])
+  }, [monthFilter, weekFilter, startDate, endDate])
 
   const toggleExpand = (id: string) => {
     setExpandedSupervisors(prev => ({ ...prev, [id]: !prev[id] }))
@@ -144,44 +315,6 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
   const formatNum = (n: number, isContrast: boolean = false) => {
      if (n === 0) return <span className={isContrast ? "text-blue-900 font-black" : "text-black font-bold"}>0</span>
      return <span className={isContrast ? "text-blue-900 font-black" : "text-black font-bold"}>{n}</span>
-  }
-
-  const renderCellContent = (colKey: string, stats: any, isSupervisor: boolean = false, supervisorName: string = '', isExpanded: boolean = false) => {
-    switch (colKey) {
-      case 'name':
-        if (isSupervisor) {
-          return (
-            <div className="flex items-center gap-4 relative">
-              <div className="absolute left-[-32px] top-0 bottom-0 w-2 bg-blue-600" />
-              <div className="text-blue-900">
-                {isExpanded ? <ChevronDown size={14} strokeWidth={4} /> : <ChevronRight size={14} strokeWidth={4} />}
-              </div>
-              <span className="text-[14px] font-black text-blue-900 uppercase tracking-tight">
-                SITE: {supervisorName}
-              </span>
-            </div>
-          )
-        }
-        return <span className="pl-8">{supervisorName}</span>
-      case 'ventas': return formatNum(stats.ventas, isSupervisor)
-      case 'ana': return formatNum(stats.activacion_no_alta, isSupervisor)
-      case 'alta': return formatNum(stats.alta, isSupervisor)
-      case 'ne': return formatNum(stats.alta_no_enrolada, isSupervisor)
-      case 'pend': return formatNum(stats.sin_status, isSupervisor)
-      case 'cb': 
-        return <span className={isSupervisor ? "text-red-700 font-black" : "text-red-600 font-black"}>{formatNum(stats.chargeback, isSupervisor)}</span>
-      case 'prom': 
-        return <span className={isSupervisor ? "text-amber-600 font-black" : "text-amber-700 font-bold"}>{formatNum(stats.promesa, isSupervisor)}</span>
-      case 'total': 
-        return <div className={isSupervisor ? "bg-sky-300/50" : "bg-black/5"}>{formatNum(stats.total, isSupervisor)}</div>
-      case 'conv':
-        const convVal = isSupervisor ? stats.conv : stats.conv // stats in sellers actually has conv property outside the stats object
-        // Wait, sellers have conv directly on the object, supervisors have conv on the object too.
-        // But for this function, stats is passed as the entire object or stats object.
-        // Let's adjust how we call it.
-        return null // Handled outside for simpler logic
-      default: return null
-    }
   }
 
   if (loading) {
@@ -234,7 +367,6 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
               <h3 className="text-[15px] font-black text-white uppercase tracking-[0.1em]">Dashboard Gerencial Site Analytics</h3>
            </div>
             <div className="flex items-center gap-4">
-              {/* Filters ... (Keep original logic) */}
               <div className="flex flex-col gap-1">
                 <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Mes</span>
                 <select 
@@ -242,6 +374,8 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                   onChange={(e) => {
                     setMonthFilter(e.target.value)
                     setWeekFilter('')
+                    setStartDate('')
+                    setEndDate('')
                   }}
                   className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[11px] font-bold px-3 py-1.5 outline-none transition-all cursor-pointer"
                 >
@@ -256,7 +390,11 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                 <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Semana</span>
                 <select 
                   value={weekFilter || data?.selectedWeek || ''}
-                  onChange={(e) => setWeekFilter(e.target.value)}
+                  onChange={(e) => {
+                    setWeekFilter(e.target.value)
+                    setStartDate('')
+                    setEndDate('')
+                  }}
                   className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[11px] font-bold px-3 py-1.5 outline-none transition-all cursor-pointer"
                 >
                   <option value="" className="text-black">Todas</option>
@@ -265,6 +403,23 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                   ))}
                 </select>
               </div>
+
+              <div className="w-[1px] h-8 bg-white/20 mx-2" />
+
+              <CustomDateRangePicker 
+                startDate={startDate}
+                endDate={endDate}
+                onRangeSelect={(start, end) => {
+                  setStartDate(start)
+                  setEndDate(end)
+                  setMonthFilter('')
+                  setWeekFilter('')
+                }}
+                onClear={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+              />
 
               <div className="w-[1px] h-8 bg-white/20 mx-2" />
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid, getLocalTimeDate } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getLocalTimeDate, parseDateFlexible, getGoogleSheetsWeek } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterMonth = searchParams.get('month')?.toUpperCase()
   const filterWeek = searchParams.get('week')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
   const supervisorId = searchParams.get('supervisorId')
   const forceFresh = searchParams.get('force') === 'true'
 
@@ -144,6 +146,29 @@ export async function GET(request: NextRequest) {
       .select('id, seller_id, sheet_id, sheet_url')
       .in('seller_id', sellerIds)
     sheets = (sheetsData as Sheet[]) || []
+  }
+  
+  // 6. Preparar Firmas de Búsqueda por Rango (si aplica)
+  const targetRangeSignatures = new Set<string>()
+  if (startDate && endDate) {
+    const start = new Date(startDate + 'T00:00:00')
+    const end = new Date(endDate + 'T23:59:59')
+    const curr = new Date(start)
+    while (curr <= end) {
+      const mName = MONTHS_ES[curr.getMonth()]
+      const wNum = getGoogleSheetsWeek(curr).toString()
+      const dName = [
+        'DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'
+      ][curr.getDay()]
+      
+      targetRangeSignatures.add(`${mName}|${wNum}|${dName}`)
+      
+      // Variaciones con acento
+      if (dName === 'MIERCOLES') targetRangeSignatures.add(`${mName}|${wNum}|MIÉRCOLES`)
+      if (dName === 'SABADO') targetRangeSignatures.add(`${mName}|${wNum}|SÁBADO`)
+      
+      curr.setDate(curr.getDate() + 1)
+    }
   }
 
   // 6. Preparar Mapas de Agregación
@@ -238,10 +263,27 @@ export async function GET(request: NextRequest) {
         if (rowWeekNum) allWeeks.add(rowWeekNum)
         if (rowWeekFvcNum) allWeeks.add(rowWeekFvcNum)
 
+        const rowDateStr = row[diaCol || 'DIA']?.trim() || ''
+        const rowDayName = row[diaCol || 'DIA']?.trim().toUpperCase()
+        const parsedRowDate = parseDateFlexible(rowDateStr)
+
         let match = false
-        if (filterWeek) match = rowWeekFvcNum === filterWeek
-        else if (filterMonth) match = rowMonth === filterMonth
-        else match = rowMonth === currentMonthName
+        if (startDate && endDate) {
+          if (parsedRowDate) {
+            const start = new Date(startDate + 'T00:00:00')
+            const end = new Date(endDate + 'T23:59:59')
+            match = parsedRowDate >= start && parsedRowDate <= end
+          } else if (rowDayName) {
+            // Match por firma MES|SEMANA|DIA_NOMBRE
+            match = targetRangeSignatures.has(`${rowMonth}|${rowWeekNum}|${rowDayName}`)
+          }
+        } else if (filterWeek) {
+          match = rowWeekFvcNum === filterWeek
+        } else if (filterMonth) {
+          match = rowMonth === filterMonth
+        } else {
+          match = rowMonth === currentMonthName
+        }
 
         if (!match) return
 
