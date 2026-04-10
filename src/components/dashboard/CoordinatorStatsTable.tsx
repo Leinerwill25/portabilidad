@@ -217,21 +217,21 @@ function CustomDateRangePicker({
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-4 px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full transition-all duration-500 group relative overflow-hidden"
+        className="flex items-center gap-3 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full transition-all duration-500 group relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors" />
-        <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg group-hover:scale-110 transition-transform duration-500">
-           <CalendarIcon size={16} strokeWidth={2.5} />
+        <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg group-hover:scale-110 transition-transform duration-500">
+           <CalendarIcon size={14} strokeWidth={2.5} />
         </div>
-        <div className="flex flex-col items-start leading-none relative z-10">
-          <span className="text-[9px] font-black text-blue-200/60 uppercase tracking-[0.15em] mb-1">Filtrar por Rango</span>
-          <span className="text-[13px] font-black text-white leading-none font-mono tracking-tighter tabular-nums">{label}</span>
+        <div className="flex flex-col items-start leading-tight relative z-10">
+          <span className="text-[7.5px] font-black text-blue-200/60 uppercase tracking-[0.15em]">Filtrar por Rango</span>
+          <span className="text-[11.5px] font-black text-white leading-none font-mono tracking-tighter tabular-nums">{label}</span>
         </div>
-        <ChevronDown size={14} className={`text-white/30 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={12} className={`text-white/30 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-4 right-0 z-[200]">
+        <div className="absolute top-full mt-3 right-0 z-[200]">
           {renderCalendar()}
         </div>
       )}
