@@ -62,7 +62,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     supabase.from('dn_searches')
       .select('*')
       .order('searched_at', { ascending: false })
-      .limit(100), // Increased from 7 for stats and better audit
+      .limit(1000), // Increased to 1000 to cover full weeks of history
     supabase.from('dn_searches')
       .select('*', { count: 'exact', head: true })
       .gte('searched_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),

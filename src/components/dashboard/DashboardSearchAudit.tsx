@@ -10,8 +10,14 @@ import {
   ChevronUp,
   UserCheck,
   TrendingUp,
-  Target
+  Target,
+  Calendar,
+  RefreshCw,
+  Search,
+  CheckCircle2
 } from 'lucide-react'
+import { getGoogleSheetsWeek } from '@/lib/sheets/scraper'
+import { toast } from 'sonner'
 
 export interface SearchResult {
   sellerName: string
@@ -33,16 +39,33 @@ interface DashboardSearchAuditProps {
 
 export default function DashboardSearchAudit({ initialSearches, totalSearchesOverall }: DashboardSearchAuditProps) {
   const [showAll, setShowAll] = useState(false)
-  
-  // Deduplicate by DN: Keep only the most recent search for each DN
+  const [selectedWeek, setSelectedWeek] = useState<number>(getGoogleSheetsWeek())
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [revalidatedData, setRevalidatedData] = useState<Record<string, any>>({})
+
+  // Generate week options (Last 12 weeks)
+  const weekOptions = useMemo(() => {
+    const current = getGoogleSheetsWeek()
+    return Array.from({ length: 12 }, (_, i) => current - i).filter(w => w > 0)
+  }, [])
+
+  // 1. Filter by Selected Week
+  const weeklySearches = useMemo(() => {
+    return initialSearches.filter(s => {
+      const date = new Date(s.searched_at)
+      return getGoogleSheetsWeek(date) === selectedWeek
+    })
+  }, [initialSearches, selectedWeek])
+
+  // 2. Deduplicate by DN: Keep only the most recent search for each DN within THIS week
   const uniqueSearchesRecent = useMemo(() => {
     const seenDNs = new Set<string>()
-    return initialSearches.filter(s => {
+    return weeklySearches.filter(s => {
       if (seenDNs.has(s.dn_code)) return false
       seenDNs.add(s.dn_code)
       return true
     })
-  }, [initialSearches])
+  }, [weeklySearches])
 
   const displayedSearches = useMemo(() => {
     return showAll ? uniqueSearchesRecent : uniqueSearchesRecent.slice(0, 20)
@@ -73,26 +96,91 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
         rate: data.total > 0 ? Math.round((data.altas / data.total) * 100) : 0
       }))
       .sort((a, b) => b.total - a.total)
-  }, [uniqueSearchesRecent])
+  }, [uniqueSearchesRecent, revalidatedData])
+
+  const handleLiveSync = async () => {
+    if (uniqueSearchesRecent.length === 0) return
+    
+    setIsSyncing(true)
+    const toastId = toast.loading(`Sincronizando ${uniqueSearchesRecent.length} DNs con las hojas de cálculo...`)
+    
+    try {
+      const dns = uniqueSearchesRecent.map(s => s.dn_code)
+      const response = await fetch('/api/admin/audit/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dns, week: selectedWeek })
+      })
+      
+      if (!response.ok) throw new Error('Error en la sincronización')
+      
+      const { validationMap } = await response.json()
+      setRevalidatedData(validationMap)
+      toast.success('Auditoría sincronizada exitosamente con las fuentes de datos.', { id: toastId })
+    } catch (error) {
+      console.error(error)
+      toast.error('No se pudo completar la sincronización en vivo.', { id: toastId })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   return (
     <div className="bg-white border border-[#e2e8f0] rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
-      <div className="px-8 py-6 border-b border-[#f1f5f9] flex items-center justify-between bg-white">
-        <div>
-          <h3 className="text-[16px] font-black text-[#0f172a] flex items-center gap-3 uppercase tracking-tight">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Clock className="text-blue-600" size={18} />
-            </div>
-            Historial de Auditoría (DN Únicos)
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-1 font-medium italic">Filtro activo: Solo se muestra la consulta más reciente por cada número registrado.</p>
-        </div>
-        <Link href="/search" className="text-[12px] text-blue-600 font-bold hover:text-blue-700 flex items-center gap-2 group transition-colors">
-          Nueva Consulta
-          <div className="p-1.5 bg-blue-600 text-white rounded-md group-hover:bg-blue-700 transition-all">
-            <ArrowUpRight size={14} />
+      <div className="px-8 py-6 border-b border-[#f1f5f9] flex flex-col lg:flex-row lg:items-center justify-between bg-white gap-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-100">
+            <Clock className="text-white" size={20} />
           </div>
-        </Link>
+          <div>
+            <h3 className="text-[17px] font-black text-[#0f172a] uppercase tracking-tight">
+              Historial de Auditoría Semanal
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-medium italic">
+              Segmentado por DN únicos para la semana seleccionada.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Week Selector */}
+          <div className="relative">
+             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Calendar size={14} />
+             </div>
+             <select 
+               value={selectedWeek}
+               onChange={(e) => {
+                 setSelectedWeek(parseInt(e.target.value))
+                 setRevalidatedData({}) // Reset sync data when week changes
+               }}
+               className="pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer hover:bg-slate-100 transition-all min-w-[140px]"
+             >
+               {weekOptions.map(w => (
+                 <option key={w} value={w}>Semana {w}</option>
+               ))}
+             </select>
+             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
+          </div>
+
+          <button
+            onClick={handleLiveSync}
+            disabled={isSyncing || uniqueSearchesRecent.length === 0}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-sm ${
+              isSyncing 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+            }`}
+          >
+            <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar (En Vivo)'}
+          </button>
+
+          <Link href="/search" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm hover:shadow-md">
+            Nueva Consulta
+            <ArrowUpRight size={14} />
+          </Link>
+        </div>
       </div>
       
       <div className="hidden sm:block overflow-x-auto">
@@ -117,48 +205,65 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
                 </td>
               </tr>
             ) : (
-              displayedSearches.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/50 transition-all group">
-                  <td className="px-8 py-5">
-                    <span className="text-[#0f172a] font-black font-mono text-[14px] leading-none tracking-tighter">{s.dn_code}</span>
-                  </td>
-                  <td className="px-8 py-5 text-center">
-                    <span className="text-slate-700 font-bold text-[13px] px-3 py-1 bg-slate-100 rounded-lg">
-                      {s.results?.[0]?.sellerName || 'S/ID'}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase border tracking-wider transition-all ${
-                        s.results && s.results.length > 0 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                          : 'bg-slate-50 text-slate-500 border-slate-100'
-                      }`}>
-                        {s.results && s.results.length > 0 ? (
-                          <><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {s.results.length} Coincidencias</>
-                        ) : 'Sin Hallazgos'}
-                      </div>
-                      {s.results && s.results.some(r => {
-                        const est = r.row?.ESTATUS?.toString().toUpperCase() || r.row?.Estatus?.toString().toUpperCase()
-                        return est === 'ALTA'
-                      }) && (
-                        <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                          <Check size={8} strokeWidth={4} /> Validado ALTA
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 text-[12px] font-medium text-slate-500">
-                    {new Date(s.searched_at).toLocaleString('es-VE', { 
-                      day: '2-digit', month: '2-digit', year: 'numeric', 
-                      hour: '2-digit', minute: '2-digit' 
-                    })}
-                  </td>
-                  <td className="px-8 py-5 text-[11px] text-slate-400 text-right font-mono opacity-60">
-                    {s.ip_address}
-                  </td>
-                </tr>
-              ))
+                uniqueSearchesRecent.map((s) => {
+                 const liveRes = revalidatedData[s.dn_code]?.results || s.results
+                 const hasAlta = liveRes?.some((r: any) => {
+                   const est = r.row?.ESTATUS?.toString().toUpperCase() || r.row?.Estatus?.toString().toUpperCase()
+                   return est === 'ALTA'
+                 })
+                 const isSynced = !!revalidatedData[s.dn_code]
+
+                 return (
+                   <tr key={s.id} className="hover:bg-slate-50/50 transition-all group">
+                     <td className="px-8 py-5">
+                       <div className="flex flex-col">
+                         <span className="text-[#0f172a] font-black font-mono text-[15px] leading-none tracking-tighter">{s.dn_code}</span>
+                         {isSynced && (
+                            <span className="text-[8px] font-black text-indigo-500 uppercase mt-1 flex items-center gap-1">
+                              <CheckCircle2 size={8} /> Sincronizado
+                            </span>
+                         )}
+                       </div>
+                     </td>
+                     <td className="px-8 py-5 text-center">
+                       <span className="text-slate-700 font-bold text-[13px] px-3 py-1 bg-slate-100 rounded-lg">
+                         {liveRes?.[0]?.sellerName || s.results?.[0]?.sellerName || 'S/ID'}
+                       </span>
+                     </td>
+                     <td className="px-8 py-5 text-center">
+                       <div className="flex flex-col items-center gap-1.5">
+                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase border tracking-wider transition-all ${
+                           liveRes && liveRes.length > 0 
+                             ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                             : 'bg-slate-50 text-slate-500 border-slate-100'
+                         }`}>
+                           {liveRes && liveRes.length > 0 ? (
+                             <><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {liveRes.length} Coincidencias</>
+                           ) : 'Sin Hallazgos'}
+                         </div>
+                         {hasAlta && (
+                           <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                             <Check size={8} strokeWidth={4} /> Validado ALTA
+                           </span>
+                         )}
+                       </div>
+                     </td>
+                     <td className="px-8 py-5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[12px] font-bold text-slate-700">
+                             {new Date(s.searched_at).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] font-medium text-slate-400">
+                             {new Date(s.searched_at).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                     </td>
+                     <td className="px-8 py-5 text-[11px] text-slate-400 text-right font-mono opacity-60">
+                       {s.ip_address}
+                     </td>
+                   </tr>
+                 )
+               })
             )}
           </tbody>
         </table>
@@ -224,8 +329,8 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
                <Target size={14} strokeWidth={3} />
                <span className="text-[10px] font-black uppercase tracking-[0.1em]">Reporte de Rendimiento Ejecutivo</span>
             </div>
-            <h4 className="text-[20px] font-[950] text-[#0f172a] leading-tight tracking-tight uppercase">Conversión Bruta por Vendedores</h4>
-            <p className="text-[12px] text-slate-500 font-medium mt-1 uppercase tracking-tight">Análisis basado únicamente en la última interacción por cada DN auditado.</p>
+            <h4 className="text-[20px] font-[950] text-[#0f172a] leading-tight tracking-tight uppercase">Conversión Bruta (Semana {selectedWeek})</h4>
+            <p className="text-[12px] text-slate-500 font-medium mt-1 uppercase tracking-tight">Estadísticas exclusivas para los DNs únicos consultados en este periodo.</p>
           </div>
           <div className="flex items-center gap-6">
              <div className="text-right">
