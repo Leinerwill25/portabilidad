@@ -372,28 +372,32 @@ export function searchDNInRows(
   dnCode: string,
   dnColumnName: string = 'DN'
 ): SheetRow[] {
-  const normalizedQuery = dnCode.trim().toUpperCase()
+  // Solo dejamos los dígitos para una comparación robusta
+  const cleanQuery = dnCode.replace(/\D/g, '')
+  if (!cleanQuery) return []
 
   // Encontrar el nombre real de la columna (insensible a mayúsculas/espacios)
   const findRealCol = (target: string, row: SheetRow) => {
     const keys = Object.keys(row)
-    // Coincidencia exacta (trim + uppercase)
     const exact = keys.find(k => k.trim().toUpperCase() === target.trim().toUpperCase())
     if (exact) return exact
-    // Coincidencia parcial (que contenga el target)
     return keys.find(k => k.trim().toUpperCase().includes(target.trim().toUpperCase()))
   }
 
   return rows.filter(row => {
     const realDnCol = findRealCol(dnColumnName, row) || dnColumnName
-    const dnValue = row[realDnCol]?.toString().trim().toUpperCase()
+    const dnValue = row[realDnCol]?.toString() || ''
+    const cleanDnValue = dnValue.replace(/\D/g, '')
     
-    if (dnValue === normalizedQuery) return true
+    // Comparación exacta de números normalizados
+    if (cleanDnValue === cleanQuery) return true
 
-    // Búsqueda parcial: si el DN está contenido en alguna columna
-    return Object.values(row).some(val =>
-      val?.toString().trim().toUpperCase().includes(normalizedQuery)
-    )
+    // Si no hay match exacto en la columna DN, buscamos en toda la fila (por si acaso)
+    return Object.values(row).some(val => {
+      if (!val) return false
+      const cleanVal = val.toString().replace(/\D/g, '')
+      return cleanVal === cleanQuery
+    })
   })
 }
 

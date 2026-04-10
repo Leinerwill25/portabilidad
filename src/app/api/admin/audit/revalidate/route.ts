@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Note: We don't filter by week here because we want current status in Sheets
     const { data: sheets, error: sheetsError } = await supabase
       .from('seller_sheets')
-      .select('*, sellers!inner(full_name, id)')
+      .select('*, sellers!inner(id, first_name, last_name)')
     
     if (sheetsError) throw sheetsError
 
@@ -25,11 +25,11 @@ export async function POST(req: NextRequest) {
     
     await Promise.all(
       sheets.map(async (s) => {
-        const fetched = await fetchSheetAsCSV(s.sheet_id, s.gid || '0')
+        const fetched = await fetchSheetAsCSV(s.sheet_id, s.gid || '0', true)
         if (fetched.success) {
           sheetResults[s.id] = {
             rows: fetched.rows,
-            sellerName: s.sellers?.full_name || 'S/N',
+            sellerName: s.sellers ? `${s.sellers.first_name || ''} ${s.sellers.last_name || ''}`.trim() : 'S/N',
             dnCol: s.dn_column || 'DN'
           }
         }

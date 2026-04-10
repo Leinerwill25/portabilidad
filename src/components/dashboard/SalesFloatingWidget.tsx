@@ -21,13 +21,17 @@ export default function SalesFloatingWidget() {
     setLoading(true)
     try {
       const res = await fetch(`/api/dashboard/stats/daily-sales${force ? '?force=true' : ''}`)
-      if (!res.ok) throw new Error('Error al obtener ventas')
       const result = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(result.error || 'Error al obtener ventas')
+      }
+      
       setData(result)
       if (force) toast.success('Información actualizada en tiempo real')
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error('No se pudo actualizar el contador')
+      toast.error(error.message || 'No se pudo actualizar el contador')
     } finally {
       setLoading(false)
     }

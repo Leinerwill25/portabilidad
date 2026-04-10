@@ -38,10 +38,13 @@ interface DashboardSearchAuditProps {
 }
 
 export default function DashboardSearchAudit({ initialSearches, totalSearchesOverall }: DashboardSearchAuditProps) {
-  const [showAll, setShowAll] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState<number>(getGoogleSheetsWeek())
   const [isSyncing, setIsSyncing] = useState(false)
   const [revalidatedData, setRevalidatedData] = useState<Record<string, any>>({})
+  
+  // New states for DB-driven stats
+  const [weeklyStats, setWeeklyStats] = useState<{ sellerStats: any[], totalImpacted: number } | null>(null)
+  const [isLoadingStats, setIsLoadingStats] = useState(false)
 
   // Generate week options (Last 12 weeks)
   const weekOptions = useMemo(() => {
@@ -49,63 +52,44 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
     return Array.from({ length: 12 }, (_, i) => current - i).filter(w => w > 0)
   }, [])
 
-  // 1. Filter by Selected Week
-  const weeklySearches = useMemo(() => {
-    return initialSearches.filter(s => {
-      const date = new Date(s.searched_at)
-      return getGoogleSheetsWeek(date) === selectedWeek
-    })
-  }, [initialSearches, selectedWeek])
+  // Fetch stats from DB whenever week changes
+  React.useEffect(() => {
+    async function fetchStats() {
+      setIsLoadingStats(true)
+      try {
+        const res = await fetch(`/api/admin/audit/stats?week=${selectedWeek}`)
+        if (res.ok) {
+          const data = await res.json()
+          setWeeklyStats(data)
+        }
+      } catch (error) {
+        console.error('Error fetching weekly stats:', error)
+      } finally {
+        setIsLoadingStats(false)
+      }
+    }
+    fetchStats()
+  }, [selectedWeek])
 
-  // 2. Deduplicate by DN: Keep only the most recent search for each DN within THIS week
-  const uniqueSearchesRecent = useMemo(() => {
+  // List always shows top 20 global activity as per user request
+  const displayedSearches = useMemo(() => {
+    // Deduplicate by DN for the recent list as well to maintain consistency
     const seenDNs = new Set<string>()
-    return weeklySearches.filter(s => {
+    return initialSearches.filter(s => {
       if (seenDNs.has(s.dn_code)) return false
       seenDNs.add(s.dn_code)
       return true
-    })
-  }, [weeklySearches])
-
-  const displayedSearches = useMemo(() => {
-    return showAll ? uniqueSearchesRecent : uniqueSearchesRecent.slice(0, 20)
-  }, [uniqueSearchesRecent, showAll])
-
-  const sellerStats = useMemo(() => {
-    const stats: Record<string, { total: number, altas: number }> = {}
-    
-    // Calculate stats ONLY based on unique DN searches as per user request
-    uniqueSearchesRecent.forEach(s => {
-      const seller = s.results?.[0]?.sellerName || 'N/A'
-      if (!stats[seller]) stats[seller] = { total: 0, altas: 0 }
-      
-      stats[seller].total++
-      
-      const hasAlta = s.results?.some(r => {
-        const est = r.row?.ESTATUS?.toString().toUpperCase() || r.row?.Estatus?.toString().toUpperCase()
-        return est === 'ALTA'
-      })
-      
-      if (hasAlta) stats[seller].altas++
-    })
-    
-    return Object.entries(stats)
-      .map(([name, data]) => ({
-        name,
-        ...data,
-        rate: data.total > 0 ? Math.round((data.altas / data.total) * 100) : 0
-      }))
-      .sort((a, b) => b.total - a.total)
-  }, [uniqueSearchesRecent, revalidatedData])
+    }).slice(0, 20)
+  }, [initialSearches])
 
   const handleLiveSync = async () => {
-    if (uniqueSearchesRecent.length === 0) return
+    if (displayedSearches.length === 0) return
     
     setIsSyncing(true)
-    const toastId = toast.loading(`Sincronizando ${uniqueSearchesRecent.length} DNs con las hojas de cálculo...`)
+    const toastId = toast.loading(`Sincronizando DNs recientes con las fuentes de datos...`)
     
     try {
-      const dns = uniqueSearchesRecent.map(s => s.dn_code)
+      const dns = displayedSearches.map(s => s.dn_code)
       const response = await fetch('/api/admin/audit/revalidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,10 +100,10 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
       
       const { validationMap } = await response.json()
       setRevalidatedData(validationMap)
-      toast.success('Auditoría sincronizada exitosamente con las fuentes de datos.', { id: toastId })
+      toast.success('Auditoría sincronizada exitosamente.', { id: toastId })
     } catch (error) {
       console.error(error)
-      toast.error('No se pudo completar la sincronización en vivo.', { id: toastId })
+      toast.error('No se pudo completar la sincronización.', { id: toastId })
     } finally {
       setIsSyncing(false)
     }
@@ -134,16 +118,16 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
           </div>
           <div>
             <h3 className="text-[17px] font-black text-[#0f172a] uppercase tracking-tight">
-              Historial de Auditoría Semanal
+              Historial de Auditoría
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5 font-medium italic">
-              Segmentado por DN únicos para la semana seleccionada.
+              Actividad global constante (20 registros más recientes).
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Week Selector */}
+          {/* Week Selector - Only affects executive stats footer */}
           <div className="relative">
              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <Calendar size={14} />
@@ -152,12 +136,12 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
                value={selectedWeek}
                onChange={(e) => {
                  setSelectedWeek(parseInt(e.target.value))
-                 setRevalidatedData({}) // Reset sync data when week changes
+                 setRevalidatedData({}) 
                }}
                className="pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer hover:bg-slate-100 transition-all min-w-[140px]"
              >
                {weekOptions.map(w => (
-                 <option key={w} value={w}>Semana {w}</option>
+                 <option key={w} value={w}>Estadísticas Sem. {w}</option>
                ))}
              </select>
              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
@@ -165,7 +149,7 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
 
           <button
             onClick={handleLiveSync}
-            disabled={isSyncing || uniqueSearchesRecent.length === 0}
+            disabled={isSyncing || displayedSearches.length === 0}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-sm ${
               isSyncing 
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
@@ -173,7 +157,7 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
             }`}
           >
             <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-            {isSyncing ? 'Sincronizando...' : 'Sincronizar (En Vivo)'}
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar Lista'}
           </button>
 
           <Link href="/search" className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm hover:shadow-md">
@@ -200,12 +184,12 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
                 <td colSpan={5} className="px-8 py-20 text-center text-slate-400 text-[13px] font-medium">
                    <div className="flex flex-col items-center gap-3">
                       <Target className="opacity-20" size={32} />
-                      No se han detectado actividades de búsqueda únicas en este periodo.
+                      No hay actividad de búsqueda reciente.
                    </div>
                 </td>
               </tr>
             ) : (
-                uniqueSearchesRecent.map((s) => {
+              displayedSearches.map((s) => {
                  const liveRes = revalidatedData[s.dn_code]?.results || s.results
                  const hasAlta = liveRes?.some((r: any) => {
                    const est = r.row?.ESTATUS?.toString().toUpperCase() || r.row?.Estatus?.toString().toUpperCase()
@@ -301,103 +285,92 @@ export default function DashboardSearchAudit({ initialSearches, totalSearchesOve
         ))}
       </div>
 
-      {!showAll && uniqueSearchesRecent.length > 20 && (
-        <button 
-          onClick={() => setShowAll(true)}
-          className="w-full py-5 bg-white hover:bg-slate-50 text-[#3b82f6] text-[11px] font-black uppercase tracking-[0.2em] border-t border-slate-100 flex items-center justify-center gap-3 transition-all"
-        >
-          Expandir Auditoría Completa ({uniqueSearchesRecent.length - 20} registros)
-          <ChevronDown size={14} strokeWidth={3} />
-        </button>
-      )}
-
-      {showAll && uniqueSearchesRecent.length > 20 && (
-        <button 
-          onClick={() => setShowAll(false)}
-          className="w-full py-5 bg-white hover:bg-slate-50 text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] border-t border-slate-100 flex items-center justify-center gap-3 transition-all"
-        >
-          Contraer Lista
-          <ChevronUp size={14} strokeWidth={3} />
-        </button>
-      )}
-
-      {/* Executive Results Summary (Footer) */}
       <div className="bg-slate-50/80 p-10 border-t border-[#e2e8f0]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg mb-3 shadow-lg shadow-blue-200">
+          <div className={isLoadingStats ? 'animate-pulse' : ''}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg mb-3 shadow-lg shadow-blue-200 transition-opacity ${isLoadingStats ? 'opacity-50' : 'opacity-100'}`}>
                <Target size={14} strokeWidth={3} />
                <span className="text-[10px] font-black uppercase tracking-[0.1em]">Reporte de Rendimiento Ejecutivo</span>
             </div>
             <h4 className="text-[20px] font-[950] text-[#0f172a] leading-tight tracking-tight uppercase">Conversión Bruta (Semana {selectedWeek})</h4>
-            <p className="text-[12px] text-slate-500 font-medium mt-1 uppercase tracking-tight">Estadísticas exclusivas para los DNs únicos consultados en este periodo.</p>
+            <p className="text-[12px] text-slate-500 font-medium mt-1 uppercase tracking-tight">Estadísticas completas de la base de datos para este periodo.</p>
           </div>
           <div className="flex items-center gap-6">
              <div className="text-right">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Impactado</p>
-                <p className="text-[22px] font-black text-[#0f172a] leading-none">{uniqueSearchesRecent.length} DNs</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Impacto Único (Sem)</p>
+                <p className={`text-[22px] font-black text-[#0f172a] leading-none ${isLoadingStats ? 'animate-pulse' : ''}`}>
+                  {isLoadingStats ? '...' : `${weeklyStats?.totalImpacted || 0} DNs`}
+                </p>
              </div>
              <div className="h-10 w-[1px] bg-slate-200 shadow-sm" />
              <div className="text-right">
-                <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Global Auditado</p>
+                <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1">Histórico Total</p>
                 <p className="text-[22px] font-black text-blue-600 leading-none">{totalSearchesOverall}</p>
              </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sellerStats.map((seller, i) => (
-            <div key={i} className="bg-white border border-[#e2e8f0] p-6 rounded-2xl flex flex-col gap-4 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 relative group">
-               <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[13px] font-black text-[#0f172a] uppercase tracking-tight group-hover:text-blue-600 transition-colors truncate max-w-[140px]">{seller.name}</span>
-                    <div className="flex items-center gap-1.5 opacity-60">
-                       <UserCheck size={10} className="text-slate-400" />
-                       <span className="text-[9px] font-bold text-slate-400 uppercase">Vand. Senior</span>
+        {isLoadingStats ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="bg-white border border-slate-100 p-6 rounded-2xl h-32" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(weeklyStats?.sellerStats || []).map((seller: any, i: number) => (
+              <div key={i} className="bg-white border border-[#e2e8f0] p-6 rounded-2xl flex flex-col gap-4 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-300 relative group">
+                 <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-black text-[#0f172a] uppercase tracking-tight group-hover:text-blue-600 transition-colors truncate max-w-[140px]">{seller.name}</span>
+                      <div className="flex items-center gap-1.5 opacity-60">
+                         <UserCheck size={10} className="text-slate-400" />
+                         <span className="text-[9px] font-bold text-slate-400 uppercase">Auditado</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={`text-[12px] font-black ${
-                    seller.rate >= 70 ? 'text-emerald-500' : 
-                    seller.rate >= 40 ? 'text-amber-500' : 
-                    'text-rose-500'
-                  }`}>
-                    {seller.rate}%
-                  </div>
-               </div>
-               
-               <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-tight">
-                    <span className="text-slate-400">Efectividad</span>
-                    <span className="text-slate-900">{seller.altas} / {seller.total}</span>
-                  </div>
-                  <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden p-[1px]">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(0,0,0,0.1)] ${
-                        seller.rate >= 70 ? 'bg-emerald-500' : 
-                        seller.rate >= 40 ? 'bg-amber-500' : 
-                        'bg-rose-500'
-                      }`} 
-                      style={{ width: `${seller.rate}%` }}
-                    />
-                  </div>
-               </div>
-
-               <p className="text-[9px] font-bold text-slate-500 uppercase leading-none opacity-0 group-hover:opacity-100 transition-opacity">
-                 {seller.total} Búsquedas únicas auditadas
-               </p>
-            </div>
-          ))}
-          {sellerStats.length === 0 && (
-            <div className="col-span-full py-12 text-center bg-white border border-dashed border-slate-200 rounded-2xl">
-              <span className="text-slate-400 font-bold uppercase text-[11px] tracking-widest">No hay registros suficientes para cálculos ejecutivos</span>
-            </div>
-          )}
-        </div>
+                    <div className={`text-[12px] font-black ${
+                      seller.rate >= 70 ? 'text-emerald-500' : 
+                      seller.rate >= 40 ? 'text-amber-500' : 
+                      'text-rose-500'
+                    }`}>
+                      {seller.rate}%
+                    </div>
+                 </div>
+                 
+                 <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-tight">
+                      <span className="text-slate-400">Efectividad</span>
+                      <span className="text-slate-900">{seller.altas} / {seller.total}</span>
+                    </div>
+                    <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden p-[1px]">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(0,0,0,0.1)] ${
+                          seller.rate >= 70 ? 'bg-emerald-500' : 
+                          seller.rate >= 40 ? 'bg-amber-500' : 
+                          'bg-rose-500'
+                        }`} 
+                        style={{ width: `${seller.rate}%` }}
+                      />
+                    </div>
+                 </div>
+  
+                 <p className="text-[9px] font-bold text-slate-500 uppercase leading-none opacity-0 group-hover:opacity-100 transition-opacity">
+                   {seller.total} DNs únicos semanales
+                 </p>
+              </div>
+            ))}
+            {(!weeklyStats || weeklyStats.sellerStats.length === 0) && (
+              <div className="col-span-full py-12 text-center bg-white border border-dashed border-slate-200 rounded-2xl">
+                <span className="text-slate-400 font-bold uppercase text-[11px] tracking-widest">No hay registros para la semana {selectedWeek}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-12 flex items-center justify-center">
            <div className="inline-flex items-center gap-4 bg-[#0f172a] text-white px-6 py-3 rounded-2xl shadow-2xl">
               <TrendingUp size={16} className="text-emerald-400" />
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] border-l border-white/20 pl-4">Panel de Credibilidad Corporativa v2.0</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] border-l border-white/20 pl-4">Auditoría Directa de Base de Datos v2.1</span>
            </div>
         </div>
       </div>
