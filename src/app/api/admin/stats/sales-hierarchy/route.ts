@@ -21,6 +21,19 @@ interface RowData {
   [key: string]: string | undefined
 }
 
+// Función robusta para normalizar cabeceras de Excel
+function normalizeHeader(h: string): string {
+  return h.trim().toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+    .replace(/[^A-Z0-9]/g, '')     // Quitar todo lo que no sea letra o número
+}
+
+function findCol(headers: string[], aliases: string[]): string | undefined {
+  const normalizedAliases = aliases.map(a => normalizeHeader(a))
+  return headers.find(h => normalizedAliases.includes(normalizeHeader(h)))
+}
+
 interface Seller {
   id: string
   first_name: string
@@ -73,22 +86,24 @@ export async function GET(request: NextRequest) {
   if (userRole === 'admin') {
     supervisorIds = [user.id]
   } else if (userRole === 'coordinator') {
-    // If coordinator specifies a supervisor, just use that (after validation)
+    // SECURITY: Get assignments for this coordinator
+    const { data: assignments } = await supabase
+      .from('coordinator_supervisors')
+      .select('supervisor_id')
+      .eq('coordinator_id', user.id)
+    
+    const assignedIds = assignments ? assignments.map(a => a.supervisor_id) : []
+    if (!assignedIds.includes(user.id)) assignedIds.push(user.id) // Include self
+
     if (supervisorId && supervisorId !== 'undefined' && supervisorId !== user.id) {
-       supervisorIds = [supervisorId]
+       // Validate requested ID is actually assigned to this coordinator
+       if (assignedIds.includes(supervisorId)) {
+         supervisorIds = [supervisorId]
+       } else {
+         return NextResponse.json({ error: 'Supervisor no asignado' }, { status: 403 })
+       }
     } else {
-      const { data: assignments } = await supabase
-        .from('coordinator_supervisors')
-        .select('supervisor_id')
-        .eq('coordinator_id', user.id)
-      
-      if (assignments) {
-        supervisorIds = assignments.map(a => a.supervisor_id)
-      }
-      
-      if (!supervisorIds.includes(user.id)) {
-        supervisorIds.push(user.id) // Incluir propios
-      }
+      supervisorIds = assignedIds
     }
   } else if (userRole === 'superadmin') {
     if (supervisorId && supervisorId !== 'undefined') {
@@ -161,10 +176,13 @@ export async function GET(request: NextRequest) {
 
     if (fetched.success && fetched.rows.length > 0) {
       const headers = fetched.headers
-      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
-      const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
-      const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
-      const diaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
+      
+      const dnCol = findCol(headers, ['DN', 'NUMERO', 'TELEFONO'])
+      const mesCol = findCol(headers, ['MES', 'MONTH'])
+      const semanaCol = findCol(headers, ['SEMANA', 'WEEK'])
+      const diaCol = findCol(headers, ['DIA FVC', 'DÍA FVC', 'DIAFVC']) 
+                  || findCol(headers, ['DIA DE LA VENTA', 'DÍA DE LA VENTA', 'DIA VENTA', 'DIA'])
+      const semanaFvcCol = findCol(headers, ['SEMANA FVC', 'DÍA FVC SEMANA', 'SEMANAFVC'])
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
@@ -210,7 +228,17 @@ export async function GET(request: NextRequest) {
           match = true
           if (filterWeek && rowWeekNum !== filterWeek) match = false
           if (filterMonth && !filterWeek && rowMonth !== filterMonth) match = false
-          if (rowDay !== normalizeDay(filterDay)) match = false
+          
+          // Mejorar match de día usando el filtro de DIA FVC prioritario
+          const finalDayName = normalizeDay(row[diaCol || 'DIA DE LA VENTA'] || '')
+          const targetDayName = normalizeDay(filterDay)
+          
+          if (finalDayName !== targetDayName) match = false
+          
+          // Validar semana correcta si el dato viene de DIA FVC
+          const useWeek = (diaCol && normalizeHeader(diaCol) === 'DIAFVC') ? rowWeekFvcNum : rowWeekNum
+          if (filterWeek && useWeek !== filterWeek) match = false
+
         } else if (filterWeek) {
           match = rowWeekNum === filterWeek
         } else if (filterMonth) {

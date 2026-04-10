@@ -13,6 +13,19 @@ interface RowData {
   [key: string]: string | undefined
 }
 
+// Función robusta para normalizar cabeceras de Excel
+function normalizeHeader(h: string): string {
+  return h.trim().toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+    .replace(/[^A-Z0-9]/g, '')     // Quitar todo lo que no sea letra o número
+}
+
+function findCol(headers: string[], aliases: string[]): string | undefined {
+  const normalizedAliases = aliases.map(a => normalizeHeader(a))
+  return headers.find(h => normalizedAliases.includes(normalizeHeader(h)))
+}
+
 interface Seller {
   id: string
   first_name: string
@@ -230,12 +243,14 @@ export async function GET(request: NextRequest) {
 
     if (fetched.success && fetched.rows.length > 0) {
       const headers = fetched.headers
-      const dnCol = headers.find(h => h.trim().toUpperCase() === 'DN')
-      const mesCol = headers.find(h => h.trim().toUpperCase() === 'MES')
-      const semanaCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA')
-      const diaCol = headers.find(h => h.trim().toUpperCase() === 'DIA DE LA VENTA' || h.trim().toUpperCase() === 'DIA')
-      const estatusCol = headers.find(h => h.trim().toUpperCase() === 'ESTATUS')
-      const semanaFvcCol = headers.find(h => h.trim().toUpperCase() === 'SEMANA FVC')
+      
+      const dnCol = findCol(headers, ['DN', 'NUMERO', 'TELEFONO'])
+      const mesCol = findCol(headers, ['MES', 'MONTH'])
+      const semanaCol = findCol(headers, ['SEMANA', 'WEEK'])
+      const diaCol = findCol(headers, ['DIA FVC', 'DÍA FVC', 'DIAFVC']) 
+                  || findCol(headers, ['DIA DE LA VENTA', 'DÍA DE LA VENTA', 'DIA VENTA', 'DIA'])
+      const estatusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO'])
+      const semanaFvcCol = findCol(headers, ['SEMANA FVC', 'DÍA FVC SEMANA', 'SEMANAFVC'])
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
@@ -275,7 +290,9 @@ export async function GET(request: NextRequest) {
             match = parsedRowDate >= start && parsedRowDate <= end
           } else if (rowDayName) {
             // Match por firma MES|SEMANA|DIA_NOMBRE
-            match = targetRangeSignatures.has(`${rowMonth}|${rowWeekNum}|${rowDayName}`)
+            // Si la columna es DIA FVC, usamos la semana de FVC para la firma
+            const useWeek = (diaCol?.toUpperCase() === 'DIA FVC') ? rowWeekFvcNum : rowWeekNum
+            match = targetRangeSignatures.has(`${rowMonth}|${useWeek}|${rowDayName}`)
           }
         } else if (filterWeek) {
           match = rowWeekFvcNum === filterWeek
