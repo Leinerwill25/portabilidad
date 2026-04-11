@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { extractSheetId, extractGid, fetchSheetAsCSV, parseDateFlexible } from '@/lib/sheets/scraper'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import SellerRecentRegisters from '@/components/vendedor/SellerRecentRegisters'
 
 export default async function SellerDashboard() {
   // 1. Obtener sesión e info de la hoja en paralelo
@@ -27,7 +28,7 @@ export default async function SellerDashboard() {
 
   const { data: sheet } = await supabase
     .from('seller_sheets')
-    .select('sheet_url, sheet_id')
+    .select('sheet_url, sheet_id, script_url')
     .eq('seller_id', session.id)
     .single()
 
@@ -39,6 +40,7 @@ export default async function SellerDashboard() {
   }
 
   // 2. Cargar datos reales con caché inteligente (2 min)
+  let fetchedRows: any[] = []
   if (sheet) {
     const sheetId = extractSheetId(sheet.sheet_url) || sheet.sheet_id
     const gid = extractGid(sheet.sheet_url)
@@ -47,6 +49,7 @@ export default async function SellerDashboard() {
     const fetched = await fetchSheetAsCSV(sheetId, gid, false)
 
     if (fetched.success) {
+      fetchedRows = fetched.rows
       const now = new Date()
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
       metrics.total = fetched.rows.length
@@ -159,29 +162,14 @@ export default async function SellerDashboard() {
 
       {/* Secciones Inferiores */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Historial (Aproximación) */}
-        <section className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden h-fit">
-           <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                 <Layers size={18} className="text-slate-400" />
-                 <h3 className="font-black text-slate-900 text-[13px] uppercase tracking-[0.15em]">Registros Recientes</h3>
-              </div>
-              <button className="text-[11px] font-black text-blue-600 uppercase hover:underline flex items-center gap-1.5">
-                 Ver todo el historial <ChevronRight size={14} />
-              </button>
-           </div>
-           
-           <div className="p-0">
-              <div className="p-20 text-center">
-                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Database size={32} className="text-slate-200" />
-                 </div>
-                 <p className="text-[15px] text-slate-800 font-bold mb-1">Visualización de Historial</p>
-                 <p className="text-[13px] text-slate-400 max-w-xs mx-auto">
-                    Pronto podrás filtrar y buscar tus registros directamente desde aquí.
-                 </p>
-              </div>
-           </div>
+        {/* Historial / Seguimientos */}
+        <section className="lg:col-span-2">
+           {sheet && (
+             <SellerRecentRegisters 
+               rows={fetchedRows} 
+               scriptUrl={sheet.script_url} 
+             />
+           )}
         </section>
 
         {/* Herramientas & Conectividad */}
