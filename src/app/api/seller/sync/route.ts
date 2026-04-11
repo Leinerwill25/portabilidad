@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { scriptUrl, data } = await request.json()
+    const { scriptUrl, spreadsheetId, data } = await request.json()
 
     if (!scriptUrl) {
       return NextResponse.json({ error: 'URL de sincronización no configurada' }, { status: 400 })
@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
     // Note: Apps Script requiere POST y los datos en el cuerpo
     const response = await fetch(scriptUrl, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        spreadsheetId,
+        ...data
+      }),
       headers: {
         'Content-Type': 'application/json',
       },

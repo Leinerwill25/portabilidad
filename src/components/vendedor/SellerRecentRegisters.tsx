@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 interface SellerRecentRegistersProps {
   rows: any[]
   scriptUrl: string | null
+  sheetId: string
 }
 
 const STATUS_LIST = [
@@ -36,7 +37,7 @@ const STATUS_LIST = [
   'PROMESA DE VISITA'
 ]
 
-export default function SellerRecentRegisters({ rows, scriptUrl }: SellerRecentRegistersProps) {
+export default function SellerRecentRegisters({ rows, scriptUrl, sheetId }: SellerRecentRegistersProps) {
   const [activeTab, setActiveTab] = useState<'seguimientos' | 'todos'>('seguimientos')
   const [currentPage, setCurrentPage] = useState(1)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
@@ -87,7 +88,12 @@ export default function SellerRecentRegisters({ rows, scriptUrl }: SellerRecentR
       const res = await fetch('/api/seller/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scriptUrl, dn, status: newStatus })
+        body: JSON.stringify({ 
+          scriptUrl, 
+          spreadsheetId: sheetId,
+          dn, 
+          status: newStatus 
+        })
       })
 
       const result = await res.json()

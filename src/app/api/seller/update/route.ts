@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const { scriptUrl, dn, status } = await req.json()
+    const { scriptUrl, spreadsheetId, dn, status } = await req.json()
 
     if (!scriptUrl || !dn || !status) {
       return NextResponse.json({ success: false, error: 'Faltan parámetros requeridos' }, { status: 400 })
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         action: 'update',
+        spreadsheetId: spreadsheetId,
         dn: dn,
         status: status
       })

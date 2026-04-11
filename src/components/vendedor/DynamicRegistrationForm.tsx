@@ -23,6 +23,7 @@ interface DynamicRegistrationFormProps {
   headers: string[]
   scriptUrl: string | null
   sellerName: string
+  sheetId?: string
 }
 
 const MONTHS_LIST = [
@@ -57,7 +58,7 @@ const DELIVERY_STATUS_LIST = [
   'ENTREGA APROBADA'
 ]
 
-export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName }: DynamicRegistrationFormProps) {
+export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName, sheetId }: DynamicRegistrationFormProps) {
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [notepadText, setNotepadText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -179,7 +180,11 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
       const res = await fetch('/api/seller/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scriptUrl, data: finalData })
+        body: JSON.stringify({ 
+          scriptUrl, 
+          spreadsheetId: sheetId, 
+          data: finalData 
+        })
       })
 
       const result = await res.json()

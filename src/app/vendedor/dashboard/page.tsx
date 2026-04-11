@@ -123,7 +123,7 @@ export default async function SellerDashboard() {
 
            <div className="flex flex-col sm:flex-row gap-4">
               <Link 
-                href="/vendedor/nuevo-registro"
+                href={`/vendedor/nuevo-registro?sheetId=${sheet?.sheet_id}`}
                 className="group relative flex items-center gap-4 bg-white text-[#1a2744] px-8 py-5 rounded-2xl font-black text-[15px] uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-white/5"
               >
                 <div className="w-10 h-10 bg-[#1a2744] text-white rounded-xl flex items-center justify-center group-hover:rotate-90 transition-transform">
@@ -168,6 +168,7 @@ export default async function SellerDashboard() {
              <SellerRecentRegisters 
                rows={fetchedRows} 
                scriptUrl={sheet.script_url} 
+               sheetId={sheet.sheet_id}
              />
            )}
         </section>
