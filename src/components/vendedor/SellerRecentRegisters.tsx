@@ -58,6 +58,10 @@ export default function SellerRecentRegisters({ rows, scriptUrl, sheetId }: Sell
     return DAYS[now.getDay()]
   }, [now])
 
+  const normalize = (str: string) => {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+  }
+
   const handleTabChange = (tab: 'seguimientos' | 'todos') => {
     setActiveTab(tab)
     setCurrentPage(1)
@@ -70,12 +74,13 @@ export default function SellerRecentRegisters({ rows, scriptUrl, sheetId }: Sell
 
   const followUpRows = useMemo(() => {
     return sortedRows.filter(row => {
-      const rowWeek = String(row['SEMANA FVC'] || '').trim()
-      const rowDay = String(row['DIA FVC'] || '').trim().toUpperCase()
+      const rowWeek = String(row['SEMANA FVC'] || '').trim().replace(/\D/g, '')
+      const rowDay = normalize(String(row['DIA FVC'] || ''))
       
-      const targetWeek = currentWeek < 10 ? `0${currentWeek}` : `${currentWeek}`
+      const targetWeek = String(currentWeek) // Comparar como strings de número puro (ej: "15")
+      const targetDay = normalize(currentDayName)
       
-      return rowWeek === targetWeek && rowDay === currentDayName
+      return rowWeek === targetWeek && rowDay === targetDay
     })
   }, [sortedRows, currentWeek, currentDayName])
 
