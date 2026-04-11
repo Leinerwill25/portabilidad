@@ -7,13 +7,13 @@ const SYNONYMS: Record<string, string[]> = {
   'NIP': ['nip', 'codigo'],
   'FECHA VENTA': ['f.v', 'fecha de venta', 'fecha venta'],
   'CURP': ['curp', 'identificacion'],
-  'NOMBRE': ['nombres', 'nombre', 'cliente'],
+  'NOMBRE': ['nombres', 'nombre', 'cliente', 'nombre(s)'],
   'APELLIDO PATERNO': ['primer apellido', 'apellido paterno', 'apellido1'],
   'APELLIDO MATERNO': ['segundo apellido', 'apellido materno', 'apellido2'],
-  'MODELO': ['modelo', 'equipo', 'terminal'],
+  'MODELO': ['modelo', 'equipo', 'terminal', 'modelo:'],
   'COLOR': ['color', 'tono'],
-  'CANTIDAD': ['cuotas', 'pagos', 'meses'],
-  'PRECIO': ['pago x mes', 'monto', 'costo', 'precio'],
+  'CANTIDAD': ['cuotas', 'pagos', 'meses', 'cuotas:'],
+  'PRECIO': ['pago x mes', 'monto', 'costo', 'precio', 'pago mensual'],
   'CAC': ['cac', 'punto de venta', 'tienda'],
   'DIRECCIÓN': ['calle', 'direccion'],
   'COLONIA': ['colonia'],
@@ -21,8 +21,26 @@ const SYNONYMS: Record<string, string[]> = {
   'CIUDAD': ['ciudad', 'municipio'],
   'ESTADO': ['estado', 'entidad'],
   'COMENTARIOS': ['lunes a viernes', 'horarios', 'observaciones', 'para el martes', 'para el jueves'],
-  'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo']
+  'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo', 'primer pago'],
+  'FUNDA': ['funda', 'case'],
+  'PROTECTOR DE PANTALLA': ['mica', 'protector', 'templado'],
+  'COLOR AUDIFONOS': ['audifonos', 'auriculares', 'audifono'],
+  'ESTATUS DE FINANCIAMIENTO': ['financiamiento', 'tipo de credito', 'estatus financiamiento']
 }
+
+/**
+ * Campos que NUNCA deben ser sobreescritos por el bloc de notas (Campos calculados o protegidos)
+ */
+const PROTECTED_FIELDS = [
+  'MES',
+  'SEMANA',
+  'DIA DE LA VENTA',
+  'FECHA',
+  'DIA FVC',
+  'SEMANA FVC',
+  'FECHA ALTA',
+  'SEMANA ALTA'
+]
 
 const IGNORE_LIST = [
   'folio',
@@ -46,13 +64,10 @@ function normalize(str: string): string {
     .trim()
 }
 
-/**
- * Verifica si una línea es una etiqueta conocida (para evitar que el lookahead consuma otra etiqueta)
- */
 function isKnownLabel(text: string): boolean {
   const norm = normalize(text)
   for (const synonyms of Object.values(SYNONYMS)) {
-    if (synonyms.some(s => norm.includes(normalize(s)))) return true
+    if (synonyms.some(s => norm === normalize(s) || norm.startsWith(normalize(s) + ':'))) return true
   }
   return false
 }
@@ -83,52 +98,51 @@ export function parseNotepadText(text: string, headers: string[]): Record<string
     if (!keyPart) continue
     if (IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))) continue
 
-    // Lógica Multilínea: Si no hay valor y la siguiente línea NO es una etiqueta, consumirla como valor
     if (!valuePart && i + 1 < lines.length) {
       const nextLine = lines[i + 1]
       if (!isKnownLabel(nextLine)) {
         valuePart = nextLine
-        i++ // Saltamos la siguiente línea ya que la consumimos
+        i++
       }
     }
 
     if (!valuePart) continue
 
-    // Buscar coincidencia en diccionario de sinónimos
     for (const [headerKey, synonyms] of Object.entries(SYNONYMS)) {
-      const headerNorm = normalize(headerKey)
+      const headerKeyNorm = normalize(headerKey)
       
-      // Protección especial: "Equipo" no debe capturar "Fecha de pago del equipo"
-      if (headerKey === 'MODELO' && keyPart.includes('fecha')) continue
+      // Protección contra colisiones
+      if (headerKey === 'MODELO' && (keyPart.includes('fecha') || keyPart.includes('pago'))) continue
       if (headerKey === 'PRECIO' && keyPart.includes('fecha')) continue
 
       const isMatch = synonyms.some(s => {
         const sn = normalize(s)
-        // Coincidencia inteligente: si la etiqueta del bloc de notas CONTIENE el sinónimo
-        // o viceversa, pero con un mínimo de relevancia.
-        return keyPart.includes(sn) || sn.includes(keyPart)
+        return keyPart === sn || keyPart.includes(sn) || sn.includes(keyPart)
       })
 
       if (isMatch) {
-        // Encontrar la cabecera real del Excel que corresponde
-        const match = normalizedHeaders.find(nh => 
-          nh.norm.includes(headerNorm) || headerNorm.includes(nh.norm) || 
-          synonyms.some(s => nh.norm.includes(normalize(s)))
-        )
+         // Encontrar la cabecera real
+         const match = normalizedHeaders.find(nh => {
+           const nhn = nh.norm
+           // Si el nombre del Excel es exactamente igual al sinónimo o a la clave
+           if (nhn === headerKeyNorm) return true
+           // Si el sinónimo está contenido de forma prominente
+           return synonyms.some(s => nhn === normalize(s) || nhn.includes(normalize(s)))
+         })
 
-        if (match && !result[match.original]) {
-          let finalValue = valuePart
-          
-          // Limpiezas específicas
-          if (headerKey === 'TELEFONO') {
-            // Extraer solo los primeros 10 dígitos (ignora folios o texto extra)
-            const digits = valuePart.replace(/\D/g, '')
-            finalValue = digits.substring(0, 10)
-          }
+         if (match && !PROTECTED_FIELDS.map(f => normalize(f)).includes(match.norm)) {
+           if (!result[match.original]) {
+             let finalValue = valuePart
+             
+             if (headerKey === 'TELEFONO') {
+               const digits = valuePart.replace(/\D/g, '')
+               finalValue = digits.substring(0, 10)
+             }
 
-          result[match.original] = finalValue
-          break 
-        }
+             result[match.original] = finalValue
+             break
+           }
+         }
       }
     }
   }
