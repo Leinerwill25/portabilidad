@@ -265,7 +265,9 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
                 
                 // Mapear tipos de input
                 let inputType = 'text'
-                if ((norm.includes('fecha') || norm.includes('fvc')) && !norm.includes('alta')) {
+                const isLocked = LOCKED_FIELDS.includes(norm)
+
+                if ((norm.includes('fecha') || norm.includes('fvc')) && !norm.includes('alta') && !isLocked) {
                   inputType = 'date'
                 }
                 
@@ -427,7 +429,6 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
                 }
 
                 const isPhone = norm.includes('tel') || norm.includes('num') || norm.includes('dn')
-                const isLocked = LOCKED_FIELDS.includes(norm)
 
                 return (
                   <div key={header} className="space-y-2 group">
