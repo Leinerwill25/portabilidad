@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, FileSpreadsheet, ChevronLeft, Loader2, Mail, Phone, Globe, X, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, FileSpreadsheet, ChevronLeft, Loader2, Mail, Phone, Globe, X, ExternalLink, Edit2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -23,6 +23,7 @@ interface Sheet {
   sheet_id: string;
   sheet_name: string;
   display_name: string;
+  script_url: string | null;
   created_at: string;
 }
 
@@ -32,6 +33,8 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
   const [sheets, setSheets] = useState<Sheet[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [showEditSheet, setShowEditSheet] = useState(false)
+  const [editingSheet, setEditingSheet] = useState<Sheet | null>(null)
   
   const supabase = createClient()
 
@@ -71,6 +74,11 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
       toast.success('Sheet eliminado')
       fetchData()
     }
+  }
+
+  const handleEditSheet = (sheet: Sheet) => {
+    setEditingSheet(sheet)
+    setShowEditSheet(true)
   }
 
   if (loading) return (
@@ -147,16 +155,31 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
                     <div className="bg-[#f0fdf4] text-[#166534] p-2 rounded-md border border-[#bbf7d0]">
                       <FileSpreadsheet size={16} />
                     </div>
-                    <button 
-                      onClick={() => handleDeleteSheet(sheet.id)}
-                      className="p-1.5 text-[#9ca3af] hover:text-[#991b1b] hover:bg-[#fef2f2] rounded-md transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => handleEditSheet(sheet)}
+                        className="p-1.5 text-[#9ca3af] hover:text-[#1a56db] hover:bg-[#eff6ff] rounded-md transition-colors"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteSheet(sheet.id)}
+                        className="p-1.5 text-[#9ca3af] hover:text-[#991b1b] hover:bg-[#fef2f2] rounded-md transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   
                   <h3 className="text-[15px] font-bold text-[#1a2744] mb-1 truncate">{sheet.display_name}</h3>
-                  <p className="text-[12px] text-[#6b7280] mb-5" title={sheet.sheet_name}>Pestaña activa: <span className="font-mono text-[#374151]">{sheet.sheet_name}</span></p>
+                  <div className="flex items-center gap-2 mb-4">
+                     <p className="text-[11px] text-[#6b7280]">Pestaña: <span className="font-mono text-[#374151]">{sheet.sheet_name}</span></p>
+                     {sheet.script_url && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-700 uppercase tracking-tighter">
+                          Sincronizable
+                        </span>
+                     )}
+                  </div>
                   
                   <a 
                     href={sheet.sheet_url} 
@@ -182,7 +205,133 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
             onSuccess={() => { fetchData(); setShowAddSheet(false); }} 
           />
         )}
+        {showEditSheet && editingSheet && (
+          <EditSheetModal 
+            sheet={editingSheet}
+            onClose={() => { setShowEditSheet(false); setEditingSheet(null); }} 
+            onSuccess={() => { fetchData(); setShowEditSheet(false); setEditingSheet(null); }} 
+          />
+        )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+function EditSheetModal({ sheet, onClose, onSuccess }: { sheet: Sheet, onClose: () => void, onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    sheet_url: sheet.sheet_url || '',
+    display_name: sheet.display_name || '',
+    sheet_name: sheet.sheet_name || 'Hoja1',
+    script_url: sheet.script_url || '',
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const supabase = createClient()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    
+    const sheetId = extractSheetId(formData.sheet_url) || sheet.sheet_id
+
+    const { error } = await supabase.from('seller_sheets')
+      .update({
+        sheet_url: formData.sheet_url,
+        sheet_id: sheetId,
+        sheet_name: formData.sheet_name,
+        display_name: formData.display_name,
+        script_url: formData.script_url || null,
+      })
+      .eq('id', sheet.id)
+
+    if (error) {
+      toast.error('Error al actualizar: ' + error.message)
+    } else {
+      toast.success('Excel actualizado correctamente')
+      onSuccess()
+    }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-sm"
+      />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="relative w-full max-w-lg bg-white p-8 rounded-xl border border-[#e5e7eb] shadow-2xl text-left"
+      >
+        <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#e5e7eb]">
+          <h2 className="text-[18px] font-bold text-[#1a2744]">Editar Configuración de Excel</h2>
+          <button onClick={onClose} className="p-2 hover:bg-[#f1f5f9] rounded-md text-[#6b7280]">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5">Nombre Descriptivo</label>
+            <input
+              required
+              className="w-full bg-white border border-[#e5e7eb] rounded-md px-4 py-2.5 text-[14px] text-[#374151] focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 outline-none transition-all"
+              value={formData.display_name}
+              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5">URL del Google Sheet</label>
+            <input
+              required
+              type="url"
+              className="w-full bg-white border border-[#e5e7eb] rounded-md px-4 py-2.5 text-[14px] text-[#374151] focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 outline-none transition-all"
+              value={formData.sheet_url}
+              onChange={(e) => setFormData({ ...formData, sheet_url: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5">Nombre de la Pestaña</label>
+            <input
+              required
+              className="w-full bg-white border border-[#e5e7eb] rounded-md px-4 py-2.5 text-[14px] text-[#374151] focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 outline-none transition-all"
+              value={formData.sheet_name}
+              onChange={(e) => setFormData({ ...formData, sheet_name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5 flex items-center justify-between">
+              URL Script Sincronización
+              <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">Activo</span>
+            </label>
+            <input
+              placeholder="https://script.google.com/macros/s/..."
+              className="w-full bg-blue-50 border border-blue-200 rounded-md px-4 py-2.5 text-[13px] text-blue-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all"
+              value={formData.script_url}
+              onChange={(e) => setFormData({ ...formData, script_url: e.target.value })}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-white border border-[#e5e7eb] text-[#374151] text-[13px] font-bold py-3 rounded-md hover:bg-[#f9fafb] transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 bg-[#1a56db] hover:bg-[#1649c0] text-white text-[13px] font-bold py-3 rounded-md transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
+            >
+              {submitting ? 'Guardando...' : 'Actualizar Configuración'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
     </div>
   )
 }
@@ -192,6 +341,7 @@ function AddSheetModal({ sellerId, onClose, onSuccess }: { sellerId: string, onC
     sheet_url: '',
     display_name: '',
     sheet_name: 'Hoja1',
+    script_url: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const supabase = createClient()
@@ -212,6 +362,7 @@ function AddSheetModal({ sellerId, onClose, onSuccess }: { sellerId: string, onC
       sheet_id: sheetId,
       sheet_name: formData.sheet_name,
       display_name: formData.display_name,
+      script_url: formData.script_url || null,
     })
 
     if (error) {
@@ -277,6 +428,20 @@ function AddSheetModal({ sellerId, onClose, onSuccess }: { sellerId: string, onC
               value={formData.sheet_name}
               onChange={(e) => setFormData({ ...formData, sheet_name: e.target.value })}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5 flex items-center justify-between">
+              URL Script Sincronización
+              <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">Opcional</span>
+            </label>
+            <input
+              placeholder="https://script.google.com/macros/s/..."
+              className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-md px-4 py-2.5 text-[14px] text-[#374151] focus:border-[#1a56db] focus:ring-4 focus:ring-[#1a56db]/5 outline-none transition-all placeholder:text-[#9ca3af]"
+              value={formData.script_url}
+              onChange={(e) => setFormData({ ...formData, script_url: e.target.value })}
+            />
+            <p className="text-[10px] text-slate-400 leading-tight">Para habilitar que el vendedor guarde datos directamente desde el dashboard.</p>
           </div>
 
           <div className="flex gap-3 pt-6">

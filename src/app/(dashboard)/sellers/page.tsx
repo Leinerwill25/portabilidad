@@ -287,7 +287,11 @@ function AddSellerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess
     const { data: { user } } = await supabase.auth.getUser()
 
     const { error } = await supabase.from('sellers').insert({
-      ...formData,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      password: 'DN2026*',
       created_by: user?.id
     })
 
@@ -413,6 +417,7 @@ function EditSellerModal({ seller, onClose, onSuccess }: { seller: Seller, onClo
     last_name: seller.last_name || '',
     email: seller.email || '',
     phone: seller.phone || '',
+    password: seller.password || 'DN2026*', // Persistir o resetar contraseña
   })
   const [submitting, setSubmitting] = useState(false)
   const supabase = createClient()

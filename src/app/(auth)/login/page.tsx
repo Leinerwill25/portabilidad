@@ -26,8 +26,28 @@ export default function LoginPage() {
     })
 
     if (error) {
-      toast.error(error.message)
-      setLoading(false)
+      // Si falla la auth normal, intentamos login de vendedor
+      try {
+        const sellerRes = await fetch('/api/auth/seller/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+        
+        const sellerData = await sellerRes.json()
+        
+        if (sellerRes.ok && sellerData.success) {
+          toast.success(`¡Bienvenido, ${sellerData.user.name}!`)
+          router.push(sellerData.redirect)
+          router.refresh()
+        } else {
+          toast.error(sellerData.error || error.message)
+        }
+      } catch (err) {
+        toast.error('Error al conectar con el servidor de autenticación')
+      } finally {
+        setLoading(false)
+      }
     } else {
       toast.success('¡Bienvenido de nuevo!')
       router.push('/dashboard')
