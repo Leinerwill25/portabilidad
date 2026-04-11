@@ -1,6 +1,6 @@
 /**
  * Diccionario de sinónimos para mapear etiquetas del bloc de notas a columnas del Excel.
- * La clave es el término normalizado del Excel, el valor es una lista de términos que pueden aparecer en el bloc de notas.
+ * La clave es el término normalizado que esperamos encontrar en el Excel (o una aproximación).
  */
 const SYNONYMS: Record<string, string[]> = {
   'VENDEDOR': ['ejecutivo', 'vendedor', 'asesor', 'atendio'],
@@ -11,10 +11,10 @@ const SYNONYMS: Record<string, string[]> = {
   'NOMBRE': ['nombres', 'nombre', 'cliente'],
   'APELLIDO PATERNO': ['primer apellido', 'apellido paterno', 'apellido1'],
   'APELLIDO MATERNO': ['segundo apellido', 'apellido materno', 'apellido2'],
-  'MODELO': ['modelo', 'equipo', 'terminal'],
+  'MODELO': ['modelo', 'equipo', 'terminal', 'equipo:'], // Añadimos : para ser más específicos
   'COLOR': ['color', 'tono'],
   'CANTIDAD': ['cuotas', 'pagos', 'meses'],
-  'PRECIO': ['pago x mes', 'monto', 'costo'],
+  'PRECIO': ['pago x mes', 'monto', 'costo', 'pago mensual'],
   'CAC': ['cac', 'punto de venta', 'tienda'],
   'DIRECCIÓN': ['calle', 'direccion'],
   'COLONIA': ['colonia'],
@@ -22,6 +22,7 @@ const SYNONYMS: Record<string, string[]> = {
   'CIUDAD': ['ciudad', 'municipio'],
   'ESTADO': ['estado', 'entidad'],
   'COMENTARIOS': ['lunes a viernes', 'horarios', 'observaciones', 'para el martes', 'para el jueves'],
+  'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo']
 }
 
 /**
@@ -49,6 +50,7 @@ function normalize(str: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
@@ -68,58 +70,55 @@ export function parseNotepadText(text: string, headers: string[]): Record<string
     norm: normalize(h)
   }))
 
-  // 3. Procesar cada línea buscando pares Clave: Valor o palabras clave
+  // 3. Procesar cada línea buscando pares Clave: Valor
   lines.forEach(line => {
-    // Intentar dividir por ":" o simplemente buscar palabras clave
     const separatorIndex = line.indexOf(':')
-    let keyPart = ''
-    let valuePart = ''
+    if (separatorIndex === -1) return // Solo procesar líneas con ":" para mayor precisión
 
-    if (separatorIndex !== -1) {
-      keyPart = normalize(line.substring(0, separatorIndex))
-      valuePart = line.substring(separatorIndex + 1).trim()
-    } else {
-      keyPart = normalize(line)
-    }
+    const rawKey = line.substring(0, separatorIndex)
+    const keyPart = normalize(rawKey)
+    const valuePart = line.substring(separatorIndex + 1).trim()
 
-    if (!valuePart && !keyPart) return
+    if (!valuePart || !keyPart) return
 
     // 0. Verificar si está en la lista de ignorados
-    const shouldIgnore = IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))
-    if (shouldIgnore) return
+    if (IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))) return
 
-    // 4. Buscar coincidencia en el diccionario de sinónimos
-    for (const [headerNorm, synonyms] of Object.entries(SYNONYMS)) {
-      const isMatch = keyPart === headerNorm || synonyms.some(s => keyPart.includes(normalize(s)))
-      
-      if (isMatch) {
-         // Encontrar la cabecera original que corresponde a esta norma
-         const match = normalizedHeaders.find(nh => nh.norm.includes(headerNorm) || headerNorm.includes(nh.norm) || synonyms.some(s => nh.norm.includes(normalize(s))))
-         if (match && valuePart) {
-           let finalValue = valuePart
-           
-           // Limpieza especial para TELEFONO
-           if (headerNorm === 'TELEFONO') {
-             finalValue = valuePart.replace(/\D/g, '').substring(0, 10)
-           }
-           
-           result[match.original] = finalValue
-         }
+    // 4. Buscar coincidencia exacta o por sinónimos
+    let matchedHeader: string | null = null
+
+    // A. Primero intentar coincidencia por Sinónimos (Alta confianza)
+    for (const [headerKey, synonyms] of Object.entries(SYNONYMS)) {
+      if (keyPart === normalize(headerKey) || synonyms.some(s => keyPart === normalize(s))) {
+        // Encontrar cuál de las cabeceras reales del Excel se parece más a este headerKey
+        const match = normalizedHeaders.find(nh => nh.norm.includes(normalize(headerKey)) || normalize(headerKey).includes(nh.norm))
+        if (match) {
+          matchedHeader = match.original
+          break
+        }
       }
     }
 
-    // 5. Búsqueda directa si no hay sinónimos (Fuzzy match simple)
-    normalizedHeaders.forEach(nh => {
-      if (keyPart.includes(nh.norm) || nh.norm.includes(keyPart)) {
-        if (valuePart && !result[nh.original]) {
-          let finalValue = valuePart
-          if (nh.norm.includes('tel') || nh.norm.includes('num') || nh.norm.includes('dn')) {
-            finalValue = valuePart.replace(/\D/g, '').substring(0, 10)
-          }
-          result[nh.original] = finalValue
-        }
+    // B. Si no hubo coincidencia por sinónimo, intentar coincidencia directa con las cabeceras del Excel
+    if (!matchedHeader) {
+      const directMatch = normalizedHeaders.find(nh => nh.norm === keyPart)
+      if (directMatch) {
+        matchedHeader = directMatch.original
       }
-    })
+    }
+
+    // 5. Aplicar el valor si encontramos un destino
+    if (matchedHeader) {
+      let finalValue = valuePart
+      const normHeader = normalize(matchedHeader)
+
+      // Limpiezas específicas
+      if (normHeader.includes('tel') || normHeader.includes('num') || normHeader.includes('dn')) {
+        finalValue = valuePart.replace(/\D/g, '').substring(0, 10)
+      }
+
+      result[matchedHeader] = finalValue
+    }
   })
 
   return result

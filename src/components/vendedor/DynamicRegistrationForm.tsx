@@ -160,10 +160,26 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
 
     setLoading(true)
     try {
+      // Formatear datos antes de enviar
+      const finalData: Record<string, string> = {}
+      Object.entries(formData).forEach(([key, val]) => {
+        const normKey = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        let finalVal = val.trim()
+
+        // 1. Forzar formato moneda en columnas de pago/precio (pero no en fechas)
+        const isMonetary = (normKey.includes('pago') || normKey.includes('precio') || normKey.includes('monto') || normKey.includes('costo')) && !normKey.includes('fecha')
+        
+        if (isMonetary && finalVal && !finalVal.startsWith('$')) {
+          finalVal = `$${finalVal}`
+        }
+
+        finalData[key] = finalVal
+      })
+
       const res = await fetch('/api/seller/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scriptUrl, data: formData })
+        body: JSON.stringify({ scriptUrl, data: finalData })
       })
 
       const result = await res.json()
