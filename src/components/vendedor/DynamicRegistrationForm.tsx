@@ -80,7 +80,8 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
   const weeksList = useMemo(() => {
     return Array.from({ length: currentWeek }, (_, i) => {
       const num = i + 1
-      return num < 10 ? `0${num}` : `${num}`
+      const numStr = num < 10 ? `0${num}` : `${num}`
+      return `SEMANA ${numStr}`
     }).reverse() // Más reciente primero
   }, [currentWeek])
 
@@ -98,8 +99,16 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
         const dayIdx = d === 0 ? 5 : d - 1 // Mapear a Lunes-Sábado (simplificado)
         initialData[h] = DAYS_LIST[Math.min(dayIdx, 5)].toUpperCase()
       }
-      if (norm.includes('fecha') || norm.includes('dia fvc')) {
-        initialData[h] = format(now, 'yyyy-MM-dd')
+      if (norm.includes('fecha')) {
+        initialData[h] = format(now, 'd/M/yy')
+      }
+      if (norm.includes('dia fvc')) {
+        // Por defecto, sugerir mañana
+        const tomorrow = new Date(now)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        const d = tomorrow.getDay()
+        const dayIdx = d === 0 ? 0 : d - 1 // 0=Lunes
+        initialData[h] = DAYS_LIST[Math.min(dayIdx, 5)].toUpperCase()
       }
     })
 
@@ -253,7 +262,7 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
                         onChange={(e) => handleChange(header, e.target.value)}
                         className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 text-[14px] font-bold text-slate-500 cursor-not-allowed appearance-none"
                       >
-                        {weeksList.map(w => <option key={w} value={w}>Semana {w}</option>)}
+                        {weeksList.map(w => <option key={w} value={w}>{w}</option>)}
                       </select>
                     </div>
                   )
@@ -295,18 +304,19 @@ export default function DynamicRegistrationForm({ headers, scriptUrl, sellerName
 
                 // 4. SEMANA FVC (Especial)
                 if (norm === 'semana fvc') {
-                  const nextWeekVal = String(Number(weeksList[0]) + 1).padStart(2, '0')
+                  const currentNum = parseInt(weeksList[0].replace('SEMANA ', ''))
+                  const nextWeekVal = `SEMANA ${String(currentNum + 1).padStart(2, '0')}`
                   return (
                     <div key={header} className="space-y-2">
-                      <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1">{header}</label>
-                      <select 
+                       <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1">{header}</label>
+                       <select 
                         value={formData[header] || ''}
                         onChange={(e) => handleChange(header, e.target.value)}
                         className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-[14px] font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all"
-                      >
-                        <option value={weeksList[0]}>Semana {weeksList[0]} (Actual)</option>
-                        <option value={nextWeekVal}>Semana {nextWeekVal} (Siguiente)</option>
-                      </select>
+                       >
+                         <option value={weeksList[0]}>{weeksList[0]} (Actual)</option>
+                         <option value={nextWeekVal}>{nextWeekVal} (Siguiente)</option>
+                       </select>
                     </div>
                   )
                 }
