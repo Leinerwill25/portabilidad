@@ -1,6 +1,5 @@
 /**
  * Diccionario de sinónimos para mapear etiquetas del bloc de notas a columnas del Excel.
- * La clave es el término normalizado que esperamos encontrar en el Excel (o una aproximación).
  */
 const SYNONYMS: Record<string, string[]> = {
   'VENDEDOR': ['ejecutivo', 'vendedor', 'asesor', 'atendio'],
@@ -11,10 +10,10 @@ const SYNONYMS: Record<string, string[]> = {
   'NOMBRE': ['nombres', 'nombre', 'cliente'],
   'APELLIDO PATERNO': ['primer apellido', 'apellido paterno', 'apellido1'],
   'APELLIDO MATERNO': ['segundo apellido', 'apellido materno', 'apellido2'],
-  'MODELO': ['modelo', 'equipo', 'terminal', 'equipo:'], // Añadimos : para ser más específicos
+  'MODELO': ['modelo', 'equipo', 'terminal'],
   'COLOR': ['color', 'tono'],
   'CANTIDAD': ['cuotas', 'pagos', 'meses'],
-  'PRECIO': ['pago x mes', 'monto', 'costo', 'pago mensual'],
+  'PRECIO': ['pago x mes', 'monto', 'costo', 'precio'],
   'CAC': ['cac', 'punto de venta', 'tienda'],
   'DIRECCIÓN': ['calle', 'direccion'],
   'COLONIA': ['colonia'],
@@ -25,9 +24,6 @@ const SYNONYMS: Record<string, string[]> = {
   'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo']
 }
 
-/**
- * Lista de términos que el sistema debe ignorar explícitamente y no mapear a ningún campo.
- */
 const IGNORE_LIST = [
   'folio',
   'vigencia del nip',
@@ -42,84 +38,100 @@ const IGNORE_LIST = [
   '(dn)'
 ]
 
-/**
- * Normaliza un string para comparaciones (minúsculas, sin acentos, sin espacios extras)
- */
 function normalize(str: string): string {
   return str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
     .trim()
 }
 
 /**
- * Analiza un bloque de texto y extrae datos basados en un conjunto de cabeceras.
+ * Verifica si una línea es una etiqueta conocida (para evitar que el lookahead consuma otra etiqueta)
  */
+function isKnownLabel(text: string): boolean {
+  const norm = normalize(text)
+  for (const synonyms of Object.values(SYNONYMS)) {
+    if (synonyms.some(s => norm.includes(normalize(s)))) return true
+  }
+  return false
+}
+
 export function parseNotepadText(text: string, headers: string[]): Record<string, string> {
   const result: Record<string, string> = {}
   if (!text) return result
 
-  // 1. Dividir el texto en líneas y limpiar
   const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '')
-
-  // 2. Normalizar las cabeceras disponibles para facilitar la búsqueda
   const normalizedHeaders = headers.map(h => ({
     original: h,
     norm: normalize(h)
   }))
 
-  // 3. Procesar cada línea buscando pares Clave: Valor
-  lines.forEach(line => {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    let keyPart = ''
+    let valuePart = ''
+
     const separatorIndex = line.indexOf(':')
-    if (separatorIndex === -1) return // Solo procesar líneas con ":" para mayor precisión
+    if (separatorIndex !== -1) {
+      keyPart = normalize(line.substring(0, separatorIndex))
+      valuePart = line.substring(separatorIndex + 1).trim()
+    } else {
+      keyPart = normalize(line)
+    }
 
-    const rawKey = line.substring(0, separatorIndex)
-    const keyPart = normalize(rawKey)
-    const valuePart = line.substring(separatorIndex + 1).trim()
+    if (!keyPart) continue
+    if (IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))) continue
 
-    if (!valuePart || !keyPart) return
+    // Lógica Multilínea: Si no hay valor y la siguiente línea NO es una etiqueta, consumirla como valor
+    if (!valuePart && i + 1 < lines.length) {
+      const nextLine = lines[i + 1]
+      if (!isKnownLabel(nextLine)) {
+        valuePart = nextLine
+        i++ // Saltamos la siguiente línea ya que la consumimos
+      }
+    }
 
-    // 0. Verificar si está en la lista de ignorados
-    if (IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))) return
+    if (!valuePart) continue
 
-    // 4. Buscar coincidencia exacta o por sinónimos
-    let matchedHeader: string | null = null
-
-    // A. Primero intentar coincidencia por Sinónimos (Alta confianza)
+    // Buscar coincidencia en diccionario de sinónimos
     for (const [headerKey, synonyms] of Object.entries(SYNONYMS)) {
-      if (keyPart === normalize(headerKey) || synonyms.some(s => keyPart === normalize(s))) {
-        // Encontrar cuál de las cabeceras reales del Excel se parece más a este headerKey
-        const match = normalizedHeaders.find(nh => nh.norm.includes(normalize(headerKey)) || normalize(headerKey).includes(nh.norm))
-        if (match) {
-          matchedHeader = match.original
-          break
+      const headerNorm = normalize(headerKey)
+      
+      // Protección especial: "Equipo" no debe capturar "Fecha de pago del equipo"
+      if (headerKey === 'MODELO' && keyPart.includes('fecha')) continue
+      if (headerKey === 'PRECIO' && keyPart.includes('fecha')) continue
+
+      const isMatch = synonyms.some(s => {
+        const sn = normalize(s)
+        // Coincidencia inteligente: si la etiqueta del bloc de notas CONTIENE el sinónimo
+        // o viceversa, pero con un mínimo de relevancia.
+        return keyPart.includes(sn) || sn.includes(keyPart)
+      })
+
+      if (isMatch) {
+        // Encontrar la cabecera real del Excel que corresponde
+        const match = normalizedHeaders.find(nh => 
+          nh.norm.includes(headerNorm) || headerNorm.includes(nh.norm) || 
+          synonyms.some(s => nh.norm.includes(normalize(s)))
+        )
+
+        if (match && !result[match.original]) {
+          let finalValue = valuePart
+          
+          // Limpiezas específicas
+          if (headerKey === 'TELEFONO') {
+            // Extraer solo los primeros 10 dígitos (ignora folios o texto extra)
+            const digits = valuePart.replace(/\D/g, '')
+            finalValue = digits.substring(0, 10)
+          }
+
+          result[match.original] = finalValue
+          break 
         }
       }
     }
-
-    // B. Si no hubo coincidencia por sinónimo, intentar coincidencia directa con las cabeceras del Excel
-    if (!matchedHeader) {
-      const directMatch = normalizedHeaders.find(nh => nh.norm === keyPart)
-      if (directMatch) {
-        matchedHeader = directMatch.original
-      }
-    }
-
-    // 5. Aplicar el valor si encontramos un destino
-    if (matchedHeader) {
-      let finalValue = valuePart
-      const normHeader = normalize(matchedHeader)
-
-      // Limpiezas específicas
-      if (normHeader.includes('tel') || normHeader.includes('num') || normHeader.includes('dn')) {
-        finalValue = valuePart.replace(/\D/g, '').substring(0, 10)
-      }
-
-      result[matchedHeader] = finalValue
-    }
-  })
+  }
 
   return result
 }
