@@ -1,5 +1,5 @@
 /**
- * Diccionario de sinónimos para mapear etiquetas del bloc de notas a columnas del Excel.
+ * DICCIONARIO DE SINÓNIMOS INTEGRADO
  */
 const SYNONYMS: Record<string, string[]> = {
   'VENDEDOR': ['ejecutivo', 'vendedor', 'asesor', 'atendio'],
@@ -21,16 +21,14 @@ const SYNONYMS: Record<string, string[]> = {
   'CIUDAD': ['ciudad', 'municipio'],
   'ESTADO': ['estado', 'entidad'],
   'COMENTARIOS': ['lunes a viernes', 'horarios', 'observaciones', 'para el martes', 'para el jueves'],
-  'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo', 'primer pago'],
+  'FECHA DE PRIMER PAGO DEL EQUIPO': ['fecha primer pago', 'fecha pago', 'primer pago del equipo', 'primer pago', 'fecha de primer pago'],
   'FUNDA': ['funda', 'case'],
-  'PROTECTOR DE PANTALLA': ['mica', 'protector', 'templado'],
+  'PROTECTOR DE PANTALLA': ['mica', 'protector', 'templado', 'protector de pantalla'],
   'COLOR AUDIFONOS': ['audifonos', 'auriculares', 'audifono'],
-  'ESTATUS DE FINANCIAMIENTO': ['financiamiento', 'tipo de credito', 'estatus financiamiento']
+  'ESTATUS DE FINANCIAMIENTO': ['financiamiento', 'tipo de credito', 'estatus financiamiento', 'credito'],
+  'TIPO DE CREDITO': ['financiamiento', 'tipo de credito', 'estatus financiamiento', 'credito']
 }
 
-/**
- * Campos que NUNCA deben ser sobreescritos por el bloc de notas (Campos calculados o protegidos)
- */
 const PROTECTED_FIELDS = [
   'MES',
   'SEMANA',
@@ -42,21 +40,10 @@ const PROTECTED_FIELDS = [
   'SEMANA ALTA'
 ]
 
-const IGNORE_LIST = [
-  'folio',
-  'vigencia del nip',
-  'fecha de nacimiento',
-  'nacionalidad',
-  'entidad de nacimiento',
-  'lunes a viernes',
-  'sábados',
-  'para el',
-  'horario',
-  '(numero)',
-  '(dn)'
-]
+const IGNORE_LIST = ['folio', 'vigencia', 'nacimiento', 'nacionalidad', 'entidad']
 
 function normalize(str: string): string {
+  if (!str) return ''
   return str
     .toLowerCase()
     .normalize('NFD')
@@ -64,10 +51,16 @@ function normalize(str: string): string {
     .trim()
 }
 
+/**
+ * Verifica si una línea es una etiqueta conocida
+ */
 function isKnownLabel(text: string): boolean {
-  const norm = normalize(text)
+  const norm = normalize(text.split(':')[0])
   for (const synonyms of Object.values(SYNONYMS)) {
-    if (synonyms.some(s => norm === normalize(s) || norm.startsWith(normalize(s) + ':'))) return true
+    if (synonyms.some(s => {
+      const sn = normalize(s)
+      return norm === sn || norm.includes(sn)
+    })) return true
   }
   return false
 }
@@ -87,10 +80,10 @@ export function parseNotepadText(text: string, headers: string[]): Record<string
     let keyPart = ''
     let valuePart = ''
 
-    const separatorIndex = line.indexOf(':')
-    if (separatorIndex !== -1) {
-      keyPart = normalize(line.substring(0, separatorIndex))
-      valuePart = line.substring(separatorIndex + 1).trim()
+    const colonIdx = line.indexOf(':')
+    if (colonIdx !== -1) {
+      keyPart = normalize(line.substring(0, colonIdx))
+      valuePart = line.substring(colonIdx + 1).trim()
     } else {
       keyPart = normalize(line)
     }
@@ -98,9 +91,10 @@ export function parseNotepadText(text: string, headers: string[]): Record<string
     if (!keyPart) continue
     if (IGNORE_LIST.some(ignore => keyPart.includes(normalize(ignore)))) continue
 
+    // Lookahead para campos multilínea
     if (!valuePart && i + 1 < lines.length) {
       const nextLine = lines[i + 1]
-      if (!isKnownLabel(nextLine)) {
+      if (!isKnownLabel(nextLine) && nextLine.length > 0) {
         valuePart = nextLine
         i++
       }
@@ -108,42 +102,42 @@ export function parseNotepadText(text: string, headers: string[]): Record<string
 
     if (!valuePart) continue
 
-    for (const [headerKey, synonyms] of Object.entries(SYNONYMS)) {
-      const headerKeyNorm = normalize(headerKey)
-      
-      // Protección contra colisiones
-      if (headerKey === 'MODELO' && (keyPart.includes('fecha') || keyPart.includes('pago'))) continue
-      if (headerKey === 'PRECIO' && keyPart.includes('fecha')) continue
+    // ASIGNACIÓN PRIORIZADA
+    let matchedHeader: string | null = null
 
-      const isMatch = synonyms.some(s => {
-        const sn = normalize(s)
-        return keyPart === sn || keyPart.includes(sn) || sn.includes(keyPart)
-      })
+    // 1. Intentar match directo con etiquetas del Excel (Máxima prioridad)
+    const directMatch = normalizedHeaders.find(nh => nh.norm === keyPart || keyPart.includes(nh.norm))
+    if (directMatch && !PROTECTED_FIELDS.map(f => normalize(f)).includes(directMatch.norm)) {
+      matchedHeader = directMatch.original
+    }
 
-      if (isMatch) {
-         // Encontrar la cabecera real
-         const match = normalizedHeaders.find(nh => {
-           const nhn = nh.norm
-           // Si el nombre del Excel es exactamente igual al sinónimo o a la clave
-           if (nhn === headerKeyNorm) return true
-           // Si el sinónimo está contenido de forma prominente
-           return synonyms.some(s => nhn === normalize(s) || nhn.includes(normalize(s)))
-         })
+    // 2. Intentar match por sinónimos
+    if (!matchedHeader) {
+      for (const [canonKey, synonyms] of Object.entries(SYNONYMS)) {
+        // Protección contra colisiones
+        if (canonKey === 'MODELO' && (keyPart.includes('fecha') || keyPart.includes('pago'))) continue
+        
+        if (synonyms.some(s => keyPart === normalize(s) || keyPart.includes(normalize(s)))) {
+          // Si el sinónimo matchea, buscar la cabecera del Excel que se relacione con canonKey
+          const headerMatch = normalizedHeaders.find(nh => {
+             const nhn = nh.norm
+             return nhn === normalize(canonKey) || synonyms.some(s => nhn === normalize(s) || nhn.includes(normalize(s)))
+          })
 
-         if (match && !PROTECTED_FIELDS.map(f => normalize(f)).includes(match.norm)) {
-           if (!result[match.original]) {
-             let finalValue = valuePart
-             
-             if (headerKey === 'TELEFONO') {
-               const digits = valuePart.replace(/\D/g, '')
-               finalValue = digits.substring(0, 10)
-             }
-
-             result[match.original] = finalValue
-             break
-           }
-         }
+          if (headerMatch && !PROTECTED_FIELDS.map(f => normalize(f)).includes(headerMatch.norm)) {
+            matchedHeader = headerMatch.original
+            break
+          }
+        }
       }
+    }
+
+    if (matchedHeader && !result[matchedHeader]) {
+       let finalValue = valuePart
+       if (normalize(matchedHeader).includes('telefono') || normalize(matchedHeader).includes('dn')) {
+         finalValue = valuePart.replace(/\D/g, '').substring(0, 10)
+       }
+       result[matchedHeader] = finalValue
     }
   }
 
