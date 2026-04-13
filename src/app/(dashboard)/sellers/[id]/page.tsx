@@ -2,11 +2,12 @@
 
 import { useState, useEffect, use, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, FileSpreadsheet, ChevronLeft, Loader2, Mail, Phone, Globe, X, ExternalLink, Edit2 } from 'lucide-react'
+import { Plus, Trash2, FileSpreadsheet, ChevronLeft, Loader2, Mail, Phone, Globe, X, ExternalLink, Edit2, BarChart3, Settings } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { extractSheetId } from '@/lib/sheets/scraper'
+import SellerPerformanceModule from '@/components/dashboard/SellerPerformanceModule'
 
 interface Seller {
   id: string;
@@ -35,6 +36,7 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [editingSheet, setEditingSheet] = useState<Sheet | null>(null)
+  const [activeTab, setActiveTab] = useState<'sheets' | 'performance'>('performance')
   
   const supabase = createClient()
 
@@ -129,73 +131,117 @@ export default function SellerDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-[14px] font-bold text-[#1a2744] flex items-center gap-2 uppercase tracking-widest px-1">
-          <FileSpreadsheet className="text-[#10b981]" size={16} />
-          Bases de Datos Vinculadas
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AnimatePresence mode="popLayout">
-            {sheets.length === 0 ? (
-              <div className="col-span-full py-16 bg-[#f8fafc] border border-dashed border-[#e5e7eb] rounded-xl flex flex-col items-center justify-center text-[#9ca3af] gap-3">
-                <Globe size={32} className="opacity-40" />
-                <p className="text-[13px] font-medium">No se han vinculado hojas de cálculo para este vendedor.</p>
-              </div>
-            ) : (
-              sheets.map((sheet) => (
-                <motion.div
-                  key={sheet.id}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  className="bg-white border border-[#e5e7eb] p-5 rounded-xl group hover:border-[#bfdbfe] transition-all shadow-sm"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="bg-[#f0fdf4] text-[#166534] p-2 rounded-md border border-[#bbf7d0]">
-                      <FileSpreadsheet size={16} />
-                    </div>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => handleEditSheet(sheet)}
-                        className="p-1.5 text-[#9ca3af] hover:text-[#1a56db] hover:bg-[#eff6ff] rounded-md transition-colors"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteSheet(sheet.id)}
-                        className="p-1.5 text-[#9ca3af] hover:text-[#991b1b] hover:bg-[#fef2f2] rounded-md transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-[15px] font-bold text-[#1a2744] mb-1 truncate">{sheet.display_name}</h3>
-                  <div className="flex items-center gap-2 mb-4">
-                     <p className="text-[11px] text-[#6b7280]">Pestaña: <span className="font-mono text-[#374151]">{sheet.sheet_name}</span></p>
-                     {sheet.script_url && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-700 uppercase tracking-tighter">
-                          Sincronizable
-                        </span>
-                     )}
-                  </div>
-                  
-                  <a 
-                    href={sheet.sheet_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 bg-[#f9fafb] hover:bg-[#f1f5f9] border border-[#e5e7eb] text-[#374151] text-[12px] font-bold py-2.5 rounded-md transition-all group-hover:bg-white"
-                  >
-                    <ExternalLink size={14} className="text-[#1a56db]" />
-                    Visualizar en Google Sheets
-                  </a>
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </div>
+      <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl w-fit border border-slate-200">
+        <button 
+          onClick={() => setActiveTab('performance')}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-[12px] font-bold uppercase tracking-wider transition-all",
+            activeTab === 'performance' ? "bg-white text-indigo-600 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+          )}
+        >
+          <BarChart3 size={16} />
+          Rendimiento Mensual
+        </button>
+        <button 
+          onClick={() => setActiveTab('sheets')}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-lg text-[12px] font-bold uppercase tracking-wider transition-all",
+            activeTab === 'sheets' ? "bg-white text-[#1a56db] shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+          )}
+        >
+          <Settings size={16} />
+          Configuración Excel
+        </button>
       </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === 'performance' ? (
+          <motion.div
+            key="performance"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <SellerPerformanceModule sellerId={sellerId} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="sheets"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-4"
+          >
+            <h2 className="text-[14px] font-bold text-[#1a2744] flex items-center gap-2 uppercase tracking-widest px-1">
+              <FileSpreadsheet className="text-[#10b981]" size={16} />
+              Bases de Datos Vinculadas
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AnimatePresence mode="popLayout">
+                {sheets.length === 0 ? (
+                  <div className="col-span-full py-16 bg-[#f8fafc] border border-dashed border-[#e5e7eb] rounded-xl flex flex-col items-center justify-center text-[#9ca3af] gap-3">
+                    <Globe size={32} className="opacity-40" />
+                    <p className="text-[13px] font-medium">No se han vinculado hojas de cálculo para este vendedor.</p>
+                  </div>
+                ) : (
+                  sheets.map((sheet) => (
+                    <motion.div
+                      key={sheet.id}
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      className="bg-white border border-[#e5e7eb] p-5 rounded-xl group hover:border-[#bfdbfe] transition-all shadow-sm"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="bg-[#f0fdf4] text-[#166534] p-2 rounded-md border border-[#bbf7d0]">
+                          <FileSpreadsheet size={16} />
+                        </div>
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={() => handleEditSheet(sheet)}
+                            className="p-1.5 text-[#9ca3af] hover:text-[#1a56db] hover:bg-[#eff6ff] rounded-md transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteSheet(sheet.id)}
+                            className="p-1.5 text-[#9ca3af] hover:text-[#991b1b] hover:bg-[#fef2f2] rounded-md transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-[15px] font-bold text-[#1a2744] mb-1 truncate">{sheet.display_name}</h3>
+                      <div className="flex items-center gap-2 mb-4">
+                         <p className="text-[11px] text-[#6b7280]">Pestaña: <span className="font-mono text-[#374151]">{sheet.sheet_name}</span></p>
+                         {sheet.script_url && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-700 uppercase tracking-tighter">
+                              Sincronizable
+                            </span>
+                         )}
+                      </div>
+                      
+                      <a 
+                        href={sheet.sheet_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 bg-[#f9fafb] hover:bg-[#f1f5f9] border border-[#e5e7eb] text-[#374151] text-[12px] font-bold py-2.5 rounded-md transition-all group-hover:bg-white"
+                      >
+                        <ExternalLink size={14} className="text-[#1a56db]" />
+                        Visualizar en Google Sheets
+                      </a>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showAddSheet && (
@@ -464,4 +510,8 @@ function AddSheetModal({ sellerId, onClose, onSuccess }: { sellerId: string, onC
       </motion.div>
     </div>
   )
+}
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
