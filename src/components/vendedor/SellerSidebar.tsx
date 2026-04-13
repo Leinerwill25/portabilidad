@@ -10,7 +10,8 @@ import {
   LogOut,
   ShieldCheck,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  ClipboardCheck
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,7 @@ interface SellerSidebarProps {
 
 const navItems = [
   { href: '/vendedor/dashboard', label: 'Inicio', icon: LayoutDashboard },
+  { href: '/vendedor/gestionar-ventas', label: 'Gestionar Ventas', icon: ClipboardCheck },
   { href: '/vendedor/rendimiento', label: 'Mi Rendimiento', icon: TrendingUp },
   { href: '/vendedor/nuevo-registro', label: 'Nueva Venta', icon: PlusSquare },
 ]
