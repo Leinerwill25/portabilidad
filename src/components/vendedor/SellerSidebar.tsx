@@ -76,7 +76,7 @@ export default function SellerSidebar({ session }: SellerSidebarProps) {
       <div className="mt-auto p-6 border-t border-white/5">
         <div className="bg-white/5 p-4 rounded-2xl flex items-center gap-3 mb-6">
            <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-black text-blue-400 text-xs">
-              {session.name?.[0].toUpperCase()}
+              {session.name?.[0]?.toUpperCase() || '?'}
            </div>
            <div className="overflow-hidden">
                <p className="text-[13px] font-bold truncate">{session.name}</p>

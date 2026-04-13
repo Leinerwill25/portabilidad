@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface SellerDailySalesManagerProps {
   rows: any[]
@@ -59,7 +60,7 @@ export default function SellerDailySalesManager({ rows, scriptUrl, sheetId }: Se
       
       if (!matchesDay) return false
       
-      const dn = String(row['TELEFONO'] || row['NUMERO'] || row['DN'] || '').toLowerCase()
+      const dn = String(row['TELEFONO'] || row['NUMERO'] || row['DN'] || row['NÚMERO'] || '').toLowerCase()
       const name = String(row['NOMBRE'] || '').toLowerCase()
       return dn.includes(searchTerm.toLowerCase()) || name.includes(searchTerm.toLowerCase())
     }).reverse() // Más recientes arriba
@@ -235,6 +236,3 @@ export default function SellerDailySalesManager({ rows, scriptUrl, sheetId }: Se
   )
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
-}
