@@ -217,17 +217,17 @@ function CustomDateRangePicker({
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full transition-all duration-500 group relative overflow-hidden"
+        className="flex items-center gap-2 px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/20 rounded-full transition-all duration-500 group relative overflow-hidden shrink-0"
       >
         <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-colors" />
-        <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg group-hover:scale-110 transition-transform duration-500">
-           <CalendarIcon size={14} strokeWidth={2.5} />
+        <div className="p-1 bg-blue-500/20 text-blue-400 rounded-lg group-hover:scale-110 transition-transform duration-500">
+           <CalendarIcon size={12} strokeWidth={2.5} />
         </div>
-        <div className="flex flex-col items-start leading-tight relative z-10">
-          <span className="text-[7.5px] font-black text-blue-200/60 uppercase tracking-[0.15em]">Filtrar por Rango</span>
-          <span className="text-[11.5px] font-black text-white leading-none font-mono tracking-tighter tabular-nums">{label}</span>
+        <div className="flex flex-col items-start leading-none relative z-10">
+          <span className="text-[7px] font-black text-blue-200/60 uppercase tracking-widest mb-0.5">Filtrar por Rango</span>
+          <span className="text-[10px] font-black text-white font-mono tracking-tighter tabular-nums">{label}</span>
         </div>
-        <ChevronDown size={12} className={`text-white/30 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={10} className={`text-white/30 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -361,33 +361,33 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
 
       <div className="bg-white rounded-xl border-2 border-slate-900 shadow-2xl overflow-hidden mb-16" id="stats-table">
         {/* Navy Title Bar */}
-        <div className="px-6 py-5 bg-[#0f172a] border-b-2 border-slate-900 flex items-center justify-between">
-           <div className="flex items-center gap-4">
+        <div className="px-6 py-5 bg-[#0f172a] border-b-2 border-slate-900 flex items-center justify-between gap-8">
+           <div className="flex items-center gap-4 flex-shrink-0">
               <div className="w-1.5 h-6 bg-white rounded-full shadow-lg" />
-              <h3 className="text-[15px] font-black text-white uppercase tracking-[0.1em]">Dashboard Gerencial Site Analytics</h3>
+              <h3 className="text-[16px] font-black text-white uppercase tracking-[0.1em] whitespace-nowrap">Dashboard Gerencial Site Analytics</h3>
            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Mes</span>
-                <select 
-                  value={monthFilter || data?.selectedMonth || ''}
-                  onChange={(e) => {
-                    setMonthFilter(e.target.value)
-                    setWeekFilter('')
-                    setStartDate('')
-                    setEndDate('')
-                  }}
-                  className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[11px] font-bold px-3 py-1.5 outline-none transition-all cursor-pointer"
-                >
-                  <option value="" className="text-black">Mes Actual</option>
-                  {data?.filterOptions.months.map(m => (
-                    <option key={m} value={m} className="text-black">{m}</option>
-                  ))}
-                </select>
-              </div>
+           <div className="flex items-center gap-3 shrink-0">
+             <div className="flex flex-col gap-0.5">
+               <span className="text-[7px] font-black text-blue-200 uppercase tracking-widest opacity-70">Mes</span>
+               <select 
+                 value={monthFilter || data?.selectedMonth || ''}
+                 onChange={(e) => {
+                   setMonthFilter(e.target.value)
+                   setWeekFilter('')
+                   setStartDate('')
+                   setEndDate('')
+                 }}
+                 className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[10px] font-bold px-2 py-1 outline-none transition-all cursor-pointer w-[95px]"
+               >
+                 <option value="" className="text-black">Mes Actual</option>
+                 {data?.filterOptions.months.map(m => (
+                   <option key={m} value={m} className="text-black">{m}</option>
+                 ))}
+               </select>
+             </div>
 
-              <div className="flex flex-col gap-1">
-                <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80">Semana</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[7px] font-black text-blue-200 uppercase tracking-widest opacity-70">Semana</span>
                 <select 
                   value={weekFilter || data?.selectedWeek || ''}
                   onChange={(e) => {
@@ -395,11 +395,11 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
                     setStartDate('')
                     setEndDate('')
                   }}
-                  className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[11px] font-bold px-3 py-1.5 outline-none transition-all cursor-pointer"
+                  className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-[10px] font-bold px-2 py-1 outline-none transition-all cursor-pointer w-[75px]"
                 >
                   <option value="" className="text-black">Todas</option>
                   {data?.filterOptions.weeks.map(w => (
-                    <option key={w} value={w} className="text-black">Semana {w}</option>
+                    <option key={w} value={w} className="text-black">S. {w}</option>
                   ))}
                 </select>
               </div>
@@ -423,23 +423,23 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
 
               <div className="w-[1px] h-8 bg-white/20 mx-2" />
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={() => copyElementToClipboard('stats-table')}
-                  className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all active:scale-90 border border-white/20 shadow-lg"
+                  className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all active:scale-90 border border-white/20"
                   title="Capturar Reporte"
                 >
-                  <Camera size={18} />
+                  <Camera size={16} />
                 </button>
 
                 <button 
                   onClick={() => fetchData(true)}
                   disabled={refreshing}
-                  className="flex items-center gap-2.5 px-5 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20 rounded-full transition-all active:scale-95 group/btn"
+                  className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 border border-white/20 rounded-full transition-all active:scale-95 group/btn"
                 >
-                  <RefreshCw size={14} className={`text-white ${refreshing ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-500'}`} />
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                    {refreshing ? 'Actualizando...' : 'Actualizar'}
+                  <RefreshCw size={12} className={`text-white ${refreshing ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-500'}`} />
+                  <span className="text-[9px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+                    {refreshing ? '...' : 'Actualizar'}
                   </span>
                 </button>
               </div>

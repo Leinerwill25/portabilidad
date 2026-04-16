@@ -342,17 +342,31 @@ export function filterLastWeek(rows: SheetRow[], dateColumn: string): SheetRow[]
   })
 }
 
-// Parser de fechas flexible (DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, etc.)
-export function parseDateFlexible(dateStr: string): Date | null {
-  const s = dateStr.trim()
+// Helper para normalizar fechas a YYYY-MM-DD sin problemas de zona horaria
+export function toYYYYMMDD(d: Date | null): string | null {
+  if (!d || isNaN(d.getTime())) return null
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
-  // ISO: 2024-12-25
+// Parser de fechas flexible (DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, nombres de meses, etc.)
+export function parseDateFlexible(dateStr: string): Date | null {
+  if (!dateStr) return null
+  let s = dateStr.trim().toUpperCase()
+
+  // 0. Limpieza previa: si empieza con el nombre de un día (Lunes, Martes...), lo removemos
+  // Ejemplo: "LUNES 13/04/2026" o "LUNES 13/04"
+  s = s.replace(/^(LUNES|MARTES|MIERCOLES|MIÉRCOLES|JUEVES|VIERNES|SABADO|SÁBADO|DOMINGO)\s+/, '')
+
+  // 1. ISO: 2024-12-25
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
     const d = new Date(s)
     return isNaN(d.getTime()) ? null : d
   }
 
-  // DD/MM/YYYY o DD-MM-YYYY (formato Venezuela)
+  // 2. DD/MM/YYYY o DD-MM-YYYY
   const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
   if (dmyMatch) {
     const [, day, month, year] = dmyMatch
@@ -360,7 +374,36 @@ export function parseDateFlexible(dateStr: string): Date | null {
     return isNaN(d.getTime()) ? null : d
   }
 
-  // Intentar parse nativo como último recurso
+  // 3. DD/MM/YY o DD-MM-YY (Año de 2 dígitos)
+  const dmy2Match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/)
+  if (dmy2Match) {
+    const [, day, month, year2] = dmy2Match
+    const year = parseInt(year2) + (parseInt(year2) < 50 ? 2000 : 1900)
+    const d = new Date(year, parseInt(month) - 1, parseInt(day))
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  // 4. DD de MES de YYYY o DD MES YYYY (ej. 13 DE ABRIL 2026 o 13 ABRIL)
+  const monthNames = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+  const monthShorts = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+  
+  // Regex para capturar [DIA] [DE?] [MES] [DE?] [AÑO?]
+  const textMatch = s.match(/^(\d{1,2})\s+(?:DE\s+)?([A-Z]+)(?:\s+(?:DE\s+)?(\d{2,4}))?/)
+  if (textMatch) {
+    const [, dayStr, monthStr, yearStr] = textMatch
+    const mIdx = monthNames.findIndex(m => monthStr.includes(m))
+    const mShortIdx = monthShorts.findIndex(ms => monthStr.startsWith(ms))
+    const month = mIdx !== -1 ? mIdx : mShortIdx
+    
+    if (month !== -1) {
+      let year = yearStr ? parseInt(yearStr) : getLocalTimeDate().getFullYear()
+      if (year < 100) year += 2000
+      const d = new Date(year, month, parseInt(dayStr))
+      return isNaN(d.getTime()) ? null : d
+    }
+  }
+
+  // 5. Intentar parse nativo como último recurso
   const d = new Date(s)
   return isNaN(d.getTime()) ? null : d
 }
