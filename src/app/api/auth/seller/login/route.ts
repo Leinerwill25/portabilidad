@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // 1. Buscar al vendedor por email
     const { data: seller, error } = await supabase
       .from('sellers')
-      .select('id, first_name, last_name, email, password, created_by')
+      .select('id, first_name, last_name, email, password, created_by, is_active')
       .eq('email', email.trim().toLowerCase())
       .single()
 
@@ -23,7 +23,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vendedor no encontrado' }, { status: 404 })
     }
 
-    // 2. Validar contraseña
+    // 2. Verificar si el usuario está activo
+    if (seller.is_active === false) {
+      return NextResponse.json({ error: 'Su acceso ha sido restringido. Por favor, contacte a su supervisor o administrador.' }, { status: 403 })
+    }
+
+    // 3. Validar contraseña
     // Nota: Por ahora comparamos directamente (según requerimiento del usuario de asignar DN2026*)
     // En el futuro se recomienda usar bcrypt.
     if (seller.password !== password) {

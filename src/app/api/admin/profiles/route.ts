@@ -25,7 +25,7 @@ export async function GET() {
   // Obtener todos los perfiles (excepto el actual)
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role')
+    .select('id, email, full_name, role, is_active')
     .neq('id', user.id)
     .order('full_name', { ascending: true })
 

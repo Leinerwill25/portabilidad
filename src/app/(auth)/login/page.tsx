@@ -49,6 +49,24 @@ export default function LoginPage() {
         setLoading(false)
       }
     } else {
+      // 2. Si la auth fue exitosa, verificar el estado del perfil
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_active')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError || profile?.is_active === false) {
+          await supabase.auth.signOut()
+          toast.error('Su cuenta está desactivada. Por favor, contacte al administrador.')
+          setLoading(false)
+          return
+        }
+      }
+
       toast.success('¡Bienvenido de nuevo!')
       router.push('/dashboard')
       router.refresh()
