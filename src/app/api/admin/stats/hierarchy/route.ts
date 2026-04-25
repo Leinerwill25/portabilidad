@@ -21,20 +21,29 @@ function normalizeHeader(h: string): string {
     .replace(/[^A-Z0-9]/g, '')     // Quitar todo lo que no sea letra o número
 }
 
-function findCol(headers: string[], aliases: string[]): string | undefined {
+function findCol(headers: string[], aliases: string[], reverse: boolean = false): string | undefined {
   const normalizedAliases = aliases.map(a => normalizeHeader(a))
   const normalizedHeaders = headers.map(h => normalizeHeader(h))
 
+  const indices = reverse 
+    ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
+    : Array.from({ length: headers.length }, (_, i) => i)
+
   // Prioridad 1: Coincidencia exacta respetando el orden de ALIAS
   for (const alias of normalizedAliases) {
-    const idx = normalizedHeaders.findIndex(nh => nh === alias)
-    if (idx !== -1) return headers[idx]
+    const idx = indices.find(i => normalizedHeaders[i] === alias)
+    if (idx !== undefined) return headers[idx]
   }
 
-  // Prioridad 2: Inclusión parcial (alias contenido en header o viceversa)
+  // Prioridad 2: Inclusión parcial
   for (const alias of normalizedAliases) {
-    const idx = normalizedHeaders.findIndex(nh => nh.includes(alias) || alias.includes(nh))
-    if (idx !== -1) return headers[idx]
+    const idx = indices.find(i => {
+      const nh = normalizedHeaders[i]
+      // nh.includes(alias): El header contiene el alias (ej: "DIA FVC" contiene "FVC") -> OK
+      // alias.includes(nh): El alias contiene el header (ej: "DIA" contenido en "DIA FVC") -> PELIGROSO si nh es muy corto
+      return nh.includes(alias) || (alias.includes(nh) && nh.length > 3)
+    })
+    if (idx !== undefined) return headers[idx]
   }
 
   return undefined
@@ -267,15 +276,15 @@ export async function GET(request: NextRequest) {
       const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
       const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO', 'ESTADO VENTA', 'RESULTADO'])
       
-      // Búsqueda más flexible para la columna indicadora de FVC
-      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC ']) || 'FVC'
+      // Búsqueda más flexible para la columna indicadora de FVC (buscando desde el final para evitar colisiones con Venta)
+      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
 
       // Columnas temporales separadas - Alias extendidos
       const ventaDiaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
       const ventaSemanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
       
-      const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION'])
-      const fvcSemanaCol = findCol(headers, ['SEMANA FVC', 'SEMANAFVC', 'WEEK FVC'])
+      const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION', 'FECHA'], true)
+      const fvcSemanaCol = findCol(headers, ['SEMANA FVC', 'SEMANAFVC', 'WEEK FVC', 'SEMANA'], true)
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
@@ -390,7 +399,12 @@ export async function GET(request: NextRequest) {
         // Solicidud: "columna 'FVC' === 'FVC'"
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
-          if (fvcValue === 'FVC') {
+          const currentEstatus = (row[statusCol || 'ESTATUS'] || '').trim().toUpperCase()
+          
+          // Lógica inclusiva: Si hay match de fecha, contamos como FVC si:
+          // 1. La columna FVC explícitamente dice FVC
+          // 2. El estatus final es FVC o ALTA (esto cubre filas donde FVC es NO pero el resultado fue positivo)
+          if (fvcValue === 'FVC' || currentEstatus === 'FVC' || currentEstatus === 'ALTA') {
             targetStats.total++ // En este dashboard 'total' representa el conteo de FVC
             targetTotals.total++
           }
