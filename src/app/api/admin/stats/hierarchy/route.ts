@@ -29,11 +29,13 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
     ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
     : Array.from({ length: headers.length }, (_, i) => i)
 
+  // Prioridad 1: Coincidencia exacta
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => normalizedHeaders[i] === alias)
     if (idx !== undefined) return headers[idx]
   }
 
+  // Prioridad 2: Inclusión parcial
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => {
       const nh = normalizedHeaders[i]
@@ -43,20 +45,6 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
   }
 
   return undefined
-}
-
-interface Seller {
-  id: string
-  first_name: string
-  last_name: string
-  created_by: string
-}
-
-interface Sheet {
-  id: string
-  seller_id: string
-  sheet_id: string
-  sheet_url: string
 }
 
 interface SellerStats {
@@ -159,16 +147,16 @@ export async function GET(request: NextRequest) {
     .select('id, first_name, last_name, created_by')
     .in('created_by', supervisorIds)
   
-  const sellers = sellersData as Seller[] | null
+  const sellers = sellersData || []
 
-  let sheets: Sheet[] = []
-  if (sellers && sellers.length > 0) {
+  let sheets: any[] = []
+  if (sellers.length > 0) {
     const sellerIds = sellers.map(s => s.id)
     const { data: sheetsData } = await supabase
       .from('seller_sheets')
       .select('id, seller_id, sheet_id, sheet_url')
       .in('seller_id', sellerIds)
-    sheets = (sheetsData as Sheet[]) || []
+    sheets = (sheetsData as any[]) || []
   }
   
   function cleanValue(v: string | undefined): string {
@@ -208,18 +196,16 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  if (sellers) {
-    sellers.forEach((s: Seller) => {
-      const sid = s.created_by
-      if (hierarchyData[sid]) {
-        hierarchyData[sid].sellers[s.id] = {
-          id: s.id,
-          name: `${s.first_name} ${s.last_name}`,
-          stats: { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, fvcAltas: 0, total: 0 }
-        }
+  sellers.forEach((s: any) => {
+    const sid = s.created_by
+    if (hierarchyData[sid]) {
+      hierarchyData[sid].sellers[s.id] = {
+        id: s.id,
+        name: `${s.first_name} ${s.last_name}`,
+        stats: { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, fvcAltas: 0, total: 0 }
       }
-    })
-  }
+    }
+  })
 
   const allMonths = new Set<string>()
   const allWeeks = new Set<string>()
@@ -232,15 +218,17 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       const dnCol = findCol(headers, ['DN', 'CELULAR', 'TELEFONO', 'NUMERO', 'NRO', 'MSISDN', 'DN VENTA', 'CONTACTO', 'CEL'])
       const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
-      const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO', 'RESULTADO'], false)
-      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
+      
+      // Seguridad: Buscar de derecha a izquierda para evitar 'ESTADO' (Provincia) y preferir 'ESTATUS' (Venta)
+      const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'RESULTADO'], true) || findCol(headers, ['ESTADO VENTA'], true)
 
+      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
       const ventaDiaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
       const ventaSemanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
       const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION', 'FECHA'], true)
       const fvcSemanaCol = findCol(headers, ['SEMANA FVC', 'SEMANAFVC', 'WEEK FVC', 'SEMANA'], true)
 
-      const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
+      const seller = sellers.find((s: any) => s.id === sheet.seller_id)
       if (!seller) return
       
       const sid = seller.created_by
