@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
         sin_status: 0,
         chargeback: 0,
         promesa: 0,
-        fvc: 0,
+        fvcAltas: 0,
         total: 0
       }
     }
@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
             sin_status: 0,
             chargeback: 0,
             promesa: 0,
-            fvc: 0,
+            fvcAltas: 0,
             total: 0
           }
         }
@@ -404,6 +404,13 @@ export async function GET(request: NextRequest) {
           if (fvcValue === 'FVC') {
             targetStats.total++ // En este dashboard 'total' representa el conteo de FVC
             targetTotals.total++
+
+            // Para la CONVERSIÓN usamos un embudo puro:
+            // ¿De las citas que ocurrieron en este periodo, cuántas terminaron en ALTA?
+            if (estatus === 'ALTA') {
+              targetStats.fvcAltas++
+              targetTotals.fvcAltas++
+            }
           }
         }
       })
@@ -412,11 +419,12 @@ export async function GET(request: NextRequest) {
 
   const finalSupervisors = Object.values(hierarchyData).map((supervisor: HierarchySupervisor) => {
     const sellersList = Object.values(supervisor.sellers).map((s: SellerStats) => {
-      const conv = s.stats.total > 0 ? Math.round((s.stats.alta / s.stats.total) * 100) : 0
+      // Conversión basada en embudo (Altas de citas hoy / Citas hoy)
+      const conv = s.stats.total > 0 ? Math.round((s.stats.fvcAltas / s.stats.total) * 100) : 0
       return { ...s, conv: `${conv}%` }
     })
     const supervisorConv = supervisor.totals.total > 0 
-      ? Math.round((supervisor.totals.alta / supervisor.totals.total) * 100) 
+      ? Math.round((supervisor.totals.fvcAltas / supervisor.totals.total) * 100) 
       : 0
     return { ...supervisor, sellers: sellersList, conv: `${supervisorConv}%` }
   })
@@ -430,10 +438,11 @@ export async function GET(request: NextRequest) {
     sin_status: acc.sin_status + curr.totals.sin_status,
     chargeback: acc.chargeback + curr.totals.chargeback,
     promesa: acc.promesa + curr.totals.promesa,
+    fvcAltas: acc.fvcAltas + curr.totals.fvcAltas,
     total: acc.total + curr.totals.total
-  }), { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, total: 0 })
+  }), { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, fvcAltas: 0, total: 0 })
 
-  const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.alta / grandTotal.total) * 100) : 0
+  const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.fvcAltas / grandTotal.total) * 100) : 0
 
   return NextResponse.json({
     debug_timestamp: new Date().toISOString(),
