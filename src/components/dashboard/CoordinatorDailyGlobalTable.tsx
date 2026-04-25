@@ -318,68 +318,73 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
 
                         {/* Drill-down Seller Details */}
                         {isExpanded && (
-                          <tr className="bg-slate-50/30">
-                            <td colSpan={4} className="px-10 py-6 border-b-2 border-navy/10">
-                              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="bg-slate-100/50 px-6 py-3 border-b border-slate-200 flex items-center gap-3">
-                                   <Users size={14} className="text-slate-500" />
-                                   <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Detalle por Vendedores (Altas)</span>
+                          <tr className="bg-slate-50/80 border-b-2 border-navy/5">
+                            <td colSpan={4} className="px-4 py-4">
+                              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                {/* Integrated Header */}
+                                <div className="px-6 py-2 flex items-center gap-3 mb-2">
+                                   <div className="h-px flex-1 bg-slate-200" />
+                                   <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                                      <Users size={12} className="text-blue-600" />
+                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Rendimiento de Vendedores</span>
+                                   </div>
+                                   <div className="h-px flex-1 bg-slate-200" />
                                 </div>
                                 
                                 {loadingSellers ? (
-                                  <div className="p-10 flex flex-col items-center justify-center gap-3">
+                                  <div className="p-8 flex flex-col items-center justify-center gap-3">
                                     <RotateCw className="text-blue-600 animate-spin" size={20} strokeWidth={3} />
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Consultando Vendedores...</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando equipo...</span>
                                   </div>
                                 ) : expandedSellers.length === 0 ? (
-                                  <div className="p-10 text-center text-slate-400 text-[12px] font-bold uppercase tracking-widest">
-                                    No hay registros de vendedores para este Site
+                                  <div className="p-8 text-center text-slate-400 text-[11px] font-black uppercase tracking-widest italic">
+                                    No hay registros procesados para este equipo
                                   </div>
                                 ) : (
-                                  <table className="w-full text-left">
-                                    <thead>
-                                      <tr className="bg-white text-black text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-                                        <th className="px-8 py-3">Vendedor</th>
-                                        <th className="px-6 py-3 text-center">FVC</th>
-                                        <th className="px-6 py-3 text-center">Altas</th>
-                                        <th className="px-6 py-3 text-center">No Enrolado</th>
-                                        <th className="px-6 py-3 text-center">AA</th>
-                                        <th className="px-6 py-3 text-center">Sin Status</th>
-                                        <th className="px-6 py-3 text-center">Promesa</th>
-                                        <th className="px-8 py-3 text-center">% Conv.</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                      {expandedSellers.map((seller, sidx) => {
-                                        const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
-                                        return (
-                                          <tr key={sidx} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-8 py-3 text-[12px] font-bold text-slate-700 flex items-center gap-3">
-                                               <div className="p-1 rounded bg-slate-100">
-                                                  <UserCheck size={12} className="text-slate-400" />
-                                               </div>
-                                               {seller.name}
-                                            </td>
-                                            <td className="px-6 py-3 text-[12px] font-black text-slate-500 text-center tabular-nums">{sStat.fvc}</td>
-                                            <td className="px-6 py-3 text-[12px] font-black text-slate-900 text-center tabular-nums">{sStat.van}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-slate-700 text-center tabular-nums">{sStat.no_enrolado ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-rose-700 text-center tabular-nums">{sStat.aa ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-slate-800 text-center tabular-nums bg-slate-100">{sStat.sin_status ?? 0}</td>
-                                            <td className="px-6 py-3 text-[12px] font-bold text-amber-700 text-center tabular-nums">{sStat.promesa ?? 0}</td>
-                                            <td className="px-8 py-3 text-center">
-                                              <span className={`text-[11px] font-black ${
-                                                sStat.pctRaw >= 80 ? 'text-emerald-600' :
-                                                sStat.pctRaw >= 50 ? 'text-amber-600' :
-                                                'text-rose-600'
-                                              }`}>
-                                                {sStat.pct}
-                                              </span>
-                                            </td>
-                                          </tr>
-                                        )
-                                      })}
-                                    </tbody>
-                                  </table>
+                                  <div className="overflow-hidden">
+                                    <table className="w-full text-left">
+                                      <thead>
+                                        <tr className="text-slate-400 text-[9px] font-black uppercase tracking-[0.15em] border-b border-slate-200/60">
+                                          <th className="px-6 py-3">Vendedor</th>
+                                          <th className="px-4 py-3 text-center">FVC</th>
+                                          <th className="px-4 py-3 text-center">Altas</th>
+                                          <th className="px-4 py-3 text-center">No Enrol.</th>
+                                          <th className="px-4 py-3 text-center">AA</th>
+                                          <th className="px-4 py-3 text-center">Sin Status</th>
+                                          <th className="px-4 py-3 text-center">Promesa</th>
+                                          <th className="px-6 py-3 text-center">% Conv.</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100/50">
+                                        {expandedSellers.map((seller, sidx) => {
+                                          const sStat = seller.days[activeDay] || { ventas: 0, fvc: 0, van: 0, no_enrolado: 0, aa: 0, promesa: 0, sin_status: 0, pct: '0%', pctRaw: 0 }
+                                          return (
+                                            <tr key={sidx} className="hover:bg-white transition-all group/row hover:scale-[1.01] hover:shadow-xl hover:z-10 relative cursor-default">
+                                              <td className="px-6 py-2.5 text-[12px] font-bold text-slate-700 flex items-center gap-3">
+                                                 <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover/row:bg-blue-400 transition-colors" />
+                                                 {seller.name}
+                                              </td>
+                                              <td className="px-4 py-2.5 text-[12px] font-black text-slate-700 text-center tabular-nums">{sStat.fvc}</td>
+                                              <td className="px-4 py-2.5 text-[12px] font-black text-navy text-center tabular-nums">{sStat.van}</td>
+                                              <td className="px-4 py-2.5 text-[12px] font-bold text-slate-700 text-center tabular-nums">{sStat.no_enrolado ?? 0}</td>
+                                              <td className="px-4 py-2.5 text-[12px] font-bold text-rose-600 text-center tabular-nums">{sStat.aa ?? 0}</td>
+                                              <td className="px-4 py-2.5 text-[12px] font-black text-slate-900 text-center tabular-nums">{sStat.sin_status ?? 0}</td>
+                                              <td className="px-4 py-2.5 text-[12px] font-bold text-amber-600 text-center tabular-nums">{sStat.promesa ?? 0}</td>
+                                              <td className="px-6 py-2.5 text-center">
+                                                <div className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-black ${
+                                                  sStat.pctRaw >= 80 ? 'bg-emerald-50 text-emerald-600' :
+                                                  sStat.pctRaw >= 50 ? 'bg-amber-50 text-amber-600' :
+                                                  'bg-rose-50 text-rose-600'
+                                                }`}>
+                                                  {sStat.pct}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          )
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
                                 )}
                               </div>
                             </td>
