@@ -399,12 +399,9 @@ export async function GET(request: NextRequest) {
         // Solicidud: "columna 'FVC' === 'FVC'"
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
-          const currentEstatus = (row[statusCol || 'ESTATUS'] || '').trim().toUpperCase()
           
-          // Lógica inclusiva: Si hay match de fecha, contamos como FVC si:
-          // 1. La columna FVC explícitamente dice FVC
-          // 2. El estatus final es FVC o ALTA (esto cubre filas donde FVC es NO pero el resultado fue positivo)
-          if (fvcValue === 'FVC' || currentEstatus === 'FVC' || currentEstatus === 'ALTA') {
+          // Lógica estricta: Solo contar si la columna de indicador FVC dice exactamente 'FVC'
+          if (fvcValue === 'FVC') {
             targetStats.total++ // En este dashboard 'total' representa el conteo de FVC
             targetTotals.total++
           }
