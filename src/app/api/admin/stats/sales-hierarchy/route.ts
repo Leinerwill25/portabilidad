@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchSheetAsCSV, extractGid, getLocalTimeDate } from '@/lib/sheets/scraper'
+import { fetchSheetAsCSV, extractGid, getLocalTimeDate, parseDateFlexible, getGoogleSheetsWeek, toYYYYMMDD } from '@/lib/sheets/scraper'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,14 +8,6 @@ const MONTHS_ES = [
   'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
   'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
 ]
-
-function normalizeDay(day: string): string {
-  if (!day) return ''
-  return day.trim().toUpperCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Z]/g, '')
-}
 
 interface RowData {
   [key: string]: string | undefined
@@ -29,9 +21,30 @@ function normalizeHeader(h: string): string {
     .replace(/[^A-Z0-9]/g, '')     // Quitar todo lo que no sea letra o número
 }
 
-function findCol(headers: string[], aliases: string[]): string | undefined {
+function findCol(headers: string[], aliases: string[], reverse: boolean = false): string | undefined {
   const normalizedAliases = aliases.map(a => normalizeHeader(a))
-  return headers.find(h => normalizedAliases.includes(normalizeHeader(h)))
+  const normalizedHeaders = headers.map(h => normalizeHeader(h))
+
+  const indices = reverse 
+    ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
+    : Array.from({ length: headers.length }, (_, i) => i)
+
+  // Prioridad 1: Coincidencia exacta respetando el orden de ALIAS
+  for (const alias of normalizedAliases) {
+    const idx = indices.find(i => normalizedHeaders[i] === alias)
+    if (idx !== undefined) return headers[idx]
+  }
+
+  // Prioridad 2: Inclusión parcial
+  for (const alias of normalizedAliases) {
+    const idx = indices.find(i => {
+      const nh = normalizedHeaders[i]
+      return nh.includes(alias) || (alias.includes(nh) && nh.length > 3)
+    })
+    if (idx !== undefined) return headers[idx]
+  }
+
+  return undefined
 }
 
 interface Seller {
@@ -65,7 +78,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterMonth = searchParams.get('month')?.toUpperCase()
   const filterWeek = searchParams.get('week')
-  const filterDay = searchParams.get('day')?.toUpperCase()
+  const filterDay = searchParams.get('day')?.toUpperCase() // e.g. "LUNES"
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
   const supervisorId = searchParams.get('supervisorId')
   const forceFresh = searchParams.get('force') === 'true'
 
@@ -86,17 +101,15 @@ export async function GET(request: NextRequest) {
   if (userRole === 'admin') {
     supervisorIds = [user.id]
   } else if (userRole === 'coordinator') {
-    // SECURITY: Get assignments for this coordinator
     const { data: assignments } = await supabase
       .from('coordinator_supervisors')
       .select('supervisor_id')
       .eq('coordinator_id', user.id)
     
     const assignedIds = assignments ? assignments.map(a => a.supervisor_id) : []
-    if (!assignedIds.includes(user.id)) assignedIds.push(user.id) // Include self
+    if (!assignedIds.includes(user.id)) assignedIds.push(user.id)
 
     if (supervisorId && supervisorId !== 'undefined' && supervisorId !== user.id) {
-       // Validate requested ID is actually assigned to this coordinator
        if (assignedIds.includes(supervisorId)) {
          supervisorIds = [supervisorId]
        } else {
@@ -138,13 +151,40 @@ export async function GET(request: NextRequest) {
     sheets = (sheetsData as Sheet[]) || []
   }
 
+  // Helper para normalizar valores
+  function cleanValue(v: string | undefined): string {
+    if (!v) return ''
+    return v.trim().toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z0-9]/g, '')
+  }
+
   const currentMonthIndex = getLocalTimeDate().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
+
+  const targetRangeSignatures = new Set<string>()
+  if (startDate && endDate) {
+    const start = new Date(startDate + 'T00:00:00')
+    const end = new Date(endDate + 'T23:59:59')
+    const curr = new Date(start)
+    while (curr <= end) {
+      const mName = MONTHS_ES[curr.getMonth()]
+      const wNum = getGoogleSheetsWeek(curr).toString()
+      const dName = [
+        'DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'
+      ][curr.getDay()]
+      
+      const cleanedDName = cleanValue(dName)
+      targetRangeSignatures.add(`${mName}|${wNum}|${cleanedDName}`)
+      curr.setDate(curr.getDate() + 1)
+    }
+  }
 
   const hierarchyData: Record<string, HierarchySupervisor> = {}
 
   supervisorIds.forEach((sid: string) => {
-    const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
+    const p = profiles?.find((prof) => prof.id === sid)
     hierarchyData[sid] = {
       id: sid,
       name: p?.full_name || p?.email || 'Supervisor Desconocido',
@@ -176,13 +216,10 @@ export async function GET(request: NextRequest) {
 
     if (fetched.success && fetched.rows.length > 0) {
       const headers = fetched.headers
-      
-      const dnCol = findCol(headers, ['DN', 'NUMERO', 'TELEFONO'])
-      const mesCol = findCol(headers, ['MES', 'MONTH'])
-      const semanaCol = findCol(headers, ['SEMANA', 'WEEK'])
-      const diaCol = findCol(headers, ['DIA FVC', 'DÍA FVC', 'DIAFVC']) 
-                  || findCol(headers, ['DIA DE LA VENTA', 'DÍA DE LA VENTA', 'DIA VENTA', 'DIA'])
-      const semanaFvcCol = findCol(headers, ['SEMANA FVC', 'DÍA FVC SEMANA', 'SEMANAFVC'])
+      const dnCol = findCol(headers, ['DN', 'CELULAR', 'TELEFONO', 'NUMERO', 'NRO', 'MSISDN', 'DN VENTA', 'CONTACTO', 'CEL'])
+      const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
+      const semanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
+      const diaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
 
       const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
       if (!seller) return
@@ -191,67 +228,56 @@ export async function GET(request: NextRequest) {
       const sellerEntry = hierarchyData[sid]?.sellers[sheet.seller_id]
       if (!sellerEntry) return
 
-      // Month/Week propagation state
-      let lastRowMonth = ''
-      let lastRowWeek = ''
-
       fetched.rows.forEach((row: RowData) => {
-        const rowMonth = row[mesCol || 'MES']?.trim().toUpperCase() || lastRowMonth
-        const rawWeek = row[semanaCol || 'SEMANA']?.trim() || lastRowWeek
-        const rowWeekNum = rawWeek?.replace(/\D/g, '')
-        const rowDay = normalizeDay(row[diaCol || 'DIA DE LA VENTA'] || '')
-
-        // Update propagation state
-        if (row[mesCol || 'MES']?.trim()) lastRowMonth = row[mesCol || 'MES']?.trim().toUpperCase()
-        if (row[semanaCol || 'SEMANA']?.trim()) lastRowWeek = row[semanaCol || 'SEMANA']?.trim()
-
         const dn = row[dnCol || 'DN']?.trim()
-         
-        // If DN column exists but value is missing, skip row
+        const rowMonth = cleanValue(row[mesCol || 'MES'])
+        const rowWeekNum = row[semanaCol || 'SEMANA']?.trim().replace(/\D/g, '')
+        const rowDayName = cleanValue(row[diaCol || 'DIA'])
+        const parsedRowDate = parseDateFlexible(row[diaCol || 'FECHA'] || '')
+        const rowYYYYMMDD = toYYYYMMDD(parsedRowDate)
+
         if (dnCol && !dn) return
-        
-        // If no DN column AND no metadata columns, skip
-        if (!dnCol && !rowMonth && !rowWeekNum) return
 
         if (rowMonth) allMonths.add(rowMonth)
         if (rowWeekNum) allWeeks.add(rowWeekNum)
         
-        if (rowDay) {
-          if ((filterWeek && rowWeekNum === filterWeek) || (!filterWeek && rowMonth === currentMonthName)) {
-            allDays.add(rowDay)
+        // Populate days for the current context
+        if (rowDayName) {
+           if ((filterWeek && rowWeekNum === filterWeek) || (!filterWeek && rowMonth === currentMonthName)) {
+             allDays.add(rowDayName)
+           }
+        }
+
+        // --- Lógica de Match (Unificada con hierarchy/route.ts) ---
+        const checkMatch = () => {
+          if (startDate && endDate) {
+            if (!parsedRowDate) return false
+            if (rowYYYYMMDD && rowYYYYMMDD >= startDate && rowYYYYMMDD <= endDate) return true
+            
+            // Fallback: si el rango cubre días específicos por firma
+            const sig = `${rowMonth}|${rowWeekNum}|${rowDayName}`
+            if (targetRangeSignatures.has(sig)) return true
+            
+            return false
+          } else if (filterDay) {
+             const targetDay = cleanValue(filterDay)
+             if (rowDayName !== targetDay) return false
+             if (filterWeek) return rowWeekNum === filterWeek
+             if (filterMonth) return rowMonth === filterMonth
+             return rowMonth === currentMonthName
+          } else if (filterWeek) {
+            return rowWeekNum === filterWeek
+          } else if (filterMonth) {
+            return rowMonth === filterMonth
+          } else {
+            return rowMonth === currentMonthName
           }
         }
 
-        let match = false
-
-        if (filterDay) {
-          match = true
-          if (filterWeek && rowWeekNum !== filterWeek) match = false
-          if (filterMonth && !filterWeek && rowMonth !== filterMonth) match = false
-          
-          // Mejorar match de día usando el filtro de DIA FVC prioritario
-          const finalDayName = normalizeDay(row[diaCol || 'DIA DE LA VENTA'] || '')
-          const targetDayName = normalizeDay(filterDay)
-          
-          if (finalDayName !== targetDayName) match = false
-          
-          // Validar semana correcta si el dato viene de DIA FVC
-          const useWeek = (diaCol && normalizeHeader(diaCol) === 'DIAFVC') ? rowWeekFvcNum : rowWeekNum
-          if (filterWeek && useWeek !== filterWeek) match = false
-
-        } else if (filterWeek) {
-          match = rowWeekNum === filterWeek
-        } else if (filterMonth) {
-          match = rowMonth === filterMonth
-        } else {
-          match = rowMonth === currentMonthName
+        if (checkMatch()) {
+          sellerEntry.totalVentas++
+          hierarchyData[sid].totalVentas++
         }
-
-        if (!match) return
-
-        // Incrementar Venta
-        sellerEntry.totalVentas++
-        hierarchyData[sid].totalVentas++
       })
     }
   }))
@@ -263,7 +289,6 @@ export async function GET(request: NextRequest) {
 
   const grandTotalVentas = finalSupervisors.reduce((acc, curr) => acc + curr.totalVentas, 0)
 
-  // Order days naturally (Lunes, Martes, Miercoles...)
   const dayOrder = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']
   const sortedDays = Array.from(allDays).sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
 
