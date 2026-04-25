@@ -359,23 +359,26 @@ export function parseDateFlexible(dateStr: string): Date | null {
   // 0. Limpieza previa: si empieza con el nombre de un día (Lunes, Martes...), lo removemos
   // Ejemplo: "LUNES 13/04/2026" o "LUNES 13/04"
   s = s.replace(/^(LUNES|MARTES|MIERCOLES|MIÉRCOLES|JUEVES|VIERNES|SABADO|SÁBADO|DOMINGO)\s+/, '')
+  
+  // Normalización de separadores duplicados (ej: 20--04--2026 -> 20/04/2026)
+  s = s.replace(/[\-\s\/]+/g, '/')
 
-  // 1. ISO: 2024-12-25
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const d = new Date(s)
+  // 1. ISO: 2024/12/25 (después de normalizar) o 2024-12-25
+  if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}/.test(s)) {
+    const d = new Date(s.replace(/\//g, '-'))
     return isNaN(d.getTime()) ? null : d
   }
 
-  // 2. DD/MM/YYYY o DD-MM-YYYY
-  const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+  // 2. DD/MM/YYYY
+  const dmyMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
   if (dmyMatch) {
     const [, day, month, year] = dmyMatch
     const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
     return isNaN(d.getTime()) ? null : d
   }
 
-  // 3. DD/MM/YY o DD-MM-YY (Año de 2 dígitos)
-  const dmy2Match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/)
+  // 3. DD/MM/YY (Año de 2 dígitos)
+  const dmy2Match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/)
   if (dmy2Match) {
     const [, day, month, year2] = dmy2Match
     const year = parseInt(year2) + (parseInt(year2) < 50 ? 2000 : 1900)
@@ -387,8 +390,8 @@ export function parseDateFlexible(dateStr: string): Date | null {
   const monthNames = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
   const monthShorts = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
   
-  // Regex para capturar [DIA] [DE?] [MES] [DE?] [AÑO?]
-  const textMatch = s.match(/^(\d{1,2})\s+(?:DE\s+)?([A-Z]+)(?:\s+(?:DE\s+)?(\d{2,4}))?/)
+  // Regex para capturar [DIA] / [MES] / [AÑO?] (después de normalización de espacios a /)
+  const textMatch = s.match(/^(\d{1,2})\/([A-Z]+)(?:\/(\d{2,4}))?/)
   if (textMatch) {
     const [, dayStr, monthStr, yearStr] = textMatch
     const mIdx = monthNames.findIndex(m => monthStr.includes(m))
