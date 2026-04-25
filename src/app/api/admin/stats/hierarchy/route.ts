@@ -29,13 +29,11 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
     ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
     : Array.from({ length: headers.length }, (_, i) => i)
 
-  // Prioridad 1: Coincidencia exacta
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => normalizedHeaders[i] === alias)
     if (idx !== undefined) return headers[idx]
   }
 
-  // Prioridad 2: Inclusión parcial
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => {
       const nh = normalizedHeaders[i]
@@ -218,11 +216,9 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       const dnCol = findCol(headers, ['DN', 'CELULAR', 'TELEFONO', 'NUMERO', 'NRO', 'MSISDN', 'DN VENTA', 'CONTACTO', 'CEL'])
       const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
-      
-      // Seguridad: Buscar de derecha a izquierda para evitar 'ESTADO' (Provincia) y preferir 'ESTATUS' (Venta)
       const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'RESULTADO'], true) || findCol(headers, ['ESTADO VENTA'], true)
-
       const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
+
       const ventaDiaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
       const ventaSemanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
       const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION', 'FECHA'], true)
@@ -290,37 +286,39 @@ export async function GET(request: NextRequest) {
         if (matchVenta && dn) {
           targetStats.ventas++
           targetTotals.ventas++
-
-          if (estatus === 'ALTA') {
-            targetStats.alta++
-            targetTotals.alta++
-          } else if (estatus === 'AA' || estatus === 'ANA' || estatus.includes('ACTIVACION')) {
-            targetStats.activacion_no_alta++
-            targetTotals.activacion_no_alta++
-          } else if (estatus === 'RECHAZO' || estatus === 'NE' || estatus.includes('ENROLADO')) {
-            targetStats.alta_no_enrolada++
-            targetTotals.alta_no_enrolada++
-          } else if (estatus === 'CHARGEBACK' || estatus === 'CB' || estatus.includes('CHARGE')) {
-            targetStats.chargeback++
-            targetTotals.chargeback++
-          } else if (estatus === 'SINSTATUS' || estatus === 'PENDIENTE' || estatus.includes('SIN')) {
-            targetStats.sin_status++
-            targetTotals.sin_status++
-          } else if (estatus === 'PROMESADEVISITA' || estatus === 'PROMESA' || estatus.includes('PROMESA')) {
-            targetStats.promesa++
-            targetTotals.promesa++
-          }
         }
 
-        // 2. Lógica Estricta de FVC (Filtro por CITA)
+        // 2. Lógica de RESULTADOS (Filtro por CITA/FVC)
+        // Los estados (Alta, AA, Rechazo, etc.) ahora siguen la fecha de la CITA
+        // para que coincidan con el Total FVC y la Conversión.
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
+          
           if (fvcValue === 'FVC' || estatus === 'FVC') {
             targetStats.total++
             targetTotals.total++
+
+            // Mapeo de estados basado en la fecha de la CITA
             if (estatus === 'ALTA') {
+              targetStats.alta++
+              targetTotals.alta++
               targetStats.fvcAltas++
               targetTotals.fvcAltas++
+            } else if (estatus === 'AA' || estatus === 'ANA' || estatus.includes('ACTIVACION')) {
+              targetStats.activacion_no_alta++
+              targetTotals.activacion_no_alta++
+            } else if (estatus === 'RECHAZO' || estatus === 'NE' || estatus.includes('ENROLADO')) {
+              targetStats.alta_no_enrolada++
+              targetTotals.alta_no_enrolada++
+            } else if (estatus === 'CHARGEBACK' || estatus === 'CB' || estatus.includes('CHARGE')) {
+              targetStats.chargeback++
+              targetTotals.chargeback++
+            } else if (estatus === 'SINSTATUS' || estatus === 'PENDIENTE' || estatus.includes('SIN')) {
+              targetStats.sin_status++
+              targetTotals.sin_status++
+            } else if (estatus === 'PROMESADEVISITA' || estatus === 'PROMESA' || estatus.includes('PROMESA')) {
+              targetStats.promesa++
+              targetTotals.promesa++
             }
           }
         }
