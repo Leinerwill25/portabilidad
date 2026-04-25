@@ -29,7 +29,7 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
     ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
     : Array.from({ length: headers.length }, (_, i) => i)
 
-  // Prioridad 1: Coincidencia exacta respetando el orden de ALIAS
+  // Prioridad 1: Coincidencia exacta
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => normalizedHeaders[i] === alias)
     if (idx !== undefined) return headers[idx]
@@ -39,8 +39,6 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => {
       const nh = normalizedHeaders[i]
-      // nh.includes(alias): El header contiene el alias (ej: "DIA FVC" contiene "FVC") -> OK
-      // alias.includes(nh): El alias contiene el header (ej: "DIA" contenido en "DIA FVC") -> PELIGROSO si nh es muy corto
       return nh.includes(alias) || (alias.includes(nh) && nh.length > 3)
     })
     if (idx !== undefined) return headers[idx]
@@ -74,7 +72,7 @@ interface SellerStats {
     sin_status: number
     chargeback: number
     promesa: number
-    fvc: number
+    fvcAltas: number
     total: number
   }
 }
@@ -91,7 +89,7 @@ interface HierarchySupervisor {
     sin_status: number
     chargeback: number
     promesa: number
-    fvc: number
+    fvcAltas: number
     total: number
   }
 }
@@ -120,12 +118,9 @@ export async function GET(request: NextRequest) {
   let supervisorIds: string[] = []
 
   if (userRole === 'admin') {
-    // Si es supervisor, solo se ve a sí mismo
     supervisorIds = [user.id]
   } else {
-    // Si es coordinador o superadmin
     if (supervisorId) {
-      // Verificar si tiene asignado a este supervisor
       if (supervisorId === user.id) {
         supervisorIds = [user.id]
       } else {
@@ -142,30 +137,25 @@ export async function GET(request: NextRequest) {
         supervisorIds = [supervisorId]
       }
     } else {
-      // Obtener todos sus supervisores asignados
       const { data: assignments } = await supabase
         .from('coordinator_supervisors')
         .select('supervisor_id')
         .eq('coordinator_id', user.id)
 
       if (assignments && assignments.length > 0) {
-        supervisorIds = (assignments as { supervisor_id: string[] }[]).map(a => a.supervisor_id as unknown as string)
+        supervisorIds = (assignments as any[]).map(a => a.supervisor_id)
       } else {
         supervisorIds = []
       }
-      
-      // Inyectar el ID del coordinador para mostrar a sus vendedores directos
       supervisorIds.push(user.id)
     }
   }
 
-  // 3. Obtener nombres de perfiles
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, full_name, email')
     .in('id', supervisorIds)
 
-  // 4. Obtener todos los sellers de estos supervisores
   const { data: sellersData } = await supabase
     .from('sellers')
     .select('id, first_name, last_name, created_by')
@@ -173,7 +163,6 @@ export async function GET(request: NextRequest) {
   
   const sellers = sellersData as Seller[] | null
 
-  // 5. Obtener todos los sheets de estos sellers
   let sheets: Sheet[] = []
   if (sellers && sellers.length > 0) {
     const sellerIds = sellers.map(s => s.id)
@@ -184,16 +173,14 @@ export async function GET(request: NextRequest) {
     sheets = (sheetsData as Sheet[]) || []
   }
   
-  // Helper para normalizar valores (quitar acentos, espacios, etc.)
   function cleanValue(v: string | undefined): string {
     if (!v) return ''
     return v.trim().toUpperCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^A-Z0-9]/g, '') // Mantener solo letras y números para máxima robustez
+      .replace(/[^A-Z0-9]/g, '')
   }
 
-  // 6. Preparar Firmas de Búsqueda por Rango (si aplica)
   const targetRangeSignatures = new Set<string>()
   if (startDate && endDate) {
     const start = new Date(startDate + 'T00:00:00')
@@ -202,40 +189,24 @@ export async function GET(request: NextRequest) {
     while (curr <= end) {
       const mName = MONTHS_ES[curr.getMonth()]
       const wNum = getGoogleSheetsWeek(curr).toString()
-      const dName = [
-        'DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'
-      ][curr.getDay()]
-      
-      const cleanedDName = cleanValue(dName)
-      targetRangeSignatures.add(`${mName}|${wNum}|${cleanedDName}`)
-      
+      const dName = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'][curr.getDay()]
+      targetRangeSignatures.add(`${mName}|${wNum}|${cleanValue(dName)}`)
       curr.setDate(curr.getDate() + 1)
     }
   }
 
-  // 6. Preparar Mapas de Agregación
   const currentMonthIndex = getLocalTimeDate().getMonth()
   const currentMonthName = MONTHS_ES[currentMonthIndex]
 
   const hierarchyData: Record<string, HierarchySupervisor> = {}
 
   supervisorIds.forEach((sid: string) => {
-    const p = profiles?.find((prof: { id: string, full_name?: string | null, email?: string | null }) => prof.id === sid)
+    const p = profiles?.find((prof) => prof.id === sid)
     hierarchyData[sid] = {
       id: sid,
       name: p?.full_name || p?.email || 'Supervisor Desconocido',
       sellers: {},
-      totals: {
-        ventas: 0,
-        activacion_no_alta: 0,
-        alta: 0,
-        alta_no_enrolada: 0,
-        sin_status: 0,
-        chargeback: 0,
-        promesa: 0,
-        fvcAltas: 0,
-        total: 0
-      }
+      totals: { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, fvcAltas: 0, total: 0 }
     }
   })
 
@@ -246,17 +217,7 @@ export async function GET(request: NextRequest) {
         hierarchyData[sid].sellers[s.id] = {
           id: s.id,
           name: `${s.first_name} ${s.last_name}`,
-          stats: {
-            ventas: 0,
-            activacion_no_alta: 0,
-            alta: 0,
-            alta_no_enrolada: 0,
-            sin_status: 0,
-            chargeback: 0,
-            promesa: 0,
-            fvcAltas: 0,
-            total: 0
-          }
+          stats: { ventas: 0, activacion_no_alta: 0, alta: 0, alta_no_enrolada: 0, sin_status: 0, chargeback: 0, promesa: 0, fvcAltas: 0, total: 0 }
         }
       }
     })
@@ -265,7 +226,6 @@ export async function GET(request: NextRequest) {
   const allMonths = new Set<string>()
   const allWeeks = new Set<string>()
 
-  // 7. Procesar Sheets
   await Promise.all(sheets.map(async (sheet) => {
     const gid = extractGid(sheet.sheet_url)
     const fetched = await fetchSheetAsCSV(sheet.sheet_id, gid, forceFresh)
@@ -274,15 +234,13 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       const dnCol = findCol(headers, ['DN', 'CELULAR', 'TELEFONO', 'NUMERO', 'NRO', 'MSISDN', 'DN VENTA', 'CONTACTO', 'CEL'])
       const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
-      const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO', 'ESTADO VENTA', 'RESULTADO'])
       
-      // Búsqueda más flexible para la columna indicadora de FVC (buscando desde el final para evitar colisiones con Venta)
-      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
+      // Prioridad alta para ESTATUS exacto
+      const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO', 'RESULTADO'], false)
 
-      // Columnas temporales separadas - Alias extendidos
+      const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
       const ventaDiaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
       const ventaSemanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
-      
       const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION', 'FECHA'], true)
       const fvcSemanaCol = findCol(headers, ['SEMANA FVC', 'SEMANAFVC', 'WEEK FVC', 'SEMANA'], true)
 
@@ -295,24 +253,21 @@ export async function GET(request: NextRequest) {
 
       fetched.rows.forEach((row: RowData) => {
         const dn = row[dnCol || 'DN']?.trim()
-        let rowMonth = cleanValue(row[mesCol || 'MES']) // Normalizado
+        let rowMonth = cleanValue(row[mesCol || 'MES'])
         
         const rawWeekVenta = row[ventaSemanaCol || 'SEMANA']?.trim().replace(/\D/g, '')
         const rawWeekFvc = row[fvcSemanaCol || 'SEMANA FVC']?.trim().replace(/\D/g, '')
-        
         const normWeekVenta = rawWeekVenta ? parseInt(rawWeekVenta).toString() : ''
         const normWeekFvc = rawWeekFvc ? parseInt(rawWeekFvc).toString() : ''
 
         if (normWeekVenta) allWeeks.add(normWeekVenta)
         if (normWeekFvc) allWeeks.add(normWeekFvc)
 
-        // Helper para evaluar coincidencia temporal
         const checkMatch = (diaC: string | undefined, semRow: string | undefined) => {
           const rowDateStr = diaC ? row[diaC]?.trim() : ''
           const cleanedRowDayName = cleanValue(rowDateStr)
           const parsedRowDate = rowDateStr ? parseDateFlexible(rowDateStr) : null
           
-          // Si no hay mes en la columna, intentamos sacarlo de la fecha
           if (!rowMonth && parsedRowDate) {
             rowMonth = MONTHS_ES[parsedRowDate.getMonth()]
           }
@@ -321,15 +276,10 @@ export async function GET(request: NextRequest) {
           const normSemNum = rawSemNum ? parseInt(rawSemNum).toString() : ''
 
           if (startDate && endDate) {
-            // Comparación de cadenas pura (YYYY-MM-DD) para evitar desfases de zona horaria
             if (parsedRowDate) {
               const rowDateStrYYYY = toYYYYMMDD(parsedRowDate)
-              if (rowDateStrYYYY) {
-                return rowDateStrYYYY >= startDate && rowDateStrYYYY <= endDate
-              }
+              if (rowDateStrYYYY && rowDateStrYYYY >= startDate && rowDateStrYYYY <= endDate) return true
             } 
-            
-            // 2. Intentar construir fecha a partir de Mes y Número de día (ej. "Lunes 13" -> 13)
             const dayMatch = rowDateStr?.match(/(\d{1,2})/)
             if (dayMatch && rowMonth) {
               const dayNum = parseInt(dayMatch[1])
@@ -338,13 +288,9 @@ export async function GET(request: NextRequest) {
                 const year = startDate.split('-')[0] || '2026'
                 const constructedDate = new Date(parseInt(year), monthIndex, dayNum)
                 const constructedStr = toYYYYMMDD(constructedDate)
-                if (constructedStr) {
-                  return constructedStr >= startDate && constructedStr <= endDate
-                }
+                if (constructedStr && constructedStr >= startDate && constructedStr <= endDate) return true
               }
             }
-
-            // 3. Fallback: Comparación contra firmas normalizadas
             if (cleanedRowDayName && rowMonth) {
               return targetRangeSignatures.has(`${rowMonth}|${normSemNum}|${cleanedRowDayName}`)
             }
@@ -361,14 +307,14 @@ export async function GET(request: NextRequest) {
         const matchVenta = checkMatch(ventaDiaCol, ventaSemanaCol)
         const matchFvc = checkMatch(fvcDiaCol, fvcSemanaCol)
 
-        // Registrar meses disponibles encontrados/derivados
         if (rowMonth) allMonths.add(rowMonth)
 
-        const estatus = (row[statusCol || 'ESTATUS'] || '').trim().toUpperCase()
+        const rawEstatus = row[statusCol || 'ESTATUS'] || ''
+        const estatus = cleanValue(rawEstatus)
         const targetStats = sellerEntry.stats
         const targetTotals = hierarchyData[sid].totals
 
-        // 1. Lógica de VENTAS y ALTAS (Filtro por VENTA)
+        // 1. Lógica de VENTAS (Filtro por VENTA)
         if (matchVenta && dn) {
           targetStats.ventas++
           targetTotals.ventas++
@@ -376,37 +322,30 @@ export async function GET(request: NextRequest) {
           if (estatus === 'ALTA') {
             targetStats.alta++
             targetTotals.alta++
-          } else if (estatus === 'AA') {
+          } else if (estatus === 'AA' || estatus === 'ANA' || estatus.includes('ACTIVACION')) {
             targetStats.activacion_no_alta++
             targetTotals.activacion_no_alta++
-          } else if (estatus === 'NO ENROLADO') {
+          } else if (estatus === 'NE' || estatus.includes('ENROLADO') || estatus.includes('ENROLAR')) {
             targetStats.alta_no_enrolada++
             targetTotals.alta_no_enrolada++
-          } else if (estatus === 'CHARGE BACK') {
+          } else if (estatus === 'CB' || estatus.includes('CHARGEBACK') || estatus.includes('CHARGE')) {
             targetStats.chargeback++
             targetTotals.chargeback++
-          } else if (estatus === 'SIN STATUS') {
+          } else if (estatus === 'SINSTATUS' || estatus === 'PENDIENTE' || estatus.includes('SIN')) {
             targetStats.sin_status++
             targetTotals.sin_status++
-          } else if (estatus === 'PROMESA DE VISITA') {
+          } else if (estatus === 'PROMESA' || estatus.includes('PROMESA')) {
             targetStats.promesa++
             targetTotals.promesa++
           }
         }
 
         // 2. Lógica Estricta de FVC (Filtro por CITA)
-        // Solicidud: "TOTAL FVC el resultado se va a calcular pero siendo filtrada por la columna de 'FECHA DE LA CITA'"
-        // Solicidud: "columna 'FVC' === 'FVC'"
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
-          
-          // Lógica estricta: Solo contar si la columna de indicador FVC dice exactamente 'FVC'
           if (fvcValue === 'FVC') {
-            targetStats.total++ // En este dashboard 'total' representa el conteo de FVC
+            targetStats.total++
             targetTotals.total++
-
-            // Para la CONVERSIÓN usamos un embudo puro:
-            // ¿De las citas que ocurrieron en este periodo, cuántas terminaron en ALTA?
             if (estatus === 'ALTA') {
               targetStats.fvcAltas++
               targetTotals.fvcAltas++
@@ -419,17 +358,13 @@ export async function GET(request: NextRequest) {
 
   const finalSupervisors = Object.values(hierarchyData).map((supervisor: HierarchySupervisor) => {
     const sellersList = Object.values(supervisor.sellers).map((s: SellerStats) => {
-      // Conversión basada en embudo (Altas de citas hoy / Citas hoy)
       const conv = s.stats.total > 0 ? Math.round((s.stats.fvcAltas / s.stats.total) * 100) : 0
       return { ...s, conv: `${conv}%` }
     })
-    const supervisorConv = supervisor.totals.total > 0 
-      ? Math.round((supervisor.totals.fvcAltas / supervisor.totals.total) * 100) 
-      : 0
+    const supervisorConv = supervisor.totals.total > 0 ? Math.round((supervisor.totals.fvcAltas / supervisor.totals.total) * 100) : 0
     return { ...supervisor, sellers: sellersList, conv: `${supervisorConv}%` }
   })
 
-  // 10. Consolidado Global
   const grandTotal = finalSupervisors.reduce((acc, curr) => ({
     ventas: acc.ventas + curr.totals.ventas,
     activacion_no_alta: acc.activacion_no_alta + curr.totals.activacion_no_alta,
@@ -445,7 +380,6 @@ export async function GET(request: NextRequest) {
   const grandConv = grandTotal.total > 0 ? Math.round((grandTotal.fvcAltas / grandTotal.total) * 100) : 0
 
   return NextResponse.json({
-    debug_timestamp: new Date().toISOString(),
     selectedMonth: filterMonth || currentMonthName,
     selectedWeek: filterWeek || '',
     filterOptions: {
