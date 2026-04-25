@@ -13,12 +13,11 @@ interface RowData {
   [key: string]: string | undefined
 }
 
-// Función robusta para normalizar cabeceras de Excel
 function normalizeHeader(h: string): string {
   return h.trim().toUpperCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-    .replace(/[^A-Z0-9]/g, '')     // Quitar todo lo que no sea letra o número
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]/g, '')
 }
 
 function findCol(headers: string[], aliases: string[], reverse: boolean = false): string | undefined {
@@ -29,13 +28,11 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
     ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
     : Array.from({ length: headers.length }, (_, i) => i)
 
-  // Prioridad 1: Coincidencia exacta respetando el orden de ALIAS
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => normalizedHeaders[i] === alias)
     if (idx !== undefined) return headers[idx]
   }
 
-  // Prioridad 2: Inclusión parcial
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => {
       const nh = normalizedHeaders[i]
@@ -45,20 +42,6 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
   }
 
   return undefined
-}
-
-interface Seller {
-  id: string
-  first_name: string
-  last_name: string
-  created_by: string
-}
-
-interface Sheet {
-  id: string
-  seller_id: string
-  sheet_id: string
-  sheet_url: string
 }
 
 interface SellerStats {
@@ -78,7 +61,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filterMonth = searchParams.get('month')?.toUpperCase()
   const filterWeek = searchParams.get('week')
-  const filterDay = searchParams.get('day')?.toUpperCase() // e.g. "LUNES"
+  const filterDay = searchParams.get('day')?.toUpperCase()
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
   const supervisorId = searchParams.get('supervisorId')
@@ -139,19 +122,18 @@ export async function GET(request: NextRequest) {
     .select('id, first_name, last_name, created_by')
     .in('created_by', supervisorIds)
   
-  const sellers = sellersData as Seller[] | null
+  const sellers = sellersData || []
 
-  let sheets: Sheet[] = []
-  if (sellers && sellers.length > 0) {
+  let sheets: { id: string, seller_id: string, sheet_id: string, sheet_url: string }[] = []
+  if (sellers.length > 0) {
     const sellerIds = sellers.map(s => s.id)
     const { data: sheetsData } = await supabase
       .from('seller_sheets')
       .select('id, seller_id, sheet_id, sheet_url')
       .in('seller_id', sellerIds)
-    sheets = (sheetsData as Sheet[]) || []
+    sheets = (sheetsData as any[]) || []
   }
 
-  // Helper para normalizar valores
   function cleanValue(v: string | undefined): string {
     if (!v) return ''
     return v.trim().toUpperCase()
@@ -193,18 +175,16 @@ export async function GET(request: NextRequest) {
     }
   })
 
-  if (sellersData) {
-    sellersData.forEach((s: Seller) => {
-      const sid = s.created_by
-      if (hierarchyData[sid]) {
-        hierarchyData[sid].sellers[s.id] = {
-          id: s.id,
-          name: `${s.first_name} ${s.last_name}`,
-          totalVentas: 0
-        }
+  sellers.forEach((s: any) => {
+    const sid = s.created_by
+    if (hierarchyData[sid]) {
+      hierarchyData[sid].sellers[s.id] = {
+        id: s.id,
+        name: `${s.first_name} ${s.last_name}`,
+        totalVentas: 0
       }
-    })
-  }
+    }
+  })
 
   const allMonths = new Set<string>()
   const allWeeks = new Set<string>()
@@ -221,7 +201,7 @@ export async function GET(request: NextRequest) {
       const semanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
       const diaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
 
-      const seller = sellers?.find((s: Seller) => s.id === sheet.seller_id)
+      const seller = sellers.find((s: any) => s.id === sheet.seller_id)
       if (!seller) return
       
       const sid = seller.created_by
@@ -230,10 +210,12 @@ export async function GET(request: NextRequest) {
 
       fetched.rows.forEach((row: RowData) => {
         const dn = row[dnCol || 'DN']?.trim()
-        const rowMonth = cleanValue(row[mesCol || 'MES'])
+        let rowMonth = cleanValue(row[mesCol || 'MES'])
         const rowWeekNum = row[semanaCol || 'SEMANA']?.trim().replace(/\D/g, '')
-        const rowDayName = cleanValue(row[diaCol || 'DIA'])
-        const parsedRowDate = parseDateFlexible(row[diaCol || 'FECHA'] || '')
+        
+        const rowDateStr = diaCol ? row[diaCol]?.trim() : ''
+        const rowDayName = cleanValue(rowDateStr)
+        const parsedRowDate = rowDateStr ? parseDateFlexible(rowDateStr) : null
         const rowYYYYMMDD = toYYYYMMDD(parsedRowDate)
 
         if (dnCol && !dn) return
@@ -241,20 +223,17 @@ export async function GET(request: NextRequest) {
         if (rowMonth) allMonths.add(rowMonth)
         if (rowWeekNum) allWeeks.add(rowWeekNum)
         
-        // Populate days for the current context
-        if (rowDayName) {
+        if (rowDayName && rowDayName.length > 3) {
            if ((filterWeek && rowWeekNum === filterWeek) || (!filterWeek && rowMonth === currentMonthName)) {
              allDays.add(rowDayName)
            }
         }
 
-        // --- Lógica de Match (Unificada con hierarchy/route.ts) ---
         const checkMatch = () => {
           if (startDate && endDate) {
             if (!parsedRowDate) return false
             if (rowYYYYMMDD && rowYYYYMMDD >= startDate && rowYYYYMMDD <= endDate) return true
             
-            // Fallback: si el rango cubre días específicos por firma
             const sig = `${rowMonth}|${rowWeekNum}|${rowDayName}`
             if (targetRangeSignatures.has(sig)) return true
             
@@ -290,7 +269,7 @@ export async function GET(request: NextRequest) {
   const grandTotalVentas = finalSupervisors.reduce((acc, curr) => acc + curr.totalVentas, 0)
 
   const dayOrder = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']
-  const sortedDays = Array.from(allDays).sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
+  const sortedDays = Array.from(allDays).filter(d => dayOrder.includes(d)).sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
 
   return NextResponse.json({
     selectedMonth: filterMonth || currentMonthName,
