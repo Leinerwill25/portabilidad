@@ -117,12 +117,20 @@ export async function GET(request: NextRequest) {
     .select('id, full_name, email')
     .in('id', supervisorIds)
 
-  const { data: sellersData } = await supabase
+  const includeGraduated = searchParams.get('includeGraduated') === 'true'
+
+  let sellersQuery = supabase
     .from('sellers')
-    .select('id, first_name, last_name, created_by')
+    .select('id, first_name, last_name, created_by, status')
     .in('created_by', supervisorIds)
+
+  if (!includeGraduated) {
+    sellersQuery = sellersQuery.eq('status', 'activo')
+  }
+
+  const { data: sellersData } = await sellersQuery
   
-  const sellers = sellersData || []
+  const sellers = (sellersData || []) as any[]
 
   let sheets: { id: string, seller_id: string, sheet_id: string, sheet_url: string }[] = []
   if (sellers.length > 0) {

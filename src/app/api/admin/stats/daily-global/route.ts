@@ -140,11 +140,19 @@ export async function GET(request: NextRequest) {
 
   const supervisorIds = assignments.map(a => a.supervisor_id)
 
+  const includeGraduated = searchParams.get('includeGraduated') === 'true'
+
   // 2. Obtener todos los vendedores para estos supervisores
-  const { data: sellersData, error: sellersError } = await supabase
+  let sellersQuery = supabase
     .from('sellers')
-    .select('id, first_name, last_name, created_by')
+    .select('id, first_name, last_name, created_by, status')
     .in('created_by', supervisorIds)
+
+  if (!includeGraduated) {
+    sellersQuery = sellersQuery.eq('status', 'activo')
+  }
+
+  const { data: sellersData, error: sellersError } = await sellersQuery
 
   if (sellersError || !sellersData) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })

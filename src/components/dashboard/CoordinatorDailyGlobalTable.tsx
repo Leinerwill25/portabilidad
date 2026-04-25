@@ -53,6 +53,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [activeDay, setActiveDay] = useState<string>('')
   const [weekFilter, setWeekFilter] = useState<string>('')
+  const [includeGraduated, setIncludeGraduated] = useState(false)
   
   // Drill-down state
   const [expandedSupId, setExpandedSupId] = useState<string | null>(null)
@@ -68,6 +69,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       let url = `/api/admin/stats/daily-global?t=${ts}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (includeGraduated) url += `&includeGraduated=true`
       if (isManual) url += `&update=true`
 
       const res = await fetch(url)
@@ -86,7 +88,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       setLoading(false)
       setIsRefreshing(false)
     }
-  }, [weekFilter, activeDay, supervisorId])
+  }, [weekFilter, activeDay, supervisorId, includeGraduated])
 
   const fetchSellerDetails = useCallback(async (supId: string) => {
     // If already expanded, collapse it
@@ -101,6 +103,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
       const ts = Date.now()
       let url = `/api/dashboard/daily-stats?t=${ts}&supervisorId=${supId}`
       if (weekFilter) url += `&week=${weekFilter}`
+      if (includeGraduated) url += `&includeGraduated=true`
       
       const res = await fetch(url)
       const result = await res.json()
@@ -110,7 +113,7 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
     } finally {
       setLoadingSellers(false)
     }
-  }, [expandedSupId, weekFilter])
+  }, [expandedSupId, weekFilter, includeGraduated])
 
   useEffect(() => {
     fetchGlobalStats()
@@ -224,7 +227,22 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
              </div>
           </div>
 
-          <div className="flex items-center gap-8 w-full xl:w-auto">
+          <div className="flex items-center gap-6 w-full xl:w-auto">
+             <div className="flex flex-col gap-2 min-w-[180px]">
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1">Egresados</span>
+                <button
+                  onClick={() => setIncludeGraduated(!includeGraduated)}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[12px] font-black uppercase tracking-tight transition-all shadow-lg active:scale-95 border-2 ${
+                    includeGraduated 
+                      ? 'bg-amber-600 border-amber-500 text-white hover:bg-amber-700' 
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-400'
+                  }`}
+                >
+                  <UserCheck size={16} className={includeGraduated ? 'animate-pulse' : ''} />
+                  {includeGraduated ? 'Quitar Egresados' : 'Agregar Egresados'}
+                </button>
+             </div>
+
              <div className="flex flex-col gap-2 min-w-[180px]">
                 <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1">Semana de Filtro</span>
                 <div className="relative group">
@@ -242,21 +260,23 @@ export default function CoordinatorDailyGlobalTable({ supervisorId }: { supervis
                 </div>
              </div>
 
-             <button 
-                onClick={() => copyElementToClipboard('daily-global-report')}
-                className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all active:scale-95 border border-white/20 shadow-lg mt-5"
-                title="Capturar Reporte"
-              >
-                <Camera size={18} />
-              </button>
+             <div className="flex items-center gap-3 mt-5">
+               <button 
+                  onClick={() => copyElementToClipboard('daily-global-report')}
+                  className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all active:scale-95 border border-white/20 shadow-lg"
+                  title="Capturar Reporte"
+                >
+                  <Camera size={18} />
+                </button>
 
-              <button 
-                onClick={() => fetchGlobalStats(true)}
-                disabled={isRefreshing}
-                className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-xl active:scale-95 group disabled:opacity-50 mt-5 border border-blue-400/20"
-              >
-                <RotateCw size={18} strokeWidth={3} className={isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
-              </button>
+                <button 
+                  onClick={() => fetchGlobalStats(true)}
+                  disabled={isRefreshing}
+                  className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-xl active:scale-95 group disabled:opacity-50 border border-blue-400/20"
+                >
+                  <RotateCw size={18} strokeWidth={3} className={isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
+                </button>
+             </div>
           </div>
         </div>
 

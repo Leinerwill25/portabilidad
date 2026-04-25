@@ -102,6 +102,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const includeGraduated = searchParams.get('includeGraduated') === 'true'
+
   // 2. Obtener los vendedores filtrados
   const query = supabase
     .from('sellers')
@@ -109,6 +111,7 @@ export async function GET(request: NextRequest) {
       id,
       first_name,
       last_name,
+      status,
       profiles:created_by (
         full_name,
         email
@@ -130,6 +133,10 @@ export async function GET(request: NextRequest) {
         ranking: []
       })
     }
+  }
+
+  if (!includeGraduated) {
+    query.eq('status', 'activo')
   }
 
   const { data: sellersData, error: sellersError } = await query as { data: SellerWithProfile[] | null, error: unknown }

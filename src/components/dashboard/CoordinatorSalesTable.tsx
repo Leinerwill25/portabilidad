@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Camera,
   Calendar as CalendarIcon,
+  UserCheck,
   X
 } from 'lucide-react'
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
@@ -211,6 +212,7 @@ export default function CoordinatorSalesTable({ supervisorId }: { supervisorId?:
   const [dayFilter, setDayFilter] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [includeGraduated, setIncludeGraduated] = useState(false)
 
   const fetchData = async (isManual: boolean = false) => {
     if (isManual) setRefreshing(true)
@@ -224,6 +226,7 @@ export default function CoordinatorSalesTable({ supervisorId }: { supervisorId?:
       if (startDate) url += `&startDate=${startDate}`
       if (endDate) url += `&endDate=${endDate}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
+      if (includeGraduated) url += `&includeGraduated=true`
       if (isManual) url += `&force=true`
 
       const res = await fetch(url)
@@ -247,7 +250,7 @@ export default function CoordinatorSalesTable({ supervisorId }: { supervisorId?:
 
   useEffect(() => {
     fetchData()
-  }, [monthFilter, weekFilter, dayFilter, startDate, endDate])
+  }, [monthFilter, weekFilter, dayFilter, startDate, endDate, includeGraduated])
 
   const toggleExpand = (id: string) => {
     setExpandedSupervisors(prev => ({ ...prev, [id]: !prev[id] }))
@@ -308,6 +311,18 @@ export default function CoordinatorSalesTable({ supervisorId }: { supervisorId?:
          </div>
           <div className="flex items-center gap-3 shrink-0">
             
+            <button
+                onClick={() => setIncludeGraduated(!includeGraduated)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-white/20 ${
+                  includeGraduated 
+                    ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                    : 'bg-white/10 text-white/60 hover:text-white'
+                }`}
+              >
+                <UserCheck size={12} className={includeGraduated ? 'animate-pulse' : ''} />
+                {includeGraduated ? 'Quitar Egresados' : 'Agregar Egresados'}
+              </button>
+
             {/* Month Filter */}
             <div className="flex flex-col gap-0.5">
               <span className="text-[7px] font-black text-blue-200 uppercase tracking-widest opacity-70">Mes</span>

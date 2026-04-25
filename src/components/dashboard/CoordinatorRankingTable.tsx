@@ -11,7 +11,8 @@ import {
   Star,
   Users,
   Target,
-  BarChart3
+  BarChart3,
+  UserCheck
 } from 'lucide-react'
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
@@ -43,6 +44,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
   const [periodValue, setPeriodValue] = useState('')
   const [selectedDay, setSelectedDay] = useState('') // Specific day filter (Lunes-Sabado)
   const [rankingMode, setRankingMode] = useState<'ventas' | 'altas' | 'conversion'>('ventas')
+  const [includeGraduated, setIncludeGraduated] = useState(false)
   
   const [sortBy, setSortBy] = useState<'ventas' | 'altas' | 'conversion'>('ventas')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -57,6 +59,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
       if (periodValue) url.searchParams.set('periodValue', periodValue)
       if (periodType === 'week' && selectedDay) url.searchParams.set('day', selectedDay)
       if (supervisorId) url.searchParams.set('supervisorId', supervisorId)
+      if (includeGraduated) url.searchParams.set('includeGraduated', 'true')
       if (isRefresh) url.searchParams.set('force', 'true')
       
       const res = await fetch(url.toString())
@@ -78,7 +81,7 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
       setLoading(false)
       setRefreshing(false)
     }
-  }, [periodType, periodValue, selectedDay, supervisorId, data])
+  }, [periodType, periodValue, selectedDay, supervisorId, includeGraduated, data])
 
   useEffect(() => {
     if (rankingMode === 'ventas') setSortBy('ventas')
@@ -144,6 +147,19 @@ export default function CoordinatorRankingTable({ supervisorId }: { supervisorId
             </div>
 
             <div className="flex flex-wrap items-center gap-6">
+               
+               <button
+                  onClick={() => setIncludeGraduated(!includeGraduated)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 border-b-4 ${
+                    includeGraduated 
+                      ? 'bg-amber-600 text-white border-amber-800 hover:bg-amber-700' 
+                      : 'bg-slate-800 text-slate-400 border-slate-950 hover:text-white'
+                  }`}
+                >
+                  <UserCheck size={14} className={includeGraduated ? 'animate-pulse' : ''} />
+                  {includeGraduated ? 'Quitar Egresados' : 'Agregar Egresados'}
+                </button>
+
                {/* Period Type Switcher */}
                <div className="flex bg-slate-950/50 rounded-2xl p-1.5 border border-slate-800 shadow-inner">
                   {(['day', 'week', 'month'] as const).map((t) => (

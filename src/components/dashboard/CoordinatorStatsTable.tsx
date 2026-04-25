@@ -11,6 +11,7 @@ import {
   Camera,
   GripVertical,
   Calendar as CalendarIcon,
+  UserCheck,
   X
 } from 'lucide-react'
 import { Reorder } from 'framer-motion'
@@ -261,6 +262,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
   const [weekFilter, setWeekFilter] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [includeGraduated, setIncludeGraduated] = useState(false)
   const [columnOrder, setColumnOrder] = useState(INITIAL_COLUMNS)
 
   const fetchData = async (isManual: boolean = false) => {
@@ -274,6 +276,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
       if (startDate) url += `&startDate=${startDate}`
       if (endDate) url += `&endDate=${endDate}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
+      if (includeGraduated) url += `&includeGraduated=true`
       if (isManual) url += `&force=true`
 
       const res = await fetch(url)
@@ -298,7 +301,7 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
 
   useEffect(() => {
     fetchData()
-  }, [monthFilter, weekFilter, startDate, endDate])
+  }, [monthFilter, weekFilter, startDate, endDate, includeGraduated])
 
   const toggleExpand = (id: string) => {
     setExpandedSupervisors(prev => ({ ...prev, [id]: !prev[id] }))
@@ -367,6 +370,19 @@ export default function CoordinatorStatsTable({ supervisorId }: { supervisorId?:
               <h3 className="text-[16px] font-black text-white uppercase tracking-[0.1em] whitespace-nowrap">Dashboard Gerencial Site Analytics</h3>
            </div>
            <div className="flex items-center gap-3 shrink-0">
+             
+             <button
+                onClick={() => setIncludeGraduated(!includeGraduated)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-white/20 ${
+                  includeGraduated 
+                    ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                    : 'bg-white/10 text-white/60 hover:text-white'
+                }`}
+              >
+                <UserCheck size={12} className={includeGraduated ? 'animate-pulse' : ''} />
+                {includeGraduated ? 'Quitar Egresados' : 'Agregar Egresados'}
+              </button>
+
              <div className="flex flex-col gap-0.5">
                <span className="text-[7px] font-black text-blue-200 uppercase tracking-widest opacity-70">Mes</span>
                <select 

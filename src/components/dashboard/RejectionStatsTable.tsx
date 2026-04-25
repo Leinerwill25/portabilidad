@@ -9,7 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  Camera
+  Camera,
+  UserCheck
 } from 'lucide-react'
 import { copyElementToClipboard } from '@/lib/utils/screenshot'
 
@@ -61,6 +62,7 @@ export default function RejectionStatsTable({ supervisorId }: { supervisorId?: s
   const [expandedSupervisors, setExpandedSupervisors] = useState<Record<string, boolean>>({})
   const [monthFilter, setMonthFilter] = useState('')
   const [weekFilter, setWeekFilter] = useState('')
+  const [includeGraduated, setIncludeGraduated] = useState(false)
 
   const fetchData = async (isManual: boolean = false) => {
     if (isManual) setRefreshing(true)
@@ -71,6 +73,7 @@ export default function RejectionStatsTable({ supervisorId }: { supervisorId?: s
       if (monthFilter) url += `&month=${monthFilter}`
       if (weekFilter) url += `&week=${weekFilter}`
       if (supervisorId) url += `&supervisorId=${supervisorId}`
+      if (includeGraduated) url += `&includeGraduated=true`
       if (isManual) url += `&force=true`
 
       const res = await fetch(url)
@@ -94,7 +97,7 @@ export default function RejectionStatsTable({ supervisorId }: { supervisorId?: s
 
   useEffect(() => {
     fetchData()
-  }, [monthFilter, weekFilter])
+  }, [monthFilter, weekFilter, includeGraduated])
 
   const toggleExpand = (id: string) => {
     setExpandedSupervisors(prev => ({ ...prev, [id]: !prev[id] }))
@@ -184,6 +187,19 @@ export default function RejectionStatsTable({ supervisorId }: { supervisorId?: s
             </div>
          </div>
          <div className="flex items-center gap-4">
+            
+            <button
+                onClick={() => setIncludeGraduated(!includeGraduated)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 border border-white/20 ${
+                  includeGraduated 
+                    ? 'bg-amber-600 text-white hover:bg-amber-700' 
+                    : 'bg-white/10 text-white/60 hover:text-white'
+                }`}
+              >
+                <UserCheck size={12} className={includeGraduated ? 'animate-pulse' : ''} />
+                {includeGraduated ? 'Quitar Egresados' : 'Agregar Egresados'}
+              </button>
+
             {/* Month Filter */}
             <div className="flex flex-col gap-1">
               <span className="text-[8px] font-black text-blue-200 uppercase tracking-widest opacity-80 text-right">Mes</span>

@@ -13,6 +13,7 @@ interface Seller {
   last_name: string;
   email: string | null;
   phone: string | null;
+  status: 'activo' | 'egresado';
   created_at: string;
 }
 
@@ -138,9 +139,18 @@ export default function SellersPage() {
                           {seller.first_name[0]}{seller.last_name[0]}
                         </div>
                         <div>
-                          <p className="text-[14px] font-bold text-[#1a2744] truncate max-w-[200px]">
-                            {seller.first_name} {seller.last_name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[14px] font-bold text-[#1a2744] truncate max-w-[200px]">
+                              {seller.first_name} {seller.last_name}
+                            </p>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                              seller.status === 'egresado' 
+                                ? 'bg-slate-100 text-slate-500' 
+                                : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                            }`}>
+                              {seller.status || 'activo'}
+                            </span>
+                          </div>
                           <p className="text-[11px] text-[#6b7280] font-mono">{seller.id.split('-')[0]}</p>
                         </div>
                       </div>
@@ -209,7 +219,16 @@ export default function SellersPage() {
                       {seller.first_name[0]}{seller.last_name[0]}
                     </div>
                     <div>
-                      <h4 className="text-[15px] font-bold text-[#1a2744]">{seller.first_name} {seller.last_name}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-[15px] font-bold text-[#1a2744]">{seller.first_name} {seller.last_name}</h4>
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          seller.status === 'egresado' 
+                            ? 'bg-slate-100 text-slate-500' 
+                            : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        }`}>
+                          {seller.status || 'activo'}
+                        </span>
+                      </div>
                       <p className="text-[11px] text-[#6b7280] font-mono leading-none mt-1">ID: {seller.id.split('-')[0]}</p>
                     </div>
                   </div>
@@ -276,6 +295,7 @@ function AddSellerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess
     last_name: '',
     email: '',
     phone: '',
+    status: 'activo',
   })
   const [submitting, setSubmitting] = useState(false)
   const supabase = createClient()
@@ -291,6 +311,7 @@ function AddSellerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess
       last_name: formData.last_name,
       email: formData.email || null,
       phone: formData.phone || null,
+      status: formData.status,
       password: 'DN2026*',
       created_by: user?.id
     })
@@ -380,6 +401,18 @@ function AddSellerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess
             </div>
           </div>
 
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5">Estatus Operativo</label>
+            <select
+              value={formData.status}
+              onChange={e => setFormData({ ...formData, status: e.target.value as 'activo' | 'egresado' })}
+              className="w-full px-4 py-3 bg-[#f8fafc] border border-[#e5e7eb] rounded-lg text-[13px] font-bold focus:ring-2 focus:ring-[#1a56db]/20 focus:border-[#1a56db] transition-all outline-none cursor-pointer"
+            >
+              <option value="activo">ACTIVO</option>
+              <option value="egresado">EGRESADO</option>
+            </select>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -417,7 +450,7 @@ function EditSellerModal({ seller, onClose, onSuccess }: { seller: Seller, onClo
     last_name: seller.last_name || '',
     email: seller.email || '',
     phone: seller.phone || '',
-    password: seller.password || 'DN2026*', // Persistir o resetar contraseña
+    status: seller.status || 'activo',
   })
   const [submitting, setSubmitting] = useState(false)
   const supabase = createClient()
@@ -433,6 +466,7 @@ function EditSellerModal({ seller, onClose, onSuccess }: { seller: Seller, onClo
         last_name: formData.last_name,
         email: formData.email,
         phone: formData.phone,
+        status: formData.status,
       })
       .eq('id', seller.id)
 
@@ -515,6 +549,18 @@ function EditSellerModal({ seller, onClose, onSuccess }: { seller: Seller, onClo
                 className="w-full pl-11 pr-4 py-3 bg-[#f8fafc] border border-[#e5e7eb] rounded-lg text-[13px] focus:ring-2 focus:ring-[#1a56db]/20 focus:border-[#1a56db] transition-all outline-none"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5 text-left">
+            <label className="text-[13px] font-semibold text-[#1a2744] ml-0.5">Estatus Operativo</label>
+            <select
+              value={formData.status}
+              onChange={e => setFormData({ ...formData, status: e.target.value as 'activo' | 'egresado' })}
+              className="w-full px-4 py-3 bg-[#f8fafc] border border-[#e5e7eb] rounded-lg text-[13px] font-bold focus:ring-2 focus:ring-[#1a56db]/20 focus:border-[#1a56db] transition-all outline-none cursor-pointer"
+            >
+              <option value="activo">ACTIVO</option>
+              <option value="egresado">EGRESADO</option>
+            </select>
           </div>
 
           <div className="flex gap-3 pt-4">

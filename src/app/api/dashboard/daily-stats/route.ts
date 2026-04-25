@@ -56,10 +56,18 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const { data: sellers, error: sellersError } = await supabase
+  const includeGraduated = searchParams.get('includeGraduated') === 'true'
+
+  let sellersQuery = supabase
     .from('sellers')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, status')
     .eq('created_by', targetOwnerId)
+
+  if (!includeGraduated) {
+    sellersQuery = sellersQuery.eq('status', 'activo')
+  }
+
+  const { data: sellers, error: sellersError } = await sellersQuery
 
   if (sellersError) {
     return NextResponse.json({ error: 'Error al obtener vendedores' }, { status: 500 })
