@@ -29,13 +29,11 @@ function findCol(headers: string[], aliases: string[], reverse: boolean = false)
     ? Array.from({ length: headers.length }, (_, i) => headers.length - 1 - i)
     : Array.from({ length: headers.length }, (_, i) => i)
 
-  // Prioridad 1: Coincidencia exacta
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => normalizedHeaders[i] === alias)
     if (idx !== undefined) return headers[idx]
   }
 
-  // Prioridad 2: Inclusión parcial
   for (const alias of normalizedAliases) {
     const idx = indices.find(i => {
       const nh = normalizedHeaders[i]
@@ -234,11 +232,9 @@ export async function GET(request: NextRequest) {
       const headers = fetched.headers
       const dnCol = findCol(headers, ['DN', 'CELULAR', 'TELEFONO', 'NUMERO', 'NRO', 'MSISDN', 'DN VENTA', 'CONTACTO', 'CEL'])
       const mesCol = findCol(headers, ['MES', 'MONTH', 'PERIODO', 'MES VENTA', 'MES ACTIVACION'])
-      
-      // Prioridad alta para ESTATUS exacto
       const statusCol = findCol(headers, ['ESTATUS', 'STATUS', 'ESTADO', 'RESULTADO'], false)
-
       const fvcIndicatorCol = findCol(headers, ['FVC', 'INDICADOR FVC', 'FVC '], true) || 'FVC'
+
       const ventaDiaCol = findCol(headers, ['FECHA DE LA VENTA', 'FECHA DE VENTA', 'DÍA DE LA VENTA', 'FECHA VENTA', 'FECHA REGISTRO', 'FECHA', 'DIA VENTA', 'DIA'])
       const ventaSemanaCol = findCol(headers, ['SEMANA', 'WEEK', 'SEMANA VENTA'])
       const fvcDiaCol = findCol(headers, ['FECHA DE LA CITA', 'FECHA CITA', 'CITA', 'FECHA ACTIVACION', 'FECHA FVC', 'DIA FVC', 'DÍA FVC', 'DIAFVC', 'DIAL FVC', 'ACTIVACION', 'FECHA'], true)
@@ -280,17 +276,6 @@ export async function GET(request: NextRequest) {
               const rowDateStrYYYY = toYYYYMMDD(parsedRowDate)
               if (rowDateStrYYYY && rowDateStrYYYY >= startDate && rowDateStrYYYY <= endDate) return true
             } 
-            const dayMatch = rowDateStr?.match(/(\d{1,2})/)
-            if (dayMatch && rowMonth) {
-              const dayNum = parseInt(dayMatch[1])
-              const monthIndex = MONTHS_ES.indexOf(rowMonth)
-              if (monthIndex > -1) {
-                const year = startDate.split('-')[0] || '2026'
-                const constructedDate = new Date(parseInt(year), monthIndex, dayNum)
-                const constructedStr = toYYYYMMDD(constructedDate)
-                if (constructedStr && constructedStr >= startDate && constructedStr <= endDate) return true
-              }
-            }
             if (cleanedRowDayName && rowMonth) {
               return targetRangeSignatures.has(`${rowMonth}|${normSemNum}|${cleanedRowDayName}`)
             }
@@ -309,8 +294,7 @@ export async function GET(request: NextRequest) {
 
         if (rowMonth) allMonths.add(rowMonth)
 
-        const rawEstatus = row[statusCol || 'ESTATUS'] || ''
-        const estatus = cleanValue(rawEstatus)
+        const estatus = cleanValue(row[statusCol || 'ESTATUS'])
         const targetStats = sellerEntry.stats
         const targetTotals = hierarchyData[sid].totals
 
@@ -325,16 +309,16 @@ export async function GET(request: NextRequest) {
           } else if (estatus === 'AA' || estatus === 'ANA' || estatus.includes('ACTIVACION')) {
             targetStats.activacion_no_alta++
             targetTotals.activacion_no_alta++
-          } else if (estatus === 'NE' || estatus.includes('ENROLADO') || estatus.includes('ENROLAR')) {
+          } else if (estatus === 'RECHAZO' || estatus === 'NE' || estatus.includes('ENROLADO')) {
             targetStats.alta_no_enrolada++
             targetTotals.alta_no_enrolada++
-          } else if (estatus === 'CB' || estatus.includes('CHARGEBACK') || estatus.includes('CHARGE')) {
+          } else if (estatus === 'CHARGEBACK' || estatus === 'CB' || estatus.includes('CHARGE')) {
             targetStats.chargeback++
             targetTotals.chargeback++
           } else if (estatus === 'SINSTATUS' || estatus === 'PENDIENTE' || estatus.includes('SIN')) {
             targetStats.sin_status++
             targetTotals.sin_status++
-          } else if (estatus === 'PROMESA' || estatus.includes('PROMESA')) {
+          } else if (estatus === 'PROMESADEVISITA' || estatus === 'PROMESA' || estatus.includes('PROMESA')) {
             targetStats.promesa++
             targetTotals.promesa++
           }
@@ -343,7 +327,7 @@ export async function GET(request: NextRequest) {
         // 2. Lógica Estricta de FVC (Filtro por CITA)
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
-          if (fvcValue === 'FVC') {
+          if (fvcValue === 'FVC' || estatus === 'FVC') {
             targetStats.total++
             targetTotals.total++
             if (estatus === 'ALTA') {
