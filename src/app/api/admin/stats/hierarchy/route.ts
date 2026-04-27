@@ -301,8 +301,9 @@ export async function GET(request: NextRequest) {
         // para que coincidan con el Total FVC y la Conversión.
         if (matchFvc) {
           const fvcValue = row[fvcIndicatorCol || '']?.trim().toUpperCase()
+          const isValidFvc = fvcValue && fvcValue !== 'NO' && !(fvcValue === 'FVC' && estatus === 'RECHAZO')
           
-          if (fvcValue === 'FVC' || estatus === 'FVC') {
+          if (isValidFvc) {
             targetStats.total++
             targetTotals.total++
 
